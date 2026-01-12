@@ -6,19 +6,19 @@ Implementasi sistem rekap absensi per Jam Pelajaran (JP) dengan Custom Admin Pan
 
 ## Tasks
 
-- [ ] 1. Setup New Models and Database Schema
-  - [ ] 1.1 Create DaySchedule model with day_of_week, day_name, default_jp_count, is_school_day fields
+- [x] 1. Setup New Models and Database Schema
+  - [x] 1.1 Create DaySchedule model with day_of_week, day_name, default_jp_count, is_school_day fields
     - Add validators for jp_count (1-10 range)
     - Create migration file
     - _Requirements: 1.1, 1.3_
-  - [ ] 1.2 Create DailyAttendance model with student FK, date, jp_statuses JSONField, recorded_by FK
+  - [x] 1.2 Create DailyAttendance model with student FK, date, jp_statuses JSONField, recorded_by FK
     - Add unique_together constraint for (student, date)
     - Add indexes for performance
     - _Requirements: 2.5, 10.3_
-  - [ ] 1.3 Create Holiday model with date, name, holiday_type, apply_to_all, classrooms M2M
+  - [x] 1.3 Create Holiday model with date, name, holiday_type, apply_to_all, classrooms M2M
     - Add HOLIDAY_TYPES choices
     - _Requirements: 3.1, 3.5_
-  - [ ] 1.4 Create initial data migration for DaySchedule (7 days with default JP counts)
+  - [x] 1.4 Create initial data migration for DaySchedule (7 days with default JP counts)
     - Senin-Kamis: 6 JP, Jumat: 4 JP, Sabtu: 6 JP, Minggu: 0 JP (not school day)
     - _Requirements: 1.2_
   - [ ]* 1.5 Write property tests for model validation
@@ -27,12 +27,12 @@ Implementasi sistem rekap absensi per Jam Pelajaran (JP) dengan Custom Admin Pan
     - **Property 10: Holiday Type Validation**
     - **Validates: Requirements 1.1, 1.3, 2.5, 3.5, 10.1, 10.2**
 
-- [ ] 2. Implement Service Layer
-  - [ ] 2.1 Create ScheduleService with get_jp_count_for_date, get_day_schedule, update_schedule methods
+- [x] 2. Implement Service Layer
+  - [x] 2.1 Create ScheduleService with get_jp_count_for_date, get_day_schedule, update_schedule methods
     - _Requirements: 1.4, 1.5_
-  - [ ] 2.2 Create AttendanceService with get_attendance, save_attendance, save_bulk_attendance, get_missing_attendance methods
+  - [x] 2.2 Create AttendanceService with get_attendance, save_attendance, save_bulk_attendance, get_missing_attendance methods
     - _Requirements: 2.1, 2.5, 2.6, 4.1_
-  - [ ] 2.3 Create HolidayService with is_holiday, get_holidays, create_holiday methods
+  - [x] 2.3 Create HolidayService with is_holiday, get_holidays, create_holiday methods
     - _Requirements: 3.3, 3.6_
   - [ ]* 2.4 Write property tests for service methods
     - **Property 3: JP Count Determination**
@@ -40,10 +40,10 @@ Implementasi sistem rekap absensi per Jam Pelajaran (JP) dengan Custom Admin Pan
     - **Property 12: Missing Attendance Calculation**
     - **Validates: Requirements 1.5, 2.2, 2.9, 3.6, 4.1, 4.2, 4.3**
 
-- [ ] 3. Checkpoint - Ensure models and services work correctly
+- [x] 3. Checkpoint - Ensure models and services work correctly
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 4. Create Base Template Components
+- [-] 4. Create Base Template Components
   - [ ] 4.1 Create new base.html with sidebar layout and brown/white color theme
     - Include CSS variables for theme colors
     - Add Font Awesome CDN
