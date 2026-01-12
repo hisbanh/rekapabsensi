@@ -47,4 +47,9 @@ urlpatterns = [
     
     # Bulk Actions
     path('manage/bulk-action/', views.bulk_action, name='bulk_action'),
+    
+    # JP-Based Report URLs
+    path('jp-report/', views.jp_report, name='jp_report'),
+    path('export/jp-csv/', views.export_jp_csv, name='export_jp_csv'),
+    path('api/students-by-classroom/', views.api_get_students_by_classroom, name='api_students_by_classroom'),
 ]

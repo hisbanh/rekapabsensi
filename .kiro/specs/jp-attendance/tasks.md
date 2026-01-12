@@ -158,11 +158,11 @@ Implementasi sistem rekap absensi per Jam Pelajaran (JP) dengan Custom Admin Pan
     - **Property 18: Role-Based Authorization**
     - **Validates: Requirements 8.6, 9.2, 9.3, 9.4**
 
-- [ ] 11. Implement Report Service
-  - [ ] 11.1 Create ReportService with generate_class_report and generate_student_report methods
+- [x] 11. Implement Report Service
+  - [x] 11.1 Create ReportService with generate_class_report and generate_student_report methods
     - Calculate totals and percentages
     - _Requirements: 5.3, 5.4, 5.6_
-  - [ ] 11.2 Create report page with date range filter and export options
+  - [x] 11.2 Create report page with date range filter and export options
     - Select classroom or student
     - Date range picker
     - Export buttons (PDF, Excel, CSV)

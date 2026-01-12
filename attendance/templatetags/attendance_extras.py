@@ -38,3 +38,21 @@ def percentage(value, total):
         return round((int(value) / int(total)) * 100, 1)
     except (ValueError, TypeError, ZeroDivisionError):
         return 0
+
+@register.filter
+def make_list(value):
+    """Convert a number to a range list for iteration in templates.
+    Usage: {% for i in 6|make_list %}
+    """
+    try:
+        return range(1, int(value) + 1)
+    except (ValueError, TypeError):
+        return []
+
+@register.filter
+def subtract(value, arg):
+    """Subtract arg from value"""
+    try:
+        return int(value) - int(arg)
+    except (ValueError, TypeError):
+        return 0

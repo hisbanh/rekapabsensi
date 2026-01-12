@@ -320,8 +320,8 @@ def attendance_report(request):
                 filters['start_date'] = form.cleaned_data['start_date']
             if form.cleaned_data['end_date']:
                 filters['end_date'] = form.cleaned_data['end_date']
-            if form.cleaned_data['class_name']:
-                filters['class_name'] = form.cleaned_data['class_name']
+            if form.cleaned_data.get('classroom'):
+                filters['classroom_id'] = str(form.cleaned_data['classroom'].id)
             if form.cleaned_data['status']:
                 filters['status'] = form.cleaned_data['status']
         
@@ -401,8 +401,8 @@ def export_csv(request):
                 filters['start_date'] = form.cleaned_data['start_date']
             if form.cleaned_data['end_date']:
                 filters['end_date'] = form.cleaned_data['end_date']
-            if form.cleaned_data['class_name']:
-                filters['class_name'] = form.cleaned_data['class_name']
+            if form.cleaned_data.get('classroom'):
+                filters['classroom_id'] = str(form.cleaned_data['classroom'].id)
             if form.cleaned_data['status']:
                 filters['status'] = form.cleaned_data['status']
         
@@ -1308,3 +1308,169 @@ def bulk_action(request):
         messages.error(request, f"Gagal melakukan aksi: {str(e)}")
     
     return redirect(request.META.get('HTTP_REFERER', 'dashboard'))
+
+
+# ============================================
+# JP-Based Report Views
+# ============================================
+
+from .forms import JPReportFilterForm
+
+
+@login_required
+def jp_report(request):
+    """
+    JP-based attendance report view with date range filter and export options.
+    Supports both class-level and student-level reports.
+    
+    Requirements: 5.1, 6.1
+    """
+    try:
+        form = JPReportFilterForm(request.GET or None)
+        report_data = None
+        report_type = request.GET.get('report_type', 'class')
+        
+        # Get all classrooms and students for the form
+        classrooms = Classroom.objects.filter(
+            is_active=True
+        ).select_related('academic_level').order_by(
+            'academic_level__code', 'grade', 'section'
+        )
+        
+        students = Student.objects.filter(
+            is_active=True
+        ).select_related('classroom', 'classroom__academic_level').order_by('name')
+        
+        # Process form if submitted with valid data
+        if request.GET and form.is_valid():
+            report_type = form.cleaned_data['report_type']
+            start_date = form.cleaned_data['start_date']
+            end_date = form.cleaned_data['end_date']
+            
+            if report_type == 'class':
+                classroom = form.cleaned_data['classroom']
+                if classroom:
+                    report_data = ReportService.generate_class_report(
+                        classroom=classroom,
+                        start_date=start_date,
+                        end_date=end_date
+                    )
+            else:  # student report
+                student = form.cleaned_data['student']
+                if student:
+                    report_data = ReportService.generate_student_report(
+                        student=student,
+                        start_date=start_date,
+                        end_date=end_date
+                    )
+        
+        context = {
+            'form': form,
+            'report_data': report_data,
+            'report_type': report_type,
+            'classrooms': classrooms,
+            'students': students,
+        }
+        
+    except ReportServiceError as e:
+        logger.error(f"Report service error: {str(e)}")
+        messages.error(request, f"Kesalahan layanan laporan: {str(e)}")
+        context = {
+            'form': JPReportFilterForm(),
+            'report_data': None,
+            'report_type': 'class',
+            'classrooms': [],
+            'students': [],
+        }
+    except Exception as e:
+        logger.error(f"Error generating JP report: {str(e)}")
+        messages.error(request, "Terjadi kesalahan saat membuat laporan")
+        context = {
+            'form': JPReportFilterForm(),
+            'report_data': None,
+            'report_type': 'class',
+            'classrooms': [],
+            'students': [],
+        }
+    
+    return render(request, 'attendance/jp_report.html', context)
+
+
+@login_required
+def export_jp_csv(request):
+    """
+    Export JP-based attendance data to CSV format.
+    
+    Requirements: 6.6
+    """
+    try:
+        # Get parameters
+        classroom_id = request.GET.get('classroom')
+        start_date_str = request.GET.get('start_date')
+        end_date_str = request.GET.get('end_date')
+        
+        if not all([classroom_id, start_date_str, end_date_str]):
+            messages.error(request, 'Parameter tidak lengkap')
+            return redirect('jp_report')
+        
+        # Parse dates
+        try:
+            start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+            end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+        except ValueError:
+            messages.error(request, 'Format tanggal tidak valid')
+            return redirect('jp_report')
+        
+        # Get classroom
+        try:
+            classroom = Classroom.objects.get(id=classroom_id, is_active=True)
+        except Classroom.DoesNotExist:
+            messages.error(request, 'Kelas tidak ditemukan')
+            return redirect('jp_report')
+        
+        # Generate CSV
+        csv_content = ReportService.export_jp_attendance_to_csv(
+            classroom=classroom,
+            start_date=start_date,
+            end_date=end_date
+        )
+        
+        # Create response
+        response = HttpResponse(csv_content, content_type='text/csv; charset=utf-8')
+        filename = f"laporan_absensi_jp_{classroom}_{start_date_str}_{end_date_str}.csv"
+        # Sanitize filename
+        filename = filename.replace(' ', '_').replace('/', '-')
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        
+        return response
+        
+    except Exception as e:
+        logger.error(f"Error exporting JP CSV: {str(e)}")
+        messages.error(request, f"Gagal mengekspor data: {str(e)}")
+        return redirect('jp_report')
+
+
+@login_required
+def api_get_students_by_classroom(request):
+    """
+    AJAX endpoint to get students filtered by classroom.
+    Used for dynamic student dropdown in report form.
+    """
+    try:
+        classroom_id = request.GET.get('classroom_id')
+        
+        if not classroom_id:
+            return JsonResponse({'students': []})
+        
+        students = Student.objects.filter(
+            classroom_id=classroom_id,
+            is_active=True
+        ).order_by('name').values('id', 'name', 'student_id')
+        
+        return JsonResponse({
+            'students': list(students)
+        })
+        
+    except Exception as e:
+        logger.error(f"Error getting students by classroom: {str(e)}")
+        return JsonResponse({'error': str(e)}, status=500)

@@ -39,6 +39,13 @@
                     <span>Laporan</span>
                 </a>
             </div>
+            
+            <div class="nav-item">
+                <a href="{% url 'jp_report' %}" class="nav-link {% if request.resolver_match.url_name == 'jp_report' %}active{% endif %}">
+                    <i class="fas fa-file-alt"></i>
+                    <span>Laporan JP</span>
+                </a>
+            </div>
         </div>
         
         <!-- Management Section -->

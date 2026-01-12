@@ -398,9 +398,10 @@ class AttendanceFilterForm(forms.Form):
         required=False,
         widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'})
     )
-    class_name = forms.ChoiceField(
+    classroom = forms.ModelChoiceField(
         required=False,
-        choices=[('', 'Semua Kelas')],
+        queryset=Classroom.objects.none(),
+        empty_label='Semua Kelas',
         widget=forms.Select(attrs={'class': 'form-control'})
     )
     status = forms.ChoiceField(
@@ -411,24 +412,134 @@ class AttendanceFilterForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Populate class choices dynamically
-        classes = Student.objects.values_list('class_name', flat=True).distinct().order_by('class_name')
-        class_choices = [('', 'Semua Kelas')] + [(cls, cls) for cls in classes]
-        self.fields['class_name'].choices = class_choices
+        # Populate classroom choices dynamically
+        self.fields['classroom'].queryset = Classroom.objects.filter(
+            is_active=True
+        ).select_related('academic_level').order_by(
+            'academic_level__code', 'grade', 'section'
+        )
 
 class BulkAttendanceForm(forms.Form):
     date = forms.DateField(
         initial=timezone.now().date(),
         widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'})
     )
-    class_name = forms.ChoiceField(
-        choices=[('', 'Pilih Kelas')],
+    classroom = forms.ModelChoiceField(
+        queryset=Classroom.objects.none(),
+        empty_label='Pilih Kelas',
         widget=forms.Select(attrs={'class': 'form-control'})
     )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Populate class choices dynamically
-        classes = Student.objects.values_list('class_name', flat=True).distinct().order_by('class_name')
-        class_choices = [('', 'Pilih Kelas')] + [(cls, cls) for cls in classes]
-        self.fields['class_name'].choices = class_choices
+        # Populate classroom choices dynamically
+        self.fields['classroom'].queryset = Classroom.objects.filter(
+            is_active=True
+        ).select_related('academic_level').order_by(
+            'academic_level__code', 'grade', 'section'
+        )
+
+
+# ============================================
+# JP-Based Report Forms
+# ============================================
+
+class JPReportFilterForm(forms.Form):
+    """Form for filtering JP-based attendance reports"""
+    
+    REPORT_TYPE_CHOICES = [
+        ('class', 'Laporan Per Kelas'),
+        ('student', 'Laporan Per Siswa'),
+    ]
+    
+    report_type = forms.ChoiceField(
+        choices=REPORT_TYPE_CHOICES,
+        initial='class',
+        widget=forms.Select(attrs={
+            'class': 'form-select',
+            'id': 'report_type'
+        })
+    )
+    classroom = forms.ModelChoiceField(
+        required=False,
+        queryset=Classroom.objects.none(),
+        empty_label='Pilih Kelas',
+        widget=forms.Select(attrs={
+            'class': 'form-select',
+            'id': 'classroom'
+        })
+    )
+    student = forms.ModelChoiceField(
+        required=False,
+        queryset=Student.objects.none(),
+        empty_label='Pilih Siswa',
+        widget=forms.Select(attrs={
+            'class': 'form-select',
+            'id': 'student'
+        })
+    )
+    start_date = forms.DateField(
+        widget=forms.DateInput(attrs={
+            'type': 'date',
+            'class': 'form-control',
+            'id': 'start_date'
+        })
+    )
+    end_date = forms.DateField(
+        widget=forms.DateInput(attrs={
+            'type': 'date',
+            'class': 'form-control',
+            'id': 'end_date'
+        })
+    )
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # Set default dates (current month)
+        today = timezone.now().date()
+        first_day_of_month = today.replace(day=1)
+        
+        if not self.data.get('start_date'):
+            self.initial['start_date'] = first_day_of_month
+        if not self.data.get('end_date'):
+            self.initial['end_date'] = today
+        
+        # Populate classroom choices
+        self.fields['classroom'].queryset = Classroom.objects.filter(
+            is_active=True
+        ).select_related('academic_level').order_by(
+            'academic_level__code', 'grade', 'section'
+        )
+        
+        # Populate student choices
+        self.fields['student'].queryset = Student.objects.filter(
+            is_active=True
+        ).select_related('classroom', 'classroom__academic_level').order_by('name')
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        report_type = cleaned_data.get('report_type')
+        classroom = cleaned_data.get('classroom')
+        student = cleaned_data.get('student')
+        start_date = cleaned_data.get('start_date')
+        end_date = cleaned_data.get('end_date')
+        
+        # Validate required fields based on report type
+        if report_type == 'class' and not classroom:
+            raise forms.ValidationError('Pilih kelas untuk laporan per kelas')
+        
+        if report_type == 'student' and not student:
+            raise forms.ValidationError('Pilih siswa untuk laporan per siswa')
+        
+        # Validate date range
+        if start_date and end_date:
+            if start_date > end_date:
+                raise forms.ValidationError('Tanggal mulai tidak boleh lebih besar dari tanggal akhir')
+            
+            # Limit date range to 3 months
+            max_days = 93  # ~3 months
+            if (end_date - start_date).days > max_days:
+                raise forms.ValidationError(f'Rentang tanggal maksimal {max_days} hari')
+        
+        return cleaned_data

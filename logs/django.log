@@ -8494,3 +8494,918 @@ Traceback (most recent call last):
     )
 django.core.exceptions.FieldError: Cannot resolve keyword 'class_name' into field. Choices are: address, attendancerecord, attendancesummary, classroom, classroom_id, created_at, created_by, created_by_id, daily_attendances, date_of_birth, enrollment_date, gender, graduation_date, id, is_active, name, nisn, parent_phone, student_id, student_number, updated_at, updated_by, updated_by_id
 ERROR 2026-01-12 17:51:00,226 log 69235 6204796928 "GET /report/ HTTP/1.1" 500 183469
+INFO 2026-01-12 17:53:08,643 autoreload 69235 8542499392 /Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/services/report_service.py changed, reloading.
+INFO 2026-01-12 17:53:09,423 autoreload 71030 8542499392 Watching for file changes with StatReloader
+ERROR 2026-01-12 17:53:17,664 views 71030 6128316416 Error generating report: Cannot resolve keyword 'class_name' into field. Choices are: address, attendancerecord, attendancesummary, classroom, classroom_id, created_at, created_by, created_by_id, daily_attendances, date_of_birth, enrollment_date, gender, graduation_date, id, is_active, name, nisn, parent_phone, student_id, student_number, updated_at, updated_by, updated_by_id
+ERROR 2026-01-12 17:53:17,756 log 71030 6128316416 Internal Server Error: /report/
+Traceback (most recent call last):
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 2266, in add_fields
+    join_info = self.setup_joins(
+        name.split(LOOKUP_SEP), opts, alias, allow_many=allow_m2m
+    )
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 1927, in setup_joins
+    path, final_field, targets, rest = self.names_to_path(
+                                       ~~~~~~~~~~~~~~~~~~^
+        names[:pivot],
+        ^^^^^^^^^^^^^^
+    ...<2 lines>...
+        fail_on_missing=True,
+        ^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 1832, in names_to_path
+    raise FieldError(
+    ...<2 lines>...
+    )
+django.core.exceptions.FieldError: Cannot resolve keyword 'class_name' into field. Choices are: address, attendancerecord, attendancesummary, classroom, classroom_id, created_at, created_by, created_by_id, daily_attendances, date_of_birth, enrollment_date, gender, graduation_date, id, is_active, name, nisn, parent_phone, student_id, student_number, updated_at, updated_by, updated_by_id
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/views.py", line 310, in attendance_report
+    form = AttendanceFilterForm(request.GET or None)
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/forms.py", line 415, in __init__
+    classes = Student.objects.values_list('class_name', flat=True).distinct().order_by('class_name')
+              ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/query.py", line 1458, in values_list
+    clone = self._values(*_fields, **expressions)
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/query.py", line 1409, in _values
+    clone.query.set_values(fields)
+    ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 2605, in set_values
+    self.add_fields(field_names, True)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 2307, in add_fields
+    raise FieldError(
+    ...<2 lines>...
+    )
+django.core.exceptions.FieldError: Cannot resolve keyword 'class_name' into field. Choices are: address, attendancerecord, attendancesummary, classroom, classroom_id, created_at, created_by, created_by_id, daily_attendances, date_of_birth, enrollment_date, gender, graduation_date, id, is_active, name, nisn, parent_phone, student_id, student_number, updated_at, updated_by, updated_by_id
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 2266, in add_fields
+    join_info = self.setup_joins(
+        name.split(LOOKUP_SEP), opts, alias, allow_many=allow_m2m
+    )
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 1927, in setup_joins
+    path, final_field, targets, rest = self.names_to_path(
+                                       ~~~~~~~~~~~~~~~~~~^
+        names[:pivot],
+        ^^^^^^^^^^^^^^
+    ...<2 lines>...
+        fail_on_missing=True,
+        ^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 1832, in names_to_path
+    raise FieldError(
+    ...<2 lines>...
+    )
+django.core.exceptions.FieldError: Cannot resolve keyword 'class_name' into field. Choices are: address, attendancerecord, attendancesummary, classroom, classroom_id, created_at, created_by, created_by_id, daily_attendances, date_of_birth, enrollment_date, gender, graduation_date, id, is_active, name, nisn, parent_phone, student_id, student_number, updated_at, updated_by, updated_by_id
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/core/handlers/base.py", line 198, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/contrib/auth/decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/views.py", line 346, in attendance_report
+    context = {'form': AttendanceFilterForm(), 'records': []}
+                       ~~~~~~~~~~~~~~~~~~~~^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/forms.py", line 415, in __init__
+    classes = Student.objects.values_list('class_name', flat=True).distinct().order_by('class_name')
+              ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/query.py", line 1458, in values_list
+    clone = self._values(*_fields, **expressions)
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/query.py", line 1409, in _values
+    clone.query.set_values(fields)
+    ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 2605, in set_values
+    self.add_fields(field_names, True)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 2307, in add_fields
+    raise FieldError(
+    ...<2 lines>...
+    )
+django.core.exceptions.FieldError: Cannot resolve keyword 'class_name' into field. Choices are: address, attendancerecord, attendancesummary, classroom, classroom_id, created_at, created_by, created_by_id, daily_attendances, date_of_birth, enrollment_date, gender, graduation_date, id, is_active, name, nisn, parent_phone, student_id, student_number, updated_at, updated_by, updated_by_id
+ERROR 2026-01-12 17:53:17,760 log 71030 6128316416 "GET /report/ HTTP/1.1" 500 183877
+ERROR 2026-01-12 17:53:18,582 views 71030 6128316416 Error generating report: Cannot resolve keyword 'class_name' into field. Choices are: address, attendancerecord, attendancesummary, classroom, classroom_id, created_at, created_by, created_by_id, daily_attendances, date_of_birth, enrollment_date, gender, graduation_date, id, is_active, name, nisn, parent_phone, student_id, student_number, updated_at, updated_by, updated_by_id
+ERROR 2026-01-12 17:53:18,659 log 71030 6128316416 Internal Server Error: /report/
+Traceback (most recent call last):
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 2266, in add_fields
+    join_info = self.setup_joins(
+        name.split(LOOKUP_SEP), opts, alias, allow_many=allow_m2m
+    )
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 1927, in setup_joins
+    path, final_field, targets, rest = self.names_to_path(
+                                       ~~~~~~~~~~~~~~~~~~^
+        names[:pivot],
+        ^^^^^^^^^^^^^^
+    ...<2 lines>...
+        fail_on_missing=True,
+        ^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 1832, in names_to_path
+    raise FieldError(
+    ...<2 lines>...
+    )
+django.core.exceptions.FieldError: Cannot resolve keyword 'class_name' into field. Choices are: address, attendancerecord, attendancesummary, classroom, classroom_id, created_at, created_by, created_by_id, daily_attendances, date_of_birth, enrollment_date, gender, graduation_date, id, is_active, name, nisn, parent_phone, student_id, student_number, updated_at, updated_by, updated_by_id
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/views.py", line 310, in attendance_report
+    form = AttendanceFilterForm(request.GET or None)
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/forms.py", line 415, in __init__
+    classes = Student.objects.values_list('class_name', flat=True).distinct().order_by('class_name')
+              ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/query.py", line 1458, in values_list
+    clone = self._values(*_fields, **expressions)
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/query.py", line 1409, in _values
+    clone.query.set_values(fields)
+    ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 2605, in set_values
+    self.add_fields(field_names, True)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 2307, in add_fields
+    raise FieldError(
+    ...<2 lines>...
+    )
+django.core.exceptions.FieldError: Cannot resolve keyword 'class_name' into field. Choices are: address, attendancerecord, attendancesummary, classroom, classroom_id, created_at, created_by, created_by_id, daily_attendances, date_of_birth, enrollment_date, gender, graduation_date, id, is_active, name, nisn, parent_phone, student_id, student_number, updated_at, updated_by, updated_by_id
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 2266, in add_fields
+    join_info = self.setup_joins(
+        name.split(LOOKUP_SEP), opts, alias, allow_many=allow_m2m
+    )
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 1927, in setup_joins
+    path, final_field, targets, rest = self.names_to_path(
+                                       ~~~~~~~~~~~~~~~~~~^
+        names[:pivot],
+        ^^^^^^^^^^^^^^
+    ...<2 lines>...
+        fail_on_missing=True,
+        ^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 1832, in names_to_path
+    raise FieldError(
+    ...<2 lines>...
+    )
+django.core.exceptions.FieldError: Cannot resolve keyword 'class_name' into field. Choices are: address, attendancerecord, attendancesummary, classroom, classroom_id, created_at, created_by, created_by_id, daily_attendances, date_of_birth, enrollment_date, gender, graduation_date, id, is_active, name, nisn, parent_phone, student_id, student_number, updated_at, updated_by, updated_by_id
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/core/handlers/base.py", line 198, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/contrib/auth/decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/views.py", line 346, in attendance_report
+    context = {'form': AttendanceFilterForm(), 'records': []}
+                       ~~~~~~~~~~~~~~~~~~~~^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/forms.py", line 415, in __init__
+    classes = Student.objects.values_list('class_name', flat=True).distinct().order_by('class_name')
+              ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/query.py", line 1458, in values_list
+    clone = self._values(*_fields, **expressions)
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/query.py", line 1409, in _values
+    clone.query.set_values(fields)
+    ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 2605, in set_values
+    self.add_fields(field_names, True)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 2307, in add_fields
+    raise FieldError(
+    ...<2 lines>...
+    )
+django.core.exceptions.FieldError: Cannot resolve keyword 'class_name' into field. Choices are: address, attendancerecord, attendancesummary, classroom, classroom_id, created_at, created_by, created_by_id, daily_attendances, date_of_birth, enrollment_date, gender, graduation_date, id, is_active, name, nisn, parent_phone, student_id, student_number, updated_at, updated_by, updated_by_id
+ERROR 2026-01-12 17:53:18,661 log 71030 6128316416 "GET /report/ HTTP/1.1" 500 183892
+INFO 2026-01-12 17:53:20,817 log 71030 6128316416 "GET /manage/students/ HTTP/1.1" 200 106513
+INFO 2026-01-12 17:53:20,829 log 71030 6128316416 "GET /static/css/responsive.css HTTP/1.1" 304 0
+INFO 2026-01-12 17:53:22,896 log 71030 6128316416 "GET /input/ HTTP/1.1" 200 27079
+WARNING 2026-01-12 17:53:26,872 log 71030 6128316416 Not Found: /attendance/input/0519b8e8-21bd-424c-bc98-17d7d0e9af60/2026-01-12/
+WARNING 2026-01-12 17:53:26,872 log 71030 6128316416 "GET /attendance/input/0519b8e8-21bd-424c-bc98-17d7d0e9af60/2026-01-12/ HTTP/1.1" 404 10847
+INFO 2026-01-12 17:53:30,090 log 71030 6128316416 "GET / HTTP/1.1" 200 41825
+INFO 2026-01-12 17:53:32,988 log 71030 6128316416 "GET /input/0f263ab2-2dc2-43bd-a613-5942fe940018/2026-01-12/ HTTP/1.1" 200 135519
+INFO 2026-01-12 17:53:46,406 autoreload 71030 8542499392 /Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/forms.py changed, reloading.
+INFO 2026-01-12 17:53:47,031 autoreload 71110 8542499392 Watching for file changes with StatReloader
+ERROR 2026-01-12 17:53:56,383 views 71110 6162755584 Error generating report: Cannot resolve keyword 'class_name' into field. Choices are: address, attendancerecord, attendancesummary, classroom, classroom_id, created_at, created_by, created_by_id, daily_attendances, date_of_birth, enrollment_date, gender, graduation_date, id, is_active, name, nisn, parent_phone, student_id, student_number, updated_at, updated_by, updated_by_id
+ERROR 2026-01-12 17:53:56,470 log 71110 6162755584 Internal Server Error: /report/
+Traceback (most recent call last):
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 2266, in add_fields
+    join_info = self.setup_joins(
+        name.split(LOOKUP_SEP), opts, alias, allow_many=allow_m2m
+    )
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 1927, in setup_joins
+    path, final_field, targets, rest = self.names_to_path(
+                                       ~~~~~~~~~~~~~~~~~~^
+        names[:pivot],
+        ^^^^^^^^^^^^^^
+    ...<2 lines>...
+        fail_on_missing=True,
+        ^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 1832, in names_to_path
+    raise FieldError(
+    ...<2 lines>...
+    )
+django.core.exceptions.FieldError: Cannot resolve keyword 'class_name' into field. Choices are: address, attendancerecord, attendancesummary, classroom, classroom_id, created_at, created_by, created_by_id, daily_attendances, date_of_birth, enrollment_date, gender, graduation_date, id, is_active, name, nisn, parent_phone, student_id, student_number, updated_at, updated_by, updated_by_id
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/views.py", line 310, in attendance_report
+    form = AttendanceFilterForm(request.GET or None)
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/forms.py", line 415, in __init__
+    classes = Student.objects.values_list('class_name', flat=True).distinct().order_by('class_name')
+              ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/query.py", line 1458, in values_list
+    clone = self._values(*_fields, **expressions)
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/query.py", line 1409, in _values
+    clone.query.set_values(fields)
+    ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 2605, in set_values
+    self.add_fields(field_names, True)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 2307, in add_fields
+    raise FieldError(
+    ...<2 lines>...
+    )
+django.core.exceptions.FieldError: Cannot resolve keyword 'class_name' into field. Choices are: address, attendancerecord, attendancesummary, classroom, classroom_id, created_at, created_by, created_by_id, daily_attendances, date_of_birth, enrollment_date, gender, graduation_date, id, is_active, name, nisn, parent_phone, student_id, student_number, updated_at, updated_by, updated_by_id
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 2266, in add_fields
+    join_info = self.setup_joins(
+        name.split(LOOKUP_SEP), opts, alias, allow_many=allow_m2m
+    )
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 1927, in setup_joins
+    path, final_field, targets, rest = self.names_to_path(
+                                       ~~~~~~~~~~~~~~~~~~^
+        names[:pivot],
+        ^^^^^^^^^^^^^^
+    ...<2 lines>...
+        fail_on_missing=True,
+        ^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 1832, in names_to_path
+    raise FieldError(
+    ...<2 lines>...
+    )
+django.core.exceptions.FieldError: Cannot resolve keyword 'class_name' into field. Choices are: address, attendancerecord, attendancesummary, classroom, classroom_id, created_at, created_by, created_by_id, daily_attendances, date_of_birth, enrollment_date, gender, graduation_date, id, is_active, name, nisn, parent_phone, student_id, student_number, updated_at, updated_by, updated_by_id
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/core/handlers/base.py", line 198, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/contrib/auth/decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/views.py", line 346, in attendance_report
+    context = {'form': AttendanceFilterForm(), 'records': []}
+                       ~~~~~~~~~~~~~~~~~~~~^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/forms.py", line 415, in __init__
+    classes = Student.objects.values_list('class_name', flat=True).distinct().order_by('class_name')
+              ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/query.py", line 1458, in values_list
+    clone = self._values(*_fields, **expressions)
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/query.py", line 1409, in _values
+    clone.query.set_values(fields)
+    ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 2605, in set_values
+    self.add_fields(field_names, True)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 2307, in add_fields
+    raise FieldError(
+    ...<2 lines>...
+    )
+django.core.exceptions.FieldError: Cannot resolve keyword 'class_name' into field. Choices are: address, attendancerecord, attendancesummary, classroom, classroom_id, created_at, created_by, created_by_id, daily_attendances, date_of_birth, enrollment_date, gender, graduation_date, id, is_active, name, nisn, parent_phone, student_id, student_number, updated_at, updated_by, updated_by_id
+ERROR 2026-01-12 17:53:56,474 log 71110 6162755584 "GET /report/ HTTP/1.1" 500 183453
+INFO 2026-01-12 17:54:16,786 autoreload 71110 8542499392 /Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/views.py changed, reloading.
+INFO 2026-01-12 17:54:17,183 autoreload 71154 8542499392 Watching for file changes with StatReloader
+INFO 2026-01-12 17:54:25,454 autoreload 71154 8542499392 /Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/urls.py changed, reloading.
+INFO 2026-01-12 17:54:25,776 autoreload 71176 8542499392 Watching for file changes with StatReloader
+ERROR 2026-01-12 17:54:40,615 views 71176 6169128960 Error generating report: Cannot resolve keyword 'class_name' into field. Choices are: address, attendancerecord, attendancesummary, classroom, classroom_id, created_at, created_by, created_by_id, daily_attendances, date_of_birth, enrollment_date, gender, graduation_date, id, is_active, name, nisn, parent_phone, student_id, student_number, updated_at, updated_by, updated_by_id
+ERROR 2026-01-12 17:54:40,696 log 71176 6169128960 Internal Server Error: /report/
+Traceback (most recent call last):
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 2266, in add_fields
+    join_info = self.setup_joins(
+        name.split(LOOKUP_SEP), opts, alias, allow_many=allow_m2m
+    )
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 1927, in setup_joins
+    path, final_field, targets, rest = self.names_to_path(
+                                       ~~~~~~~~~~~~~~~~~~^
+        names[:pivot],
+        ^^^^^^^^^^^^^^
+    ...<2 lines>...
+        fail_on_missing=True,
+        ^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 1832, in names_to_path
+    raise FieldError(
+    ...<2 lines>...
+    )
+django.core.exceptions.FieldError: Cannot resolve keyword 'class_name' into field. Choices are: address, attendancerecord, attendancesummary, classroom, classroom_id, created_at, created_by, created_by_id, daily_attendances, date_of_birth, enrollment_date, gender, graduation_date, id, is_active, name, nisn, parent_phone, student_id, student_number, updated_at, updated_by, updated_by_id
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/views.py", line 310, in attendance_report
+    form = AttendanceFilterForm(request.GET or None)
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/forms.py", line 415, in __init__
+    classes = Student.objects.values_list('class_name', flat=True).distinct().order_by('class_name')
+              ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/query.py", line 1458, in values_list
+    clone = self._values(*_fields, **expressions)
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/query.py", line 1409, in _values
+    clone.query.set_values(fields)
+    ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 2605, in set_values
+    self.add_fields(field_names, True)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 2307, in add_fields
+    raise FieldError(
+    ...<2 lines>...
+    )
+django.core.exceptions.FieldError: Cannot resolve keyword 'class_name' into field. Choices are: address, attendancerecord, attendancesummary, classroom, classroom_id, created_at, created_by, created_by_id, daily_attendances, date_of_birth, enrollment_date, gender, graduation_date, id, is_active, name, nisn, parent_phone, student_id, student_number, updated_at, updated_by, updated_by_id
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 2266, in add_fields
+    join_info = self.setup_joins(
+        name.split(LOOKUP_SEP), opts, alias, allow_many=allow_m2m
+    )
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 1927, in setup_joins
+    path, final_field, targets, rest = self.names_to_path(
+                                       ~~~~~~~~~~~~~~~~~~^
+        names[:pivot],
+        ^^^^^^^^^^^^^^
+    ...<2 lines>...
+        fail_on_missing=True,
+        ^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 1832, in names_to_path
+    raise FieldError(
+    ...<2 lines>...
+    )
+django.core.exceptions.FieldError: Cannot resolve keyword 'class_name' into field. Choices are: address, attendancerecord, attendancesummary, classroom, classroom_id, created_at, created_by, created_by_id, daily_attendances, date_of_birth, enrollment_date, gender, graduation_date, id, is_active, name, nisn, parent_phone, student_id, student_number, updated_at, updated_by, updated_by_id
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/core/handlers/base.py", line 198, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/contrib/auth/decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/views.py", line 346, in attendance_report
+    context = {'form': AttendanceFilterForm(), 'records': []}
+                       ~~~~~~~~~~~~~~~~~~~~^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/forms.py", line 415, in __init__
+    classes = Student.objects.values_list('class_name', flat=True).distinct().order_by('class_name')
+              ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/query.py", line 1458, in values_list
+    clone = self._values(*_fields, **expressions)
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/query.py", line 1409, in _values
+    clone.query.set_values(fields)
+    ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 2605, in set_values
+    self.add_fields(field_names, True)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 2307, in add_fields
+    raise FieldError(
+    ...<2 lines>...
+    )
+django.core.exceptions.FieldError: Cannot resolve keyword 'class_name' into field. Choices are: address, attendancerecord, attendancesummary, classroom, classroom_id, created_at, created_by, created_by_id, daily_attendances, date_of_birth, enrollment_date, gender, graduation_date, id, is_active, name, nisn, parent_phone, student_id, student_number, updated_at, updated_by, updated_by_id
+ERROR 2026-01-12 17:54:40,700 log 71176 6169128960 "GET /report/ HTTP/1.1" 500 183861
+ERROR 2026-01-12 17:54:41,503 views 71176 6169128960 Error generating report: Cannot resolve keyword 'class_name' into field. Choices are: address, attendancerecord, attendancesummary, classroom, classroom_id, created_at, created_by, created_by_id, daily_attendances, date_of_birth, enrollment_date, gender, graduation_date, id, is_active, name, nisn, parent_phone, student_id, student_number, updated_at, updated_by, updated_by_id
+ERROR 2026-01-12 17:54:41,577 log 71176 6169128960 Internal Server Error: /report/
+Traceback (most recent call last):
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 2266, in add_fields
+    join_info = self.setup_joins(
+        name.split(LOOKUP_SEP), opts, alias, allow_many=allow_m2m
+    )
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 1927, in setup_joins
+    path, final_field, targets, rest = self.names_to_path(
+                                       ~~~~~~~~~~~~~~~~~~^
+        names[:pivot],
+        ^^^^^^^^^^^^^^
+    ...<2 lines>...
+        fail_on_missing=True,
+        ^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 1832, in names_to_path
+    raise FieldError(
+    ...<2 lines>...
+    )
+django.core.exceptions.FieldError: Cannot resolve keyword 'class_name' into field. Choices are: address, attendancerecord, attendancesummary, classroom, classroom_id, created_at, created_by, created_by_id, daily_attendances, date_of_birth, enrollment_date, gender, graduation_date, id, is_active, name, nisn, parent_phone, student_id, student_number, updated_at, updated_by, updated_by_id
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/views.py", line 310, in attendance_report
+    form = AttendanceFilterForm(request.GET or None)
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/forms.py", line 415, in __init__
+    classes = Student.objects.values_list('class_name', flat=True).distinct().order_by('class_name')
+              ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/query.py", line 1458, in values_list
+    clone = self._values(*_fields, **expressions)
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/query.py", line 1409, in _values
+    clone.query.set_values(fields)
+    ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 2605, in set_values
+    self.add_fields(field_names, True)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 2307, in add_fields
+    raise FieldError(
+    ...<2 lines>...
+    )
+django.core.exceptions.FieldError: Cannot resolve keyword 'class_name' into field. Choices are: address, attendancerecord, attendancesummary, classroom, classroom_id, created_at, created_by, created_by_id, daily_attendances, date_of_birth, enrollment_date, gender, graduation_date, id, is_active, name, nisn, parent_phone, student_id, student_number, updated_at, updated_by, updated_by_id
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 2266, in add_fields
+    join_info = self.setup_joins(
+        name.split(LOOKUP_SEP), opts, alias, allow_many=allow_m2m
+    )
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 1927, in setup_joins
+    path, final_field, targets, rest = self.names_to_path(
+                                       ~~~~~~~~~~~~~~~~~~^
+        names[:pivot],
+        ^^^^^^^^^^^^^^
+    ...<2 lines>...
+        fail_on_missing=True,
+        ^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 1832, in names_to_path
+    raise FieldError(
+    ...<2 lines>...
+    )
+django.core.exceptions.FieldError: Cannot resolve keyword 'class_name' into field. Choices are: address, attendancerecord, attendancesummary, classroom, classroom_id, created_at, created_by, created_by_id, daily_attendances, date_of_birth, enrollment_date, gender, graduation_date, id, is_active, name, nisn, parent_phone, student_id, student_number, updated_at, updated_by, updated_by_id
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/core/handlers/base.py", line 198, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/contrib/auth/decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/views.py", line 346, in attendance_report
+    context = {'form': AttendanceFilterForm(), 'records': []}
+                       ~~~~~~~~~~~~~~~~~~~~^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/forms.py", line 415, in __init__
+    classes = Student.objects.values_list('class_name', flat=True).distinct().order_by('class_name')
+              ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/query.py", line 1458, in values_list
+    clone = self._values(*_fields, **expressions)
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/query.py", line 1409, in _values
+    clone.query.set_values(fields)
+    ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 2605, in set_values
+    self.add_fields(field_names, True)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 2307, in add_fields
+    raise FieldError(
+    ...<2 lines>...
+    )
+django.core.exceptions.FieldError: Cannot resolve keyword 'class_name' into field. Choices are: address, attendancerecord, attendancesummary, classroom, classroom_id, created_at, created_by, created_by_id, daily_attendances, date_of_birth, enrollment_date, gender, graduation_date, id, is_active, name, nisn, parent_phone, student_id, student_number, updated_at, updated_by, updated_by_id
+ERROR 2026-01-12 17:54:41,579 log 71176 6169128960 "GET /report/ HTTP/1.1" 500 183876
+INFO 2026-01-12 17:54:44,424 log 71176 6169128960 "GET / HTTP/1.1" 200 43021
+ERROR 2026-01-12 17:54:47,157 views 71176 6169128960 Error generating report: Cannot resolve keyword 'class_name' into field. Choices are: address, attendancerecord, attendancesummary, classroom, classroom_id, created_at, created_by, created_by_id, daily_attendances, date_of_birth, enrollment_date, gender, graduation_date, id, is_active, name, nisn, parent_phone, student_id, student_number, updated_at, updated_by, updated_by_id
+ERROR 2026-01-12 17:54:47,236 log 71176 6169128960 Internal Server Error: /report/
+Traceback (most recent call last):
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 2266, in add_fields
+    join_info = self.setup_joins(
+        name.split(LOOKUP_SEP), opts, alias, allow_many=allow_m2m
+    )
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 1927, in setup_joins
+    path, final_field, targets, rest = self.names_to_path(
+                                       ~~~~~~~~~~~~~~~~~~^
+        names[:pivot],
+        ^^^^^^^^^^^^^^
+    ...<2 lines>...
+        fail_on_missing=True,
+        ^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 1832, in names_to_path
+    raise FieldError(
+    ...<2 lines>...
+    )
+django.core.exceptions.FieldError: Cannot resolve keyword 'class_name' into field. Choices are: address, attendancerecord, attendancesummary, classroom, classroom_id, created_at, created_by, created_by_id, daily_attendances, date_of_birth, enrollment_date, gender, graduation_date, id, is_active, name, nisn, parent_phone, student_id, student_number, updated_at, updated_by, updated_by_id
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/views.py", line 310, in attendance_report
+    form = AttendanceFilterForm(request.GET or None)
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/forms.py", line 415, in __init__
+    classes = Student.objects.values_list('class_name', flat=True).distinct().order_by('class_name')
+              ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/query.py", line 1458, in values_list
+    clone = self._values(*_fields, **expressions)
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/query.py", line 1409, in _values
+    clone.query.set_values(fields)
+    ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 2605, in set_values
+    self.add_fields(field_names, True)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 2307, in add_fields
+    raise FieldError(
+    ...<2 lines>...
+    )
+django.core.exceptions.FieldError: Cannot resolve keyword 'class_name' into field. Choices are: address, attendancerecord, attendancesummary, classroom, classroom_id, created_at, created_by, created_by_id, daily_attendances, date_of_birth, enrollment_date, gender, graduation_date, id, is_active, name, nisn, parent_phone, student_id, student_number, updated_at, updated_by, updated_by_id
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 2266, in add_fields
+    join_info = self.setup_joins(
+        name.split(LOOKUP_SEP), opts, alias, allow_many=allow_m2m
+    )
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 1927, in setup_joins
+    path, final_field, targets, rest = self.names_to_path(
+                                       ~~~~~~~~~~~~~~~~~~^
+        names[:pivot],
+        ^^^^^^^^^^^^^^
+    ...<2 lines>...
+        fail_on_missing=True,
+        ^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 1832, in names_to_path
+    raise FieldError(
+    ...<2 lines>...
+    )
+django.core.exceptions.FieldError: Cannot resolve keyword 'class_name' into field. Choices are: address, attendancerecord, attendancesummary, classroom, classroom_id, created_at, created_by, created_by_id, daily_attendances, date_of_birth, enrollment_date, gender, graduation_date, id, is_active, name, nisn, parent_phone, student_id, student_number, updated_at, updated_by, updated_by_id
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/core/handlers/base.py", line 198, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/contrib/auth/decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/views.py", line 346, in attendance_report
+    context = {'form': AttendanceFilterForm(), 'records': []}
+                       ~~~~~~~~~~~~~~~~~~~~^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/forms.py", line 415, in __init__
+    classes = Student.objects.values_list('class_name', flat=True).distinct().order_by('class_name')
+              ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/query.py", line 1458, in values_list
+    clone = self._values(*_fields, **expressions)
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/query.py", line 1409, in _values
+    clone.query.set_values(fields)
+    ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 2605, in set_values
+    self.add_fields(field_names, True)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 2307, in add_fields
+    raise FieldError(
+    ...<2 lines>...
+    )
+django.core.exceptions.FieldError: Cannot resolve keyword 'class_name' into field. Choices are: address, attendancerecord, attendancesummary, classroom, classroom_id, created_at, created_by, created_by_id, daily_attendances, date_of_birth, enrollment_date, gender, graduation_date, id, is_active, name, nisn, parent_phone, student_id, student_number, updated_at, updated_by, updated_by_id
+ERROR 2026-01-12 17:54:47,238 log 71176 6169128960 "GET /report/ HTTP/1.1" 500 183453
+INFO 2026-01-12 17:55:15,670 log 71176 6169128960 "GET /static/css/responsive.css HTTP/1.1" 304 0
+WARNING 2026-01-12 17:55:15,706 log 71176 6185955328 Not Found: /.well-known/appspecific/com.chrome.devtools.json
+WARNING 2026-01-12 17:55:15,707 log 71176 6185955328 "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 11619
+INFO 2026-01-12 17:55:22,267 log 71176 6169128960 "GET /input/ HTTP/1.1" 200 27503
+WARNING 2026-01-12 17:55:22,311 log 71176 6169128960 Not Found: /.well-known/appspecific/com.chrome.devtools.json
+WARNING 2026-01-12 17:55:22,311 log 71176 6169128960 "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 11619
+INFO 2026-01-12 17:55:26,555 log 71176 6169128960 "GET /manage/students/ HTTP/1.1" 200 105317
+WARNING 2026-01-12 17:55:26,600 log 71176 6169128960 Not Found: /.well-known/appspecific/com.chrome.devtools.json
+WARNING 2026-01-12 17:55:26,601 log 71176 6169128960 "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 11619
+INFO 2026-01-12 17:55:31,855 log 71176 6169128960 "GET /manage/students/?page=2 HTTP/1.1" 200 105461
+WARNING 2026-01-12 17:55:31,899 log 71176 6169128960 Not Found: /.well-known/appspecific/com.chrome.devtools.json
+WARNING 2026-01-12 17:55:31,899 log 71176 6169128960 "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 11619
+INFO 2026-01-12 17:55:35,809 log 71176 6169128960 "GET /manage/students/create/ HTTP/1.1" 200 32271
+WARNING 2026-01-12 17:55:35,837 log 71176 6169128960 Not Found: /.well-known/appspecific/com.chrome.devtools.json
+WARNING 2026-01-12 17:55:35,838 log 71176 6169128960 "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 11619
+INFO 2026-01-12 17:55:41,455 log 71176 6169128960 "GET /admin/ HTTP/1.1" 200 52722
+INFO 2026-01-12 17:55:41,501 log 71176 6253260800 "GET /static/unfold/css/styles.css HTTP/1.1" 304 0
+INFO 2026-01-12 17:55:41,501 log 71176 6185955328 "GET /static/unfold/fonts/inter/styles.css HTTP/1.1" 304 0
+INFO 2026-01-12 17:55:41,503 log 71176 6202781696 "GET /static/unfold/fonts/material-symbols/styles.css HTTP/1.1" 304 0
+INFO 2026-01-12 17:55:41,506 log 71176 6185955328 "GET /static/unfold/css/simplebar/simplebar.css HTTP/1.1" 304 0
+INFO 2026-01-12 17:55:41,512 log 71176 6253260800 "GET /static/unfold/js/htmx/htmx.js HTTP/1.1" 304 0
+INFO 2026-01-12 17:55:41,531 log 71176 6202781696 "GET /static/unfold/js/chart/chart.js HTTP/1.1" 304 0
+INFO 2026-01-12 17:55:41,533 log 71176 6253260800 "GET /static/unfold/js/app.js HTTP/1.1" 304 0
+INFO 2026-01-12 17:55:41,539 log 71176 6219608064 "GET /static/admin/css/custom_unfold.css HTTP/1.1" 200 3871
+INFO 2026-01-12 17:55:41,540 log 71176 6202781696 "GET /static/unfold/js/simplebar/simplebar.js HTTP/1.1" 304 0
+INFO 2026-01-12 17:55:41,541 log 71176 6236434432 "GET /static/admin/css/dashboard.css HTTP/1.1" 200 11666
+WARNING 2026-01-12 17:55:41,542 log 71176 6169128960 Not Found: /.well-known/appspecific/com.chrome.devtools.json
+WARNING 2026-01-12 17:55:41,543 log 71176 6169128960 "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 11619
+INFO 2026-01-12 17:55:41,543 log 71176 6236434432 "GET /static/unfold/js/alpine/alpine.anchor.js HTTP/1.1" 304 0
+INFO 2026-01-12 17:55:41,544 log 71176 6185955328 "GET /static/admin/js/custom_unfold.js HTTP/1.1" 200 4176
+INFO 2026-01-12 17:55:41,545 log 71176 6236434432 "GET /static/unfold/js/alpine/alpine.persist.js HTTP/1.1" 304 0
+INFO 2026-01-12 17:55:41,558 log 71176 6169128960 "GET /static/unfold/js/alpine/alpine.resize.js HTTP/1.1" 304 0
+INFO 2026-01-12 17:55:41,558 log 71176 6236434432 "GET /static/unfold/js/alpine/alpine.sort.js HTTP/1.1" 304 0
+INFO 2026-01-12 17:55:41,558 log 71176 6185955328 "GET /static/unfold/js/alpine/alpine.js HTTP/1.1" 304 0
+INFO 2026-01-12 17:55:41,619 log 71176 6185955328 "GET /static/unfold/fonts/material-symbols/Material-Symbols-Outlined.woff2 HTTP/1.1" 304 0
+INFO 2026-01-12 17:55:41,620 log 71176 6169128960 "GET /static/unfold/fonts/inter/Inter-Regular.woff2 HTTP/1.1" 304 0
+INFO 2026-01-12 17:55:41,620 log 71176 6236434432 "GET /static/unfold/fonts/inter/Inter-SemiBold.woff2 HTTP/1.1" 304 0
+INFO 2026-01-12 17:55:47,564 log 71176 6169128960 "GET /admin/ HTTP/1.1" 200 52722
+WARNING 2026-01-12 17:55:47,590 log 71176 6169128960 Not Found: /.well-known/appspecific/com.chrome.devtools.json
+WARNING 2026-01-12 17:55:47,590 log 71176 6169128960 "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 11619
+INFO 2026-01-12 17:55:53,536 log 71176 6169128960 "GET /attendance/ HTTP/1.1" 200 598611
+WARNING 2026-01-12 17:55:53,566 log 71176 6169128960 Not Found: /.well-known/appspecific/com.chrome.devtools.json
+WARNING 2026-01-12 17:55:53,567 log 71176 6169128960 "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 11619
+INFO 2026-01-12 17:56:01,104 log 71176 6169128960 "GET / HTTP/1.1" 200 41825
+WARNING 2026-01-12 17:56:01,137 log 71176 6169128960 Not Found: /.well-known/appspecific/com.chrome.devtools.json
+WARNING 2026-01-12 17:56:01,138 log 71176 6169128960 "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 11619
+INFO 2026-01-12 17:56:15,882 autoreload 71176 8542499392 /Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/templatetags/attendance_extras.py changed, reloading.
+INFO 2026-01-12 17:56:16,505 autoreload 71354 8542499392 Watching for file changes with StatReloader
+INFO 2026-01-12 17:56:23,748 log 71354 6189330432 "GET / HTTP/1.1" 200 41825
+ERROR 2026-01-12 17:56:25,176 views 71354 6189330432 Error generating report: Cannot resolve keyword 'class_name' into field. Choices are: address, attendancerecord, attendancesummary, classroom, classroom_id, created_at, created_by, created_by_id, daily_attendances, date_of_birth, enrollment_date, gender, graduation_date, id, is_active, name, nisn, parent_phone, student_id, student_number, updated_at, updated_by, updated_by_id
+ERROR 2026-01-12 17:56:25,257 log 71354 6189330432 Internal Server Error: /report/
+Traceback (most recent call last):
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 2266, in add_fields
+    join_info = self.setup_joins(
+        name.split(LOOKUP_SEP), opts, alias, allow_many=allow_m2m
+    )
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 1927, in setup_joins
+    path, final_field, targets, rest = self.names_to_path(
+                                       ~~~~~~~~~~~~~~~~~~^
+        names[:pivot],
+        ^^^^^^^^^^^^^^
+    ...<2 lines>...
+        fail_on_missing=True,
+        ^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 1832, in names_to_path
+    raise FieldError(
+    ...<2 lines>...
+    )
+django.core.exceptions.FieldError: Cannot resolve keyword 'class_name' into field. Choices are: address, attendancerecord, attendancesummary, classroom, classroom_id, created_at, created_by, created_by_id, daily_attendances, date_of_birth, enrollment_date, gender, graduation_date, id, is_active, name, nisn, parent_phone, student_id, student_number, updated_at, updated_by, updated_by_id
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/views.py", line 310, in attendance_report
+    form = AttendanceFilterForm(request.GET or None)
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/forms.py", line 415, in __init__
+    classes = Student.objects.values_list('class_name', flat=True).distinct().order_by('class_name')
+              ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/query.py", line 1458, in values_list
+    clone = self._values(*_fields, **expressions)
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/query.py", line 1409, in _values
+    clone.query.set_values(fields)
+    ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 2605, in set_values
+    self.add_fields(field_names, True)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 2307, in add_fields
+    raise FieldError(
+    ...<2 lines>...
+    )
+django.core.exceptions.FieldError: Cannot resolve keyword 'class_name' into field. Choices are: address, attendancerecord, attendancesummary, classroom, classroom_id, created_at, created_by, created_by_id, daily_attendances, date_of_birth, enrollment_date, gender, graduation_date, id, is_active, name, nisn, parent_phone, student_id, student_number, updated_at, updated_by, updated_by_id
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 2266, in add_fields
+    join_info = self.setup_joins(
+        name.split(LOOKUP_SEP), opts, alias, allow_many=allow_m2m
+    )
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 1927, in setup_joins
+    path, final_field, targets, rest = self.names_to_path(
+                                       ~~~~~~~~~~~~~~~~~~^
+        names[:pivot],
+        ^^^^^^^^^^^^^^
+    ...<2 lines>...
+        fail_on_missing=True,
+        ^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 1832, in names_to_path
+    raise FieldError(
+    ...<2 lines>...
+    )
+django.core.exceptions.FieldError: Cannot resolve keyword 'class_name' into field. Choices are: address, attendancerecord, attendancesummary, classroom, classroom_id, created_at, created_by, created_by_id, daily_attendances, date_of_birth, enrollment_date, gender, graduation_date, id, is_active, name, nisn, parent_phone, student_id, student_number, updated_at, updated_by, updated_by_id
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/core/handlers/base.py", line 198, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/contrib/auth/decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/views.py", line 346, in attendance_report
+    context = {'form': AttendanceFilterForm(), 'records': []}
+                       ~~~~~~~~~~~~~~~~~~~~^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/forms.py", line 415, in __init__
+    classes = Student.objects.values_list('class_name', flat=True).distinct().order_by('class_name')
+              ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/query.py", line 1458, in values_list
+    clone = self._values(*_fields, **expressions)
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/query.py", line 1409, in _values
+    clone.query.set_values(fields)
+    ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 2605, in set_values
+    self.add_fields(field_names, True)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 2307, in add_fields
+    raise FieldError(
+    ...<2 lines>...
+    )
+django.core.exceptions.FieldError: Cannot resolve keyword 'class_name' into field. Choices are: address, attendancerecord, attendancesummary, classroom, classroom_id, created_at, created_by, created_by_id, daily_attendances, date_of_birth, enrollment_date, gender, graduation_date, id, is_active, name, nisn, parent_phone, student_id, student_number, updated_at, updated_by, updated_by_id
+ERROR 2026-01-12 17:56:25,261 log 71354 6189330432 "GET /report/ HTTP/1.1" 500 183453
+INFO 2026-01-12 17:56:28,165 log 71354 6189330432 "GET /input/ HTTP/1.1" 200 27503
+WARNING 2026-01-12 17:56:36,857 log 71354 6189330432 Not Found: /attendance/input/0f263ab2-2dc2-43bd-a613-5942fe940018/2026-01-13/
+WARNING 2026-01-12 17:56:36,858 log 71354 6189330432 "GET /attendance/input/0f263ab2-2dc2-43bd-a613-5942fe940018/2026-01-13/ HTTP/1.1" 404 11670
+WARNING 2026-01-12 17:57:24,694 log 71354 6189330432 Not Found: /attendance/input/0f263ab2-2dc2-43bd-a613-5942fe940018/2026-01-13/
+WARNING 2026-01-12 17:57:24,695 log 71354 6189330432 "GET /attendance/input/0f263ab2-2dc2-43bd-a613-5942fe940018/2026-01-13/ HTTP/1.1" 404 11670
+INFO 2026-01-12 17:57:27,046 log 71354 6189330432 "GET /input/ HTTP/1.1" 200 27320
+INFO 2026-01-12 17:57:27,064 log 71354 6189330432 "GET /static/css/responsive.css HTTP/1.1" 304 0
+INFO 2026-01-12 17:57:28,231 log 71354 6189330432 "GET /jp-report/ HTTP/1.1" 200 53736
+INFO 2026-01-12 17:57:46,526 log 71354 6189330432 "GET /jp-report/?report_type=class&classroom=d6fa0ecd-5c53-46cb-9d29-52679940208c&student=&start_date=2026-01-12&end_date=2026-01-13 HTTP/1.1" 200 95907
+INFO 2026-01-12 17:59:28,032 log 71354 6189330432 "GET /export/jp-csv/?classroom=d6fa0ecd-5c53-46cb-9d29-52679940208c&start_date=2026-01-12&end_date=2026-01-13 HTTP/1.1" 200 1791
+ERROR 2026-01-12 17:59:50,089 views 71354 6189330432 Error generating report: Cannot resolve keyword 'class_name' into field. Choices are: address, attendancerecord, attendancesummary, classroom, classroom_id, created_at, created_by, created_by_id, daily_attendances, date_of_birth, enrollment_date, gender, graduation_date, id, is_active, name, nisn, parent_phone, student_id, student_number, updated_at, updated_by, updated_by_id
+ERROR 2026-01-12 17:59:50,167 log 71354 6189330432 Internal Server Error: /report/
+Traceback (most recent call last):
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 2266, in add_fields
+    join_info = self.setup_joins(
+        name.split(LOOKUP_SEP), opts, alias, allow_many=allow_m2m
+    )
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 1927, in setup_joins
+    path, final_field, targets, rest = self.names_to_path(
+                                       ~~~~~~~~~~~~~~~~~~^
+        names[:pivot],
+        ^^^^^^^^^^^^^^
+    ...<2 lines>...
+        fail_on_missing=True,
+        ^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 1832, in names_to_path
+    raise FieldError(
+    ...<2 lines>...
+    )
+django.core.exceptions.FieldError: Cannot resolve keyword 'class_name' into field. Choices are: address, attendancerecord, attendancesummary, classroom, classroom_id, created_at, created_by, created_by_id, daily_attendances, date_of_birth, enrollment_date, gender, graduation_date, id, is_active, name, nisn, parent_phone, student_id, student_number, updated_at, updated_by, updated_by_id
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/views.py", line 310, in attendance_report
+    form = AttendanceFilterForm(request.GET or None)
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/forms.py", line 415, in __init__
+    classes = Student.objects.values_list('class_name', flat=True).distinct().order_by('class_name')
+              ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/query.py", line 1458, in values_list
+    clone = self._values(*_fields, **expressions)
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/query.py", line 1409, in _values
+    clone.query.set_values(fields)
+    ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 2605, in set_values
+    self.add_fields(field_names, True)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 2307, in add_fields
+    raise FieldError(
+    ...<2 lines>...
+    )
+django.core.exceptions.FieldError: Cannot resolve keyword 'class_name' into field. Choices are: address, attendancerecord, attendancesummary, classroom, classroom_id, created_at, created_by, created_by_id, daily_attendances, date_of_birth, enrollment_date, gender, graduation_date, id, is_active, name, nisn, parent_phone, student_id, student_number, updated_at, updated_by, updated_by_id
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 2266, in add_fields
+    join_info = self.setup_joins(
+        name.split(LOOKUP_SEP), opts, alias, allow_many=allow_m2m
+    )
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 1927, in setup_joins
+    path, final_field, targets, rest = self.names_to_path(
+                                       ~~~~~~~~~~~~~~~~~~^
+        names[:pivot],
+        ^^^^^^^^^^^^^^
+    ...<2 lines>...
+        fail_on_missing=True,
+        ^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 1832, in names_to_path
+    raise FieldError(
+    ...<2 lines>...
+    )
+django.core.exceptions.FieldError: Cannot resolve keyword 'class_name' into field. Choices are: address, attendancerecord, attendancesummary, classroom, classroom_id, created_at, created_by, created_by_id, daily_attendances, date_of_birth, enrollment_date, gender, graduation_date, id, is_active, name, nisn, parent_phone, student_id, student_number, updated_at, updated_by, updated_by_id
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/core/handlers/base.py", line 198, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/contrib/auth/decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/views.py", line 346, in attendance_report
+    context = {'form': AttendanceFilterForm(), 'records': []}
+                       ~~~~~~~~~~~~~~~~~~~~^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/forms.py", line 415, in __init__
+    classes = Student.objects.values_list('class_name', flat=True).distinct().order_by('class_name')
+              ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/query.py", line 1458, in values_list
+    clone = self._values(*_fields, **expressions)
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/query.py", line 1409, in _values
+    clone.query.set_values(fields)
+    ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 2605, in set_values
+    self.add_fields(field_names, True)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 2307, in add_fields
+    raise FieldError(
+    ...<2 lines>...
+    )
+django.core.exceptions.FieldError: Cannot resolve keyword 'class_name' into field. Choices are: address, attendancerecord, attendancesummary, classroom, classroom_id, created_at, created_by, created_by_id, daily_attendances, date_of_birth, enrollment_date, gender, graduation_date, id, is_active, name, nisn, parent_phone, student_id, student_number, updated_at, updated_by, updated_by_id
+ERROR 2026-01-12 17:59:50,172 log 71354 6189330432 "GET /report/ HTTP/1.1" 500 183595
+INFO 2026-01-12 18:00:29,283 autoreload 71354 8542499392 /Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/forms.py changed, reloading.
+INFO 2026-01-12 18:00:29,874 autoreload 71781 8542499392 Watching for file changes with StatReloader
+INFO 2026-01-12 18:00:31,892 log 71781 6122762240 "GET /report/ HTTP/1.1" 200 68314
+INFO 2026-01-12 18:00:31,909 log 71781 6122762240 "GET /static/css/responsive.css HTTP/1.1" 304 0
+INFO 2026-01-12 18:00:46,496 log 71781 6122762240 "GET /students/10B01/ HTTP/1.1" 200 27519
+INFO 2026-01-12 18:00:57,509 autoreload 71781 8542499392 /Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/views.py changed, reloading.
+INFO 2026-01-12 18:00:57,885 autoreload 71835 8542499392 Watching for file changes with StatReloader
+INFO 2026-01-12 18:01:05,409 log 71835 6131462144 "GET /attendance/?class=10-B%20(SMA) HTTP/1.1" 200 598852
+INFO 2026-01-12 18:01:10,283 autoreload 71835 8542499392 /Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/views.py changed, reloading.
+INFO 2026-01-12 18:01:10,935 autoreload 71853 8542499392 Watching for file changes with StatReloader
+INFO 2026-01-12 18:01:14,217 log 71853 6165622784 "GET /manage/settings/schedule/ HTTP/1.1" 200 53941
+INFO 2026-01-12 18:01:31,204 log 71853 6165622784 "POST /manage/settings/schedule/ HTTP/1.1" 302 0
+INFO 2026-01-12 18:01:31,214 log 71853 6165622784 "GET /manage/settings/schedule/ HTTP/1.1" 200 54374
+INFO 2026-01-12 18:01:35,426 log 71853 6165622784 "GET /input/ HTTP/1.1" 200 27320
+WARNING 2026-01-12 18:01:46,349 log 71853 6165622784 Not Found: /attendance/input/0519b8e8-21bd-424c-bc98-17d7d0e9af60/2026-01-16/
+WARNING 2026-01-12 18:01:46,349 log 71853 6165622784 "GET /attendance/input/0519b8e8-21bd-424c-bc98-17d7d0e9af60/2026-01-16/ HTTP/1.1" 404 11670
