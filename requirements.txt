@@ -27,6 +27,9 @@ whitenoise==6.6.0
 # Monitoring and logging
 sentry-sdk==1.40.0
 
+# PDF Generation
+reportlab==4.0.8
+
 # Testing
 pytest==7.4.3
 pytest-django==4.7.0

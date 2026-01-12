@@ -172,20 +172,20 @@ Implementasi sistem rekap absensi per Jam Pelajaran (JP) dengan Custom Admin Pan
     - **Property 14: Attendance Percentage Calculation**
     - **Validates: Requirements 5.3, 5.4, 5.6**
 
-- [ ] 12. Implement PDF Export
-  - [ ] 12.1 Install and configure ReportLab or WeasyPrint for PDF generation
+- [x] 12. Implement PDF Export
+  - [x] 12.1 Install and configure ReportLab or WeasyPrint for PDF generation
     - Add to requirements.txt
     - _Requirements: 5.1_
-  - [ ] 12.2 Implement export_pdf_class method
+  - [x] 12.2 Implement export_pdf_class method
     - Table with students as rows, dates as columns
     - Summary section with H/S/I/A totals per student
     - Class summary with average percentage
     - _Requirements: 5.2, 5.3, 5.4_
-  - [ ] 12.3 Implement export_pdf_student method
+  - [x] 12.3 Implement export_pdf_student method
     - Detailed view with dates as rows, JP columns
     - Summary with totals and percentages
     - _Requirements: 5.5, 5.6_
-  - [ ] 12.4 Create PDF export endpoint
+  - [x] 12.4 Create PDF export endpoint
     - _Requirements: 5.7_
 
 - [ ] 13. Implement Excel/CSV Export

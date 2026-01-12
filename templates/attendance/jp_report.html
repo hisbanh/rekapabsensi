@@ -15,9 +15,18 @@
 {% if report_data %}
 <div class="btn-group" role="group">
     {% if report_type == 'class' %}
+    <a href="{% url 'export_pdf_class' %}?classroom={{ form.cleaned_data.classroom.id }}&start_date={{ form.cleaned_data.start_date|date:'Y-m-d' }}&end_date={{ form.cleaned_data.end_date|date:'Y-m-d' }}" 
+       class="btn btn-danger">
+        <i class="fas fa-file-pdf me-1"></i> Export PDF
+    </a>
     <a href="{% url 'export_jp_csv' %}?classroom={{ form.cleaned_data.classroom.id }}&start_date={{ form.cleaned_data.start_date|date:'Y-m-d' }}&end_date={{ form.cleaned_data.end_date|date:'Y-m-d' }}" 
        class="btn btn-success">
         <i class="fas fa-file-csv me-1"></i> Export CSV
+    </a>
+    {% else %}
+    <a href="{% url 'export_pdf_student' %}?student={{ form.cleaned_data.student.id }}&start_date={{ form.cleaned_data.start_date|date:'Y-m-d' }}&end_date={{ form.cleaned_data.end_date|date:'Y-m-d' }}" 
+       class="btn btn-danger">
+        <i class="fas fa-file-pdf me-1"></i> Export PDF
     </a>
     {% endif %}
     <button type="button" class="btn btn-outline-primary" onclick="window.print()">

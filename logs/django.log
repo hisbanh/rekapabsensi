@@ -9438,3 +9438,28 @@ INFO 2026-01-12 18:06:23,019 log 71853 6165622784 "GET /report/?start_date=2026-
 INFO 2026-01-12 18:06:28,372 log 71853 6165622784 "GET /report/?start_date=2026-01-12&end_date=2026-01-12&classroom=8c57cb27-362c-4b49-b99c-920848a2e288&status= HTTP/1.1" 200 46239
 INFO 2026-01-12 18:06:34,491 log 71853 6165622784 "GET / HTTP/1.1" 200 40982
 INFO 2026-01-12 18:06:39,746 log 71853 6165622784 "GET /manage/users/ HTTP/1.1" 200 35476
+INFO 2026-01-12 18:10:31,791 autoreload 71853 8542499392 /Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/services/__init__.py changed, reloading.
+INFO 2026-01-12 18:10:32,474 autoreload 73461 8542499392 Watching for file changes with StatReloader
+INFO 2026-01-12 18:10:39,387 autoreload 73461 8542499392 /Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/views.py changed, reloading.
+INFO 2026-01-12 18:10:39,841 autoreload 73492 8542499392 Watching for file changes with StatReloader
+INFO 2026-01-12 18:10:57,300 autoreload 73492 8542499392 /Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/views.py changed, reloading.
+INFO 2026-01-12 18:10:57,750 autoreload 73518 8542499392 Watching for file changes with StatReloader
+INFO 2026-01-12 18:11:06,123 autoreload 73518 8542499392 /Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/urls.py changed, reloading.
+INFO 2026-01-12 18:11:06,568 autoreload 73540 8542499392 Watching for file changes with StatReloader
+INFO 2026-01-12 18:11:30,279 log 73540 6205485056 "GET /manage/users/ HTTP/1.1" 200 35476
+INFO 2026-01-12 18:11:30,316 log 73540 6205485056 "GET /static/css/responsive.css HTTP/1.1" 304 0
+INFO 2026-01-12 18:11:31,461 log 73540 6205485056 "GET /jp-report/ HTTP/1.1" 200 53736
+INFO 2026-01-12 18:11:44,590 log 73540 6205485056 "GET /jp-report/?report_type=class&classroom=0f263ab2-2dc2-43bd-a613-5942fe940018&student=&start_date=2026-01-01&end_date=2026-01-06 HTTP/1.1" 200 118164
+INFO 2026-01-12 18:11:50,364 log 73540 6205485056 "GET /export/pdf/class/?classroom=0f263ab2-2dc2-43bd-a613-5942fe940018&start_date=2026-01-01&end_date=2026-01-06 HTTP/1.1" 200 6878
+INFO 2026-01-12 18:12:39,297 log 73540 6205485056 "GET /export/jp-csv/?classroom=0f263ab2-2dc2-43bd-a613-5942fe940018&start_date=2026-01-01&end_date=2026-01-06 HTTP/1.1" 200 1726
+INFO 2026-01-12 18:12:43,258 log 73540 6205485056 "GET /manage/students/ HTTP/1.1" 200 105558
+INFO 2026-01-12 18:12:45,119 log 73540 6205485056 "GET /manage/classrooms/ HTTP/1.1" 200 63899
+INFO 2026-01-12 18:12:56,490 log 73540 6205485056 "POST /manage/bulk-action/ HTTP/1.1" 302 0
+INFO 2026-01-12 18:12:56,500 log 73540 6205485056 "GET /manage/classrooms/ HTTP/1.1" 200 64337
+INFO 2026-01-12 18:13:03,768 log 73540 6205485056 "POST /manage/bulk-action/ HTTP/1.1" 302 0
+INFO 2026-01-12 18:13:03,777 log 73540 6205485056 "GET /manage/classrooms/ HTTP/1.1" 200 64315
+INFO 2026-01-12 18:13:08,987 log 73540 6205485056 "POST /manage/classrooms/d6fa0ecd-5c53-46cb-9d29-52679940208c/delete/ HTTP/1.1" 302 0
+INFO 2026-01-12 18:13:08,995 log 73540 6205485056 "GET /manage/classrooms/ HTTP/1.1" 200 61340
+INFO 2026-01-12 18:13:12,305 log 73540 6205485056 "GET /manage/students/ HTTP/1.1" 200 105452
+INFO 2026-01-12 18:13:15,402 log 73540 6205485056 "GET /manage/students/5606a420-de0d-4b33-b014-2ca0c36762a4/edit/ HTTP/1.1" 200 32480
+INFO 2026-01-12 18:13:17,883 log 73540 6205485056 "GET / HTTP/1.1" 200 40982

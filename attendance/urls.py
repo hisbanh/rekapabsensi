@@ -51,5 +51,7 @@ urlpatterns = [
     # JP-Based Report URLs
     path('jp-report/', views.jp_report, name='jp_report'),
     path('export/jp-csv/', views.export_jp_csv, name='export_jp_csv'),
+    path('export/pdf/class/', views.export_pdf_class, name='export_pdf_class'),
+    path('export/pdf/student/', views.export_pdf_student, name='export_pdf_student'),
     path('api/students-by-classroom/', views.api_get_students_by_classroom, name='api_students_by_classroom'),
 ]

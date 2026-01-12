@@ -28,6 +28,7 @@ from .services.student_service import StudentService
 from .services.report_service import ReportService
 from .services.schedule_service import ScheduleService
 from .services.holiday_service import HolidayService
+from .services.pdf_service import PDFService
 from .exceptions import AttendanceServiceError, StudentServiceError, ReportServiceError
 from .decorators import admin_required, guru_or_admin_required, admin_required_for_write, AdminRequiredMixin
 
@@ -1474,3 +1475,125 @@ def api_get_students_by_classroom(request):
     except Exception as e:
         logger.error(f"Error getting students by classroom: {str(e)}")
         return JsonResponse({'error': str(e)}, status=500)
+
+
+# ============================================
+# PDF Export Views
+# ============================================
+
+@login_required
+def export_pdf_class(request):
+    """
+    Export class attendance report as PDF.
+    
+    Query Parameters:
+        - classroom: UUID of the classroom
+        - start_date: Start date (YYYY-MM-DD)
+        - end_date: End date (YYYY-MM-DD)
+    
+    Requirements: 5.1, 5.2, 5.3, 5.4, 5.7
+    """
+    try:
+        # Get parameters
+        classroom_id = request.GET.get('classroom')
+        start_date_str = request.GET.get('start_date')
+        end_date_str = request.GET.get('end_date')
+        
+        if not all([classroom_id, start_date_str, end_date_str]):
+            messages.error(request, 'Parameter tidak lengkap')
+            return redirect('jp_report')
+        
+        # Parse dates
+        try:
+            start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+            end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+        except ValueError:
+            messages.error(request, 'Format tanggal tidak valid')
+            return redirect('jp_report')
+        
+        # Get classroom
+        try:
+            classroom = Classroom.objects.get(id=classroom_id, is_active=True)
+        except Classroom.DoesNotExist:
+            messages.error(request, 'Kelas tidak ditemukan')
+            return redirect('jp_report')
+        
+        # Generate PDF
+        pdf_content = PDFService.export_pdf_class(
+            classroom=classroom,
+            start_date=start_date,
+            end_date=end_date
+        )
+        
+        # Create response
+        response = HttpResponse(pdf_content, content_type='application/pdf')
+        filename = f"laporan_absensi_{classroom}_{start_date_str}_{end_date_str}.pdf"
+        # Sanitize filename
+        filename = filename.replace(' ', '_').replace('/', '-')
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        
+        return response
+        
+    except Exception as e:
+        logger.error(f"Error exporting class PDF: {str(e)}")
+        messages.error(request, f"Gagal mengekspor PDF: {str(e)}")
+        return redirect('jp_report')
+
+
+@login_required
+def export_pdf_student(request):
+    """
+    Export student attendance report as PDF.
+    
+    Query Parameters:
+        - student: UUID of the student
+        - start_date: Start date (YYYY-MM-DD)
+        - end_date: End date (YYYY-MM-DD)
+    
+    Requirements: 5.1, 5.5, 5.6, 5.7
+    """
+    try:
+        # Get parameters
+        student_id = request.GET.get('student')
+        start_date_str = request.GET.get('start_date')
+        end_date_str = request.GET.get('end_date')
+        
+        if not all([student_id, start_date_str, end_date_str]):
+            messages.error(request, 'Parameter tidak lengkap')
+            return redirect('jp_report')
+        
+        # Parse dates
+        try:
+            start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+            end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+        except ValueError:
+            messages.error(request, 'Format tanggal tidak valid')
+            return redirect('jp_report')
+        
+        # Get student
+        try:
+            student = Student.objects.select_related('classroom').get(id=student_id)
+        except Student.DoesNotExist:
+            messages.error(request, 'Siswa tidak ditemukan')
+            return redirect('jp_report')
+        
+        # Generate PDF
+        pdf_content = PDFService.export_pdf_student(
+            student=student,
+            start_date=start_date,
+            end_date=end_date
+        )
+        
+        # Create response
+        response = HttpResponse(pdf_content, content_type='application/pdf')
+        # Sanitize student name for filename
+        safe_name = student.name.replace(' ', '_').replace('/', '-')[:30]
+        filename = f"laporan_absensi_{safe_name}_{start_date_str}_{end_date_str}.pdf"
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        
+        return response
+        
+    except Exception as e:
+        logger.error(f"Error exporting student PDF: {str(e)}")
+        messages.error(request, f"Gagal mengekspor PDF: {str(e)}")
+        return redirect('jp_report')
