@@ -1,0 +1,219 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card stats-card">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-uppercase mb-1">Total Siswa</div>
+                        <div class="h5 mb-0 font-weight-bold">{{ total_students }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-users fa-2x text-white-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-success">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Hadir Hari Ini</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ present_today }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-check-circle fa-2x text-success"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-warning">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Tidak Hadir</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ absent_today }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-exclamation-triangle fa-2x text-warning"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-info">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Tanggal</div>
+                        <div class="h6 mb-0 font-weight-bold text-gray-800">{{ today|date:"d M Y" }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-calendar fa-2x text-info"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Class Statistics -->
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-primary">Statistik Per Kelas</h6>
+            </div>
+            <div class="card-body">
+                <canvas id="classChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Attendance -->
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-primary">Absensi Terbaru</h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Siswa</th>
+                                <th>Kelas</th>
+                                <th>Status</th>
+                                <th>Waktu</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for record in recent_attendance %}
+                            <tr>
+                                <td>{{ record.student.name }}</td>
+                                <td>{{ record.student.class_name }}</td>
+                                <td>
+                                    <span class="badge status-{{ record.status|lower }}">
+                                        {{ record.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>{{ record.created_at|date:"H:i" }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center text-muted">Belum ada data absensi</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Class Statistics Table -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-primary">Detail Statistik Kelas</h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Kelas</th>
+                                <th>Total Siswa</th>
+                                <th>Hadir</th>
+                                <th>Tidak Hadir</th>
+                                <th>Persentase Kehadiran</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for stat in class_stats %}
+                            <tr>
+                                <td><strong>{{ stat.class_name }}</strong></td>
+                                <td>{{ stat.total }}</td>
+                                <td><span class="text-success">{{ stat.present }}</span></td>
+                                <td><span class="text-warning">{{ stat.absent }}</span></td>
+                                <td>
+                                    {% if stat.total > 0 %}
+                                        {% widthratio stat.present stat.total 100 %}%
+                                    {% else %}
+                                        0%
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center text-muted">Belum ada data</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Class Statistics Chart
+const ctx = document.getElementById('classChart').getContext('2d');
+const classData = {
+    labels: [{% for stat in class_stats %}'{{ stat.class_name }}'{% if not forloop.last %},{% endif %}{% endfor %}],
+    datasets: [{
+        label: 'Hadir',
+        data: [{% for stat in class_stats %}{{ stat.present }}{% if not forloop.last %},{% endif %}{% endfor %}],
+        backgroundColor: 'rgba(40, 167, 69, 0.8)',
+        borderColor: 'rgba(40, 167, 69, 1)',
+        borderWidth: 1
+    }, {
+        label: 'Tidak Hadir',
+        data: [{% for stat in class_stats %}{{ stat.absent }}{% if not forloop.last %},{% endif %}{% endfor %}],
+        backgroundColor: 'rgba(255, 193, 7, 0.8)',
+        borderColor: 'rgba(255, 193, 7, 1)',
+        borderWidth: 1
+    }]
+};
+
+const classChart = new Chart(ctx, {
+    type: 'bar',
+    data: classData,
+    options: {
+        responsive: true,
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        },
+        plugins: {
+            legend: {
+                position: 'top',
+            },
+            title: {
+                display: true,
+                text: 'Kehadiran Per Kelas Hari Ini'
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

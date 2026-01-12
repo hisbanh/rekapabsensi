@@ -1,0 +1,489 @@
+"""
+Management command to populate database with initial student data
+Supports the new Classroom and AcademicLevel model structure
+"""
+from django.core.management.base import BaseCommand
+from django.db import transaction
+from attendance.models import AcademicLevel, Classroom, Student
+
+
+class Command(BaseCommand):
+    help = 'Populate database with initial academic levels, classrooms, and student data'
+
+    def add_arguments(self, parser):
+        parser.add_argument(
+            '--reset',
+            action='store_true',
+            help='Reset all data before populating',
+        )
+
+    def handle(self, *args, **options):
+        """Main command handler"""
+        
+        if options['reset']:
+            self.stdout.write(self.style.WARNING('Resetting all data...'))
+            Student.objects.all().delete()
+            Classroom.objects.all().delete()
+            AcademicLevel.objects.all().delete()
+        
+        with transaction.atomic():
+            # Create academic levels
+            self.create_academic_levels()
+            
+            # Create classrooms
+            self.create_classrooms()
+            
+            # Create students
+            self.create_students()
+        
+        self.stdout.write(
+            self.style.SUCCESS('Successfully populated database with all data!')
+        )
+
+    def create_academic_levels(self):
+        """Create academic levels (SMP and SMA)"""
+        
+        academic_levels = [
+            {
+                'code': 'SMP',
+                'name': 'Sekolah Menengah Pertama',
+                'level_type': 'SMP',
+                'description': 'Tingkat pendidikan menengah pertama (kelas 7-9)',
+                'min_grade': 7,
+                'max_grade': 9,
+            },
+            {
+                'code': 'SMA',
+                'name': 'Sekolah Menengah Atas',
+                'level_type': 'SMA',
+                'description': 'Tingkat pendidikan menengah atas (kelas 10-12)',
+                'min_grade': 10,
+                'max_grade': 12,
+            }
+        ]
+        
+        created_count = 0
+        for level_data in academic_levels:
+            level, created = AcademicLevel.objects.get_or_create(
+                code=level_data['code'],
+                defaults=level_data
+            )
+            
+            if created:
+                created_count += 1
+                self.stdout.write(f"Created academic level: {level}")
+            else:
+                self.stdout.write(f"Academic level already exists: {level}")
+        
+        self.stdout.write(
+            self.style.SUCCESS(f'Academic levels: {created_count} created')
+        )
+
+    def create_classrooms(self):
+        """Create classrooms based on student data"""
+        
+        # Get academic levels
+        smp = AcademicLevel.objects.get(code='SMP')
+        sma = AcademicLevel.objects.get(code='SMA')
+        
+        # Define classrooms based on the student data
+        classrooms_data = [
+            # SMP Classrooms (grades 7-9)
+            {'academic_level': smp, 'grade': 7, 'section': 'A', 'capacity': 35},
+            {'academic_level': smp, 'grade': 7, 'section': 'B', 'capacity': 35},
+            {'academic_level': smp, 'grade': 8, 'section': 'A', 'capacity': 30},
+            {'academic_level': smp, 'grade': 8, 'section': 'B', 'capacity': 30},
+            {'academic_level': smp, 'grade': 9, 'section': 'A', 'capacity': 30},
+            {'academic_level': smp, 'grade': 9, 'section': 'B', 'capacity': 30},
+            
+            # SMA Classrooms (grades 10-12)
+            {'academic_level': sma, 'grade': 10, 'section': 'A', 'capacity': 30},
+            {'academic_level': sma, 'grade': 10, 'section': 'B', 'capacity': 30},
+            {'academic_level': sma, 'grade': 11, 'section': '', 'capacity': 35},  # No section for grade 11
+            {'academic_level': sma, 'grade': 12, 'section': '', 'capacity': 35},  # No section for grade 12
+        ]
+        
+        created_count = 0
+        for classroom_data in classrooms_data:
+            classroom_data['academic_year'] = '2024/2025'
+            
+            classroom, created = Classroom.objects.get_or_create(
+                academic_level=classroom_data['academic_level'],
+                grade=classroom_data['grade'],
+                section=classroom_data['section'],
+                academic_year=classroom_data['academic_year'],
+                defaults=classroom_data
+            )
+            
+            if created:
+                created_count += 1
+                self.stdout.write(f"Created classroom: {classroom}")
+            else:
+                self.stdout.write(f"Classroom already exists: {classroom}")
+        
+        self.stdout.write(
+            self.style.SUCCESS(f'Classrooms: {created_count} created')
+        )
+
+    def create_students(self):
+        """Create students with proper classroom relationships"""
+        
+        students_data = [
+            # Class 7-A
+            {'id': '7A01', 'nisn': '', 'name': 'Abdullah Muhammad Sadat', 'class': '7-A'},
+            {'id': '7A02', 'nisn': '', 'name': 'Abdurrahman Sumardi', 'class': '7-A'},
+            {'id': '7A03', 'nisn': '', 'name': 'Abidz Alvaro Bastian', 'class': '7-A'},
+            {'id': '7A04', 'nisn': '', 'name': 'Ahmad Fahrezzi Fahri Nursya', 'class': '7-A'},
+            {'id': '7A05', 'nisn': '', 'name': 'Alfino Mueen Alfarizqy', 'class': '7-A'},
+            {'id': '7A06', 'nisn': '', 'name': 'Andi Zaa Axelle Akbar', 'class': '7-A'},
+            {'id': '7A07', 'nisn': '', 'name': 'Azzam Mujahid', 'class': '7-A'},
+            {'id': '7A08', 'nisn': '', 'name': 'Danish Zaidan Al - Fahrezi', 'class': '7-A'},
+            {'id': '7A09', 'nisn': '', 'name': 'Deigo Omar Tamaya', 'class': '7-A'},
+            {'id': '7A10', 'nisn': '', 'name': 'Faiz Az Zahran Aulia', 'class': '7-A'},
+            {'id': '7A11', 'nisn': '', 'name': 'Farhan', 'class': '7-A'},
+            {'id': '7A12', 'nisn': '', 'name': 'Fauzan Abdilah', 'class': '7-A'},
+            {'id': '7A13', 'nisn': '', 'name': 'Hanif Ardi Prasetiyo', 'class': '7-A'},
+            {'id': '7A14', 'nisn': '', 'name': 'Humaydi Ibnu Junayd', 'class': '7-A'},
+            {'id': '7A15', 'nisn': '', 'name': 'Ibrahim Ubaidillah Mubarrok', 'class': '7-A'},
+            {'id': '7A16', 'nisn': '', 'name': "Ibrohim Hani Arrifa'l", 'class': '7-A'},
+            {'id': '7A17', 'nisn': '', 'name': 'Khaizan Aufar Alzan', 'class': '7-A'},
+            {'id': '7A18', 'nisn': '', 'name': 'Lukman Nurrokhib', 'class': '7-A'},
+            {'id': '7A19', 'nisn': '', 'name': 'Muhamad Nawwaf', 'class': '7-A'},
+            {'id': '7A20', 'nisn': '', 'name': 'Muhammad Fadhil Akbar', 'class': '7-A'},
+            {'id': '7A21', 'nisn': '', 'name': 'Muhammad Hasan Fakhrurozi', 'class': '7-A'},
+            {'id': '7A22', 'nisn': '', 'name': 'Muhammad Huda Al Fayyadh', 'class': '7-A'},
+            {'id': '7A23', 'nisn': '', 'name': 'Muhammad Ihsan Fakhrullah', 'class': '7-A'},
+            {'id': '7A24', 'nisn': '', 'name': 'Muhammad Irsyad Azka Syarif', 'class': '7-A'},
+            {'id': '7A25', 'nisn': '', 'name': 'Muhammad Naafi Dhaifullah', 'class': '7-A'},
+            {'id': '7A26', 'nisn': '', 'name': 'Muhammad Rafif Zufarian', 'class': '7-A'},
+            {'id': '7A27', 'nisn': '', 'name': "Muhammad Raihan Khoirunni'Am", 'class': '7-A'},
+            {'id': '7A28', 'nisn': '', 'name': 'Muhammad Yazid Hidayah', 'class': '7-A'},
+            {'id': '7A29', 'nisn': '', 'name': 'Muhammad Zhafrand Aqila Zia Ul Haq', 'class': '7-A'},
+            {'id': '7A30', 'nisn': '', 'name': 'Nuri Sahin Sutanto', 'class': '7-A'},
+            {'id': '7A31', 'nisn': '', 'name': 'Oktavian Cahyo Firdaus', 'class': '7-A'},
+
+            # Class 7-B
+            {'id': '7B01', 'nisn': '', 'name': 'Abdul Hakam As Syarif', 'class': '7-B'},
+            {'id': '7B02', 'nisn': '', 'name': 'Abdurrahman Fawaz', 'class': '7-B'},
+            {'id': '7B03', 'nisn': '', 'name': 'Ahmad Faiz Fakhruddin', 'class': '7-B'},
+            {'id': '7B04', 'nisn': '', 'name': 'Ahmad Zidan Fawwaz', 'class': '7-B'},
+            {'id': '7B05', 'nisn': '', 'name': 'Bintang Hizbullah', 'class': '7-B'},
+            {'id': '7B06', 'nisn': '', 'name': 'Danadyaksa Akhtar Aditya', 'class': '7-B'},
+            {'id': '7B07', 'nisn': '', 'name': 'Farhan Maher Abdullah', 'class': '7-B'},
+            {'id': '7B08', 'nisn': '', 'name': 'Faza Maher Muhammad', 'class': '7-B'},
+            {'id': '7B09', 'nisn': '', 'name': 'Fikri Nur Hafiy', 'class': '7-B'},
+            {'id': '7B10', 'nisn': '', 'name': 'Jafar Alfarizi', 'class': '7-B'},
+            {'id': '7B11', 'nisn': '', 'name': 'Kautsar Nabiha Putra Mustofa', 'class': '7-B'},
+            {'id': '7B12', 'nisn': '', 'name': 'M. Khaizan Yafe Mudhaffar', 'class': '7-B'},
+            {'id': '7B13', 'nisn': '', 'name': 'Mohammad Aufa Hafiz Kanz', 'class': '7-B'},
+            {'id': '7B14', 'nisn': '', 'name': 'Muh. Fatah Al Mubarok', 'class': '7-B'},
+            {'id': '7B15', 'nisn': '', 'name': 'Muh. Fatih Al Mutanniq', 'class': '7-B'},
+            {'id': '7B16', 'nisn': '', 'name': 'Muhammad Faqih Ali', 'class': '7-B'},
+            {'id': '7B17', 'nisn': '', 'name': 'Muhammad Hasan Faqih Adz Dzikri', 'class': '7-B'},
+            {'id': '7B18', 'nisn': '', 'name': 'Muhammad Nafis Alfatih', 'class': '7-B'},
+            {'id': '7B19', 'nisn': '', 'name': 'Muhammad Zulfadhli Adnan', 'class': '7-B'},
+            {'id': '7B20', 'nisn': '', 'name': 'Nabhani Zaky Aqil Widiyanto', 'class': '7-B'},
+            {'id': '7B21', 'nisn': '', 'name': 'Naufal Abdullah Rafif', 'class': '7-B'},
+            {'id': '7B22', 'nisn': '', 'name': 'Naufal Asnawi Afham Muzaffar', 'class': '7-B'},
+            {'id': '7B23', 'nisn': '', 'name': 'Nizam Ruzain Baihaqi', 'class': '7-B'},
+            {'id': '7B24', 'nisn': '', 'name': 'Orlando Vitto Ramadhani Dewanta', 'class': '7-B'},
+            {'id': '7B25', 'nisn': '', 'name': 'Syahin Mubarok', 'class': '7-B'},
+            {'id': '7B26', 'nisn': '', 'name': 'Ubaidullah Subhan', 'class': '7-B'},
+            {'id': '7B27', 'nisn': '', 'name': 'Ukkasyah', 'class': '7-B'},
+            {'id': '7B28', 'nisn': '', 'name': 'Valiant Oceanic', 'class': '7-B'},
+            {'id': '7B29', 'nisn': '', 'name': "Yahya 'Abdul Jabbar", 'class': '7-B'},
+            {'id': '7B30', 'nisn': '', 'name': 'Yusuf Al-Atsary', 'class': '7-B'},
+
+            # Class 8-A
+            {'id': '8A01', 'nisn': '0224010003', 'name': 'Abid Naqqi Alhakim', 'class': '8-A'},
+            {'id': '8A02', 'nisn': '0224010004', 'name': 'Achmad Milan Hadiwidjaya', 'class': '8-A'},
+            {'id': '8A03', 'nisn': '0224010005', 'name': 'Ahmad Mirza Aufa Rais', 'class': '8-A'},
+            {'id': '8A04', 'nisn': '0224010006', 'name': 'Ali Hasan', 'class': '8-A'},
+            {'id': '8A05', 'nisn': '0224010010', 'name': 'Andira Shafi Azmi', 'class': '8-A'},
+            {'id': '8A06', 'nisn': '0224010015', 'name': 'Duta Hibban Ahssidiq', 'class': '8-A'},
+            {'id': '8A07', 'nisn': '0224010017', 'name': 'Faiz Abdurrahman', 'class': '8-A'},
+            {'id': '8A08', 'nisn': '0224010018', 'name': 'Faran Zaka Jahabidz', 'class': '8-A'},
+            {'id': '8A09', 'nisn': '0224010019', 'name': 'Faras Atha Purna An-Naqi', 'class': '8-A'},
+            {'id': '8A10', 'nisn': '0224010022', 'name': 'Galih Ibrahim Priyono', 'class': '8-A'},
+            {'id': '8A11', 'nisn': '0224010024', 'name': 'Hanan Dzulhilmi', 'class': '8-A'},
+            {'id': '8A12', 'nisn': '0224010025', 'name': 'Hasta Setiyawardana Hidayatullah', 'class': '8-A'},
+            {'id': '8A13', 'nisn': '0224010030', 'name': 'Ihsan Ilahi Zhahir', 'class': '8-A'},
+            {'id': '8A14', 'nisn': '0224010031', 'name': 'Ihsan Nabil Al Farisi', 'class': '8-A'},
+            {'id': '8A15', 'nisn': '0224010061', 'name': 'Irfan Hakim', 'class': '8-A'},
+            {'id': '8A16', 'nisn': '0224010033', 'name': 'Kais Sebti', 'class': '8-A'},
+            {'id': '8A17', 'nisn': '0224010034', 'name': 'Karim Abdirrahman', 'class': '8-A'},
+            {'id': '8A18', 'nisn': '0224010035', 'name': 'Muaddib Zuhrul Anam', 'class': '8-A'},
+            {'id': '8A19', 'nisn': '0224010036', 'name': 'Muhamad Chadzo Awfa Waqor', 'class': '8-A'},
+            {'id': '8A20', 'nisn': '0224010039', 'name': 'Muhammad Darussalam Robi`Uts Tsani', 'class': '8-A'},
+            {'id': '8A21', 'nisn': '0224010042', 'name': 'Muhammad Zaki Abdurrahman', 'class': '8-A'},
+            {'id': '8A22', 'nisn': '0224010045', 'name': 'Nararya Luthfian Zhafi Septandria', 'class': '8-A'},
+            {'id': '8A23', 'nisn': '0224010046', 'name': 'Qaisar Muhammad At Taqiy', 'class': '8-A'},
+            {'id': '8A24', 'nisn': '0224010048', 'name': 'Rakin Ayyasy', 'class': '8-A'},
+            {'id': '8A25', 'nisn': '0224010051', 'name': 'Resky Fatria Priyono', 'class': '8-A'},
+
+            # Class 8-B
+            {'id': '8B01', 'nisn': '0224010002', 'name': 'Abdurrahman Rasyid', 'class': '8-B'},
+            {'id': '8B02', 'nisn': '0224010008', 'name': 'Alif Lukman Hanif Assajad', 'class': '8-B'},
+            {'id': '8B03', 'nisn': '0224010011', 'name': 'Aria Dzaky Syalia Rahman', 'class': '8-B'},
+            {'id': '8B04', 'nisn': '0224010012', 'name': 'Azhar Faqih Aditya Karisma', 'class': '8-B'},
+            {'id': '8B05', 'nisn': '0224010013', 'name': 'Bukhara Tsaqiif Alkhemi', 'class': '8-B'},
+            {'id': '8B06', 'nisn': '0224010014', 'name': 'Devante Pramawina Wicaksono', 'class': '8-B'},
+            {'id': '8B07', 'nisn': '0224010016', 'name': "Fadli Fauzil 'Adhim", 'class': '8-B'},
+            {'id': '8B08', 'nisn': '0224010020', 'name': 'Fathurrahman Alfarizi', 'class': '8-B'},
+            {'id': '8B09', 'nisn': '0224010021', 'name': 'Fawwaz', 'class': '8-B'},
+            {'id': '8B10', 'nisn': '0224010023', 'name': 'Hamzah Afif Abdullah', 'class': '8-B'},
+            {'id': '8B11', 'nisn': '0224010026', 'name': 'Haydar Dimas Fabregas', 'class': '8-B'},
+            {'id': '8B12', 'nisn': '0224010028', 'name': 'Husain Malik Yahya', 'class': '8-B'},
+            {'id': '8B13', 'nisn': '0224010029', 'name': 'Ibrahim Al Mustaqim', 'class': '8-B'},
+            {'id': '8B14', 'nisn': '0224010032', 'name': 'Ismail Al Atsary', 'class': '8-B'},
+            {'id': '8B15', 'nisn': '0224010037', 'name': 'Muhamad Dzaki Al Rasyid', 'class': '8-B'},
+            {'id': '8B16', 'nisn': '0224010038', 'name': 'Muhammad Alfarisy', 'class': '8-B'},
+            {'id': '8B17', 'nisn': '0224010040', 'name': 'Muhammad Faiz Al Farhan', 'class': '8-B'},
+            {'id': '8B18', 'nisn': '0224010041', 'name': "Muhammad Resya A'Zam Al-Ghifari", 'class': '8-B'},
+            {'id': '8B19', 'nisn': '0224010043', 'name': 'Muhammad Zein Askanito', 'class': '8-B'},
+            {'id': '8B20', 'nisn': '0224010044', 'name': 'Muzaffar', 'class': '8-B'},
+            {'id': '8B21', 'nisn': '0224010047', 'name': 'Rafka Abdullah', 'class': '8-B'},
+            {'id': '8B22', 'nisn': '0224010049', 'name': 'Rasya Iqbal Athaya', 'class': '8-B'},
+            {'id': '8B23', 'nisn': '0224010052', 'name': 'Saifulloh Mufid El Qorny', 'class': '8-B'},
+            {'id': '8B24', 'nisn': '0224010053', 'name': 'Saputra Azka Satria Imam Sahid', 'class': '8-B'},
+            {'id': '8B25', 'nisn': '0224010056', 'name': 'Umar Abdillah', 'class': '8-B'},
+            {'id': '8B26', 'nisn': '0224010057', 'name': 'Umar Abdul Rozaq Afify', 'class': '8-B'},
+            {'id': '8B27', 'nisn': '0224010058', 'name': 'Wikan Hafesh Abdurahman', 'class': '8-B'},
+            {'id': '8B28', 'nisn': '0224010059', 'name': 'Zaid Al Arsyad', 'class': '8-B'},
+
+            # Class 9-A
+            {'id': '9A01', 'nisn': '0223010001', 'name': 'Abdul Malik Al Atsary', 'class': '9-A'},
+            {'id': '9A02', 'nisn': '0223010004', 'name': 'Adhiwangsa Beryl Nugroho', 'class': '9-A'},
+            {'id': '9A03', 'nisn': '0223010006', 'name': 'Ahmad Rafa Fahreza', 'class': '9-A'},
+            {'id': '9A04', 'nisn': '0223010009', 'name': 'Azzaam', 'class': '9-A'},
+            {'id': '9A05', 'nisn': '0223010011', 'name': 'Bayu Setioko', 'class': '9-A'},
+            {'id': '9A06', 'nisn': '0223010013', 'name': 'Daffa Leorenzo', 'class': '9-A'},
+            {'id': '9A07', 'nisn': '0223010015', 'name': 'Dihya Al Ghifari', 'class': '9-A'},
+            {'id': '9A08', 'nisn': '0223010017', 'name': 'Fadhlur rohman hanif', 'class': '9-A'},
+            {'id': '9A09', 'nisn': '0223010018', 'name': "Fathurrahman al'ghazi", 'class': '9-A'},
+            {'id': '9A10', 'nisn': '0223010020', 'name': 'Fendra Athwan Syahdan', 'class': '9-A'},
+            {'id': '9A11', 'nisn': '0223010024', 'name': 'Islami Syahputra Wijaya', 'class': '9-A'},
+            {'id': '9A12', 'nisn': '0223010026', 'name': 'Joeshep Raynaldi Wijaya Mara', 'class': '9-A'},
+            {'id': '9A13', 'nisn': '0223010028', 'name': 'M. Arkan Khairiy Saputra', 'class': '9-A'},
+            {'id': '9A14', 'nisn': '0223010029', 'name': 'M. Hafidzurrahman Alfa K', 'class': '9-A'},
+            {'id': '9A15', 'nisn': '0223010030', 'name': 'Malik Nur Rahmat Muttaqin', 'class': '9-A'},
+            {'id': '9A16', 'nisn': '0223010032', 'name': 'Muhamad Syukri Musyafa', 'class': '9-A'},
+            {'id': '9A17', 'nisn': '0223010036', 'name': 'Muhammad Gemilang Damai Prakarsa', 'class': '9-A'},
+            {'id': '9A18', 'nisn': '0223010044', 'name': 'Muhammad Umar Al Mukhbit', 'class': '9-A'},
+            {'id': '9A19', 'nisn': '0223010050', 'name': 'Raihan Althaf Pratama', 'class': '9-A'},
+            {'id': '9A20', 'nisn': '0223010051', 'name': 'Reza Putra Medavin', 'class': '9-A'},
+            {'id': '9A21', 'nisn': '0223010052', 'name': 'Syahdan Arfan Irsyad', 'class': '9-A'},
+            {'id': '9A22', 'nisn': '0223010053', 'name': 'Wildan', 'class': '9-A'},
+            {'id': '9A23', 'nisn': '0223010056', 'name': 'Zidan Sidqy Ar-Rosyid', 'class': '9-A'},
+            {'id': '9A24', 'nisn': '0223010058', 'name': 'Zulfikar Arkan Raharja', 'class': '9-A'},
+
+            # Class 9-B
+            {'id': '9B01', 'nisn': '0223010002', 'name': 'Abdurrahman Ahmad Mubarrok', 'class': '9-B'},
+            {'id': '9B02', 'nisn': '0223010003', 'name': 'Abyyan Hayyan', 'class': '9-B'},
+            {'id': '9B03', 'nisn': '0223010005', 'name': 'Agung Fahri Fauzi', 'class': '9-B'},
+            {'id': '9B04', 'nisn': '0223010007', 'name': 'Aisar', 'class': '9-B'},
+            {'id': '9B05', 'nisn': '0223010008', 'name': 'Arka Adiswara', 'class': '9-B'},
+            {'id': '9B06', 'nisn': '0223010010', 'name': 'Bayu Anugerah Al Halimu', 'class': '9-B'},
+            {'id': '9B07', 'nisn': '0223010012', 'name': 'Catur Gilang Saputra', 'class': '9-B'},
+            {'id': '9B08', 'nisn': '0223010014', 'name': 'Damian Rozaq Ramadhan', 'class': '9-B'},
+            {'id': '9B09', 'nisn': '0223010016', 'name': 'Dzaky Annaafi Habibullah', 'class': '9-B'},
+            {'id': '9B10', 'nisn': '0223010019', 'name': 'Fauzan', 'class': '9-B'},
+            {'id': '9B11', 'nisn': '0223010033', 'name': 'Muhammad Afif Azizi', 'class': '9-B'},
+            {'id': '9B12', 'nisn': '0223010034', 'name': 'Muhammad Aqeela Qaf Maliqi', 'class': '9-B'},
+            {'id': '9B13', 'nisn': '0223010035', 'name': 'Muhammad Farras', 'class': '9-B'},
+            {'id': '9B14', 'nisn': '0223010037', 'name': 'Muhammad Haidar Abdurrahman', 'class': '9-B'},
+            {'id': '9B15', 'nisn': '0223010038', 'name': 'Muhammad Hibban', 'class': '9-B'},
+            {'id': '9B16', 'nisn': '0223010039', 'name': 'Muhammad Izzan Faqih', 'class': '9-B'},
+            {'id': '9B17', 'nisn': '0223010040', 'name': "Muhammad Naafi' Ali Firmansyah", 'class': '9-B'},
+            {'id': '9B18', 'nisn': '0223010042', 'name': 'Muhammad Razin Fadil', 'class': '9-B'},
+            {'id': '9B19', 'nisn': '0223010043', 'name': 'Muhammad Rizqi Nurruzzaman', 'class': '9-B'},
+            {'id': '9B20', 'nisn': '0223010045', 'name': 'Nabhan Jubair', 'class': '9-B'},
+            {'id': '9B21', 'nisn': '0223010047', 'name': 'Nizam Ahmad Alfarizi', 'class': '9-B'},
+            {'id': '9B22', 'nisn': '0223010048', 'name': 'Rafan Nafi Abdulwali', 'class': '9-B'},
+            {'id': '9B23', 'nisn': '0223010049', 'name': 'Rafif Abdul Zhariif', 'class': '9-B'},
+            {'id': '9B24', 'nisn': '0223010054', 'name': 'Wildan Firdaus Jauzi Al-Ghazali', 'class': '9-B'},
+            {'id': '9B25', 'nisn': '0223010057', 'name': 'Ziyan Muhammad El Arkan', 'class': '9-B'},
+
+            # Class 10-A
+            {'id': '10A01', 'nisn': '', 'name': 'Anugerah Rajendra Aji Pawenang', 'class': '10-A'},
+            {'id': '10A02', 'nisn': '', 'name': 'Ehza Abdul Aziz', 'class': '10-A'},
+            {'id': '10A03', 'nisn': '', 'name': 'Farhan', 'class': '10-A'},
+            {'id': '10A04', 'nisn': '', 'name': 'Fawwaz Izzudin', 'class': '10-A'},
+            {'id': '10A05', 'nisn': '', 'name': 'Hafidz Maulana Riyu Subagiyo', 'class': '10-A'},
+            {'id': '10A06', 'nisn': '', 'name': 'Hibban Abdullah', 'class': '10-A'},
+            {'id': '10A07', 'nisn': '', 'name': 'Jagad Almair Abimantrana', 'class': '10-A'},
+            {'id': '10A08', 'nisn': '', 'name': 'Khalawatul Iman', 'class': '10-A'},
+            {'id': '10A09', 'nisn': '', 'name': 'Kistiyan Zico Fridenta', 'class': '10-A'},
+            {'id': '10A10', 'nisn': '', 'name': 'Luthfan Eka Rochman', 'class': '10-A'},
+            {'id': '10A11', 'nisn': '', 'name': 'Mirza Arkan Ardisa', 'class': '10-A'},
+            {'id': '10A12', 'nisn': '', 'name': 'Mufid Shiddiq', 'class': '10-A'},
+            {'id': '10A13', 'nisn': '', 'name': 'Muhammad Abdillah Mukhtar', 'class': '10-A'},
+            {'id': '10A14', 'nisn': '', 'name': 'Muhammad Aisy Zhafran', 'class': '10-A'},
+            {'id': '10A15', 'nisn': '', 'name': 'Muhammad Azzam Ramadhan', 'class': '10-A'},
+            {'id': '10A16', 'nisn': '', 'name': 'Muhammad Fauzan Mubarok', 'class': '10-A'},
+            {'id': '10A17', 'nisn': '', 'name': 'Muhammad Furqon', 'class': '10-A'},
+            {'id': '10A18', 'nisn': '', 'name': 'Muhammad Haikal Kamil', 'class': '10-A'},
+            {'id': '10A19', 'nisn': '', 'name': 'Muhammad Karim Rosyid', 'class': '10-A'},
+            {'id': '10A20', 'nisn': '', 'name': 'Muhammad Keifa Alhanif Wiguna', 'class': '10-A'},
+            {'id': '10A21', 'nisn': '', 'name': 'Muhammad Tifa Nugroho', 'class': '10-A'},
+            {'id': '10A22', 'nisn': '', 'name': 'Musa', 'class': '10-A'},
+            {'id': '10A23', 'nisn': '', 'name': 'Nandra Ibrah Rajaa', 'class': '10-A'},
+            {'id': '10A24', 'nisn': '', 'name': 'Rifqy Haidar Fadhil', 'class': '10-A'},
+            {'id': '10A25', 'nisn': '', 'name': 'Syauqi Shiroi', 'class': '10-A'},
+            {'id': '10A26', 'nisn': '', 'name': 'Tegar Afnur Suradi', 'class': '10-A'},
+
+            # Class 10-B
+            {'id': '10B01', 'nisn': '', 'name': 'Abdullah', 'class': '10-B'},
+            {'id': '10B02', 'nisn': '', 'name': 'Abdullah Al Muhtadi', 'class': '10-B'},
+            {'id': '10B03', 'nisn': '', 'name': 'Ahmad Haidir', 'class': '10-B'},
+            {'id': '10B04', 'nisn': '', 'name': 'Arjuna Putra', 'class': '10-B'},
+            {'id': '10B05', 'nisn': '', 'name': 'Fayyad Abid Adima', 'class': '10-B'},
+            {'id': '10B06', 'nisn': '', 'name': 'Gibran Elroy Hidayat', 'class': '10-B'},
+            {'id': '10B07', 'nisn': '', 'name': 'Hamzah Lathif', 'class': '10-B'},
+            {'id': '10B08', 'nisn': '', 'name': 'Hasan', 'class': '10-B'},
+            {'id': '10B09', 'nisn': '', 'name': 'Husain', 'class': '10-B'},
+            {'id': '10B10', 'nisn': '', 'name': 'Ibnu Labib', 'class': '10-B'},
+            {'id': '10B11', 'nisn': '', 'name': 'Ibrahim Zafran Setiawan', 'class': '10-B'},
+            {'id': '10B12', 'nisn': '', 'name': 'Irsyad Abdillah', 'class': '10-B'},
+            {'id': '10B13', 'nisn': '', 'name': 'Jamal Abdullah', 'class': '10-B'},
+            {'id': '10B14', 'nisn': '', 'name': 'Khaleed Salman Irfani', 'class': '10-B'},
+            {'id': '10B15', 'nisn': '', 'name': 'Muhammad Azzam Atstsauri', 'class': '10-B'},
+            {'id': '10B16', 'nisn': '', 'name': 'Muhammad Ihsan Andono', 'class': '10-B'},
+            {'id': '10B17', 'nisn': '', 'name': 'Muhammad Ikhsan', 'class': '10-B'},
+            {'id': '10B18', 'nisn': '', 'name': 'Muhammad Nurul Aziz', 'class': '10-B'},
+            {'id': '10B19', 'nisn': '', 'name': 'Muhammad Raffa Miftahul Sodiqin', 'class': '10-B'},
+            {'id': '10B20', 'nisn': '', 'name': 'Muhammad Rifqi Hafizh', 'class': '10-B'},
+            {'id': '10B21', 'nisn': '', 'name': 'Muhammad Rifqy Al-Faayid', 'class': '10-B'},
+            {'id': '10B22', 'nisn': '', 'name': 'Muhammad Zaidan Shidqi Effendy', 'class': '10-B'},
+            {'id': '10B23', 'nisn': '', 'name': 'Muhammad Fadhil Al Atsari', 'class': '10-B'},
+            {'id': '10B24', 'nisn': '', 'name': 'Nararya Ega Parama', 'class': '10-B'},
+            {'id': '10B25', 'nisn': '', 'name': 'Nidal Addna', 'class': '10-B'},
+            {'id': '10B26', 'nisn': '', 'name': 'Radhitya Arrazi Faraj', 'class': '10-B'},
+            {'id': '10B27', 'nisn': '', 'name': 'Rafa Iqbal Maulana Putra', 'class': '10-B'},
+            {'id': '10B28', 'nisn': '', 'name': "Sa'ad Ali Tamam", 'class': '10-B'},
+            {'id': '10B29', 'nisn': '', 'name': 'Umair Abdullah', 'class': '10-B'},
+
+            # Class 11
+            {'id': '1101', 'nisn': '0324010001', 'name': 'Abdul Hamid', 'class': '11'},
+            {'id': '1102', 'nisn': '0324010002', 'name': 'Afgan Arofiq', 'class': '11'},
+            {'id': '1103', 'nisn': '0324010004', 'name': 'Ahmad Wildan Agust Ramadhan', 'class': '11'},
+            {'id': '1104', 'nisn': '0324010005', 'name': 'Akbar Firdaus Setyawan', 'class': '11'},
+            {'id': '1105', 'nisn': '0324010006', 'name': 'Akhtar Danish Rasikh', 'class': '11'},
+            {'id': '1106', 'nisn': '0324010007', 'name': 'Alifqy Jati Raharjo', 'class': '11'},
+            {'id': '1107', 'nisn': '0324010008', 'name': 'Atha Sava Nararya', 'class': '11'},
+            {'id': '1108', 'nisn': '0324010009', 'name': 'Auriel Ainuriza', 'class': '11'},
+            {'id': '1109', 'nisn': '0324010010', 'name': 'Bilal Abid Abdulloh', 'class': '11'},
+            {'id': '1110', 'nisn': '0324010012', 'name': 'Farij Alessandro Nesta', 'class': '11'},
+            {'id': '1111', 'nisn': '0324010013', 'name': 'Fathii Rizq Al Hassan', 'class': '11'},
+            {'id': '1112', 'nisn': '0324010014', 'name': 'Fauzan Anwari Ahmad', 'class': '11'},
+            {'id': '1113', 'nisn': '0324010015', 'name': 'Hegel Fawwaz Mufadhdhal', 'class': '11'},
+            {'id': '1114', 'nisn': '0324010016', 'name': 'Hubaib Fadhillah Trisani', 'class': '11'},
+            {'id': '1115', 'nisn': '0324010017', 'name': 'Humam Afkar Respati', 'class': '11'},
+            {'id': '1116', 'nisn': '0324010018', 'name': 'Ibrahim Hasan Ramadhan', 'class': '11'},
+            {'id': '1117', 'nisn': '0324010021', 'name': 'Khairul Azzam', 'class': '11'},
+            {'id': '1118', 'nisn': '0324010022', 'name': 'M. Fikar Anwar', 'class': '11'},
+            {'id': '1119', 'nisn': '0324010023', 'name': 'Muhammad Danish Arsyad', 'class': '11'},
+            {'id': '1120', 'nisn': '0324010024', 'name': 'Muhammad Faiz Al Akbar', 'class': '11'},
+            {'id': '1121', 'nisn': '0324010025', 'name': 'Muhammad Farras Ash-Shidqi', 'class': '11'},
+            {'id': '1122', 'nisn': '0324010026', 'name': 'Muhammad Farras Dzaky', 'class': '11'},
+            {'id': '1123', 'nisn': '0324010027', 'name': 'Muhammad Fattah', 'class': '11'},
+            {'id': '1124', 'nisn': '0324010028', 'name': 'Muhammad Gaza Alfathi', 'class': '11'},
+            {'id': '1125', 'nisn': '0324010029', 'name': 'Muhamad Rahil Al Ghifari', 'class': '11'},
+            {'id': '1126', 'nisn': '0324010033', 'name': 'Raid Fahri Mahdi', 'class': '11'},
+            {'id': '1127', 'nisn': '0324010035', 'name': 'Rizki', 'class': '11'},
+            {'id': '1128', 'nisn': '0324010036', 'name': 'Salman Baihaqi Hakim', 'class': '11'},
+            {'id': '1129', 'nisn': '', 'name': 'Usamah', 'class': '11'},
+            {'id': '1130', 'nisn': '0324010037', 'name': 'Youmi Hafidz Azami', 'class': '11'},
+
+            # Class 12
+            {'id': '1201', 'nisn': '0323010001', 'name': 'Abdul Aziz Risay Ar Royan', 'class': '12'},
+            {'id': '1202', 'nisn': '0323010002', 'name': 'Abdul Halim Mustaqim', 'class': '12'},
+            {'id': '1203', 'nisn': '0323010003', 'name': "Abdullah Umar Rifa'i", 'class': '12'},
+            {'id': '1204', 'nisn': '0323010004', 'name': 'Abyyan Ammar Dhafi', 'class': '12'},
+            {'id': '1205', 'nisn': '0323010007', 'name': 'Al Wildan Jibril Rahmat', 'class': '12'},
+            {'id': '1206', 'nisn': '0323010008', 'name': 'Ammar Alfarisi', 'class': '12'},
+            {'id': '1207', 'nisn': '0323010009', 'name': 'Aryana azfar assyahmi', 'class': '12'},
+            {'id': '1208', 'nisn': '0323010011', 'name': 'Faisal Hafizsyah', 'class': '12'},
+            {'id': '1209', 'nisn': '0323010012', 'name': 'Fatthan Abi Fakhrurrahman', 'class': '12'},
+            {'id': '1210', 'nisn': '0323010014', 'name': 'Ibrahim Abdurrahman', 'class': '12'},
+            {'id': '1211', 'nisn': '0323010015', 'name': 'Kevin rahman khadafi', 'class': '12'},
+            {'id': '1212', 'nisn': '0323010016', 'name': 'Krido Serayu Hesti', 'class': '12'},
+            {'id': '1213', 'nisn': '0323010017', 'name': 'Luqman', 'class': '12'},
+            {'id': '1214', 'nisn': '0323010019', 'name': 'M. Thoriq Mulki Penjalang', 'class': '12'},
+            {'id': '1215', 'nisn': '0323010020', 'name': 'Mas\'ud Abdurrohman As Sajid', 'class': '12'},
+            {'id': '1216', 'nisn': '0323010021', 'name': 'Muhamad Rizky Tamtomo', 'class': '12'},
+            {'id': '1217', 'nisn': '0323010022', 'name': 'Muhammad Affan Nashat', 'class': '12'},
+            {'id': '1218', 'nisn': '0323010023', 'name': 'Muhammad Ali Usamah', 'class': '12'},
+            {'id': '1219', 'nisn': '0323010024', 'name': 'Muhammad Diarra Hamka', 'class': '12'},
+            {'id': '1220', 'nisn': '0323010025', 'name': 'Muhammad Duta Heriansyah', 'class': '12'},
+            {'id': '1221', 'nisn': '0323010026', 'name': 'Muhammad Hafiizh Faturrahman', 'class': '12'},
+            {'id': '1222', 'nisn': '0323010027', 'name': 'Muhammad Naufal Ghiffari', 'class': '12'},
+            {'id': '1223', 'nisn': '0323010029', 'name': 'Muhammad Saif', 'class': '12'},
+            {'id': '1224', 'nisn': '0323010030', 'name': 'Muhammad Zuhdhan Rifai', 'class': '12'},
+            {'id': '1225', 'nisn': '0323010031', 'name': 'Naufal Mazini', 'class': '12'},
+            {'id': '1226', 'nisn': '0323010032', 'name': 'Omar Zahraan Darmawan', 'class': '12'},
+            {'id': '1227', 'nisn': '0323010033', 'name': 'Rizki Abdullah', 'class': '12'},
+            {'id': '1228', 'nisn': '0323010035', 'name': 'Salman Al Farisi', 'class': '12'},
+            {'id': '1229', 'nisn': '0323010036', 'name': 'Yusril Huda', 'class': '12'},
+            {'id': '1230', 'nisn': '0323010037', 'name': 'Ziyyal Fifayadhi Aldiya Kafi', 'class': '12'},
+        ]
+
+        # Create a mapping of class names to classroom objects
+        classroom_mapping = {}
+        for classroom in Classroom.objects.all():
+            if classroom.section:
+                key = f"{classroom.grade}-{classroom.section}"
+            else:
+                key = str(classroom.grade)
+            classroom_mapping[key] = classroom
+
+        created_count = 0
+        updated_count = 0
+        error_count = 0
+
+        for student_data in students_data:
+            try:
+                # Get the classroom for this student
+                class_key = student_data['class']
+                if class_key not in classroom_mapping:
+                    self.stdout.write(
+                        self.style.ERROR(f"Classroom not found for class: {class_key}")
+                    )
+                    error_count += 1
+                    continue
+
+                classroom = classroom_mapping[class_key]
+
+                # Create or update student
+                student, created = Student.objects.get_or_create(
+                    student_id=student_data['id'],
+                    defaults={
+                        'nisn': student_data['nisn'],
+                        'name': student_data['name'],
+                        'classroom': classroom
+                    }
+                )
+                
+                if created:
+                    created_count += 1
+                    self.stdout.write(f"Created: {student.name} ({student.classroom})")
+                else:
+                    # Update existing student
+                    student.nisn = student_data['nisn']
+                    student.name = student_data['name']
+                    student.classroom = classroom
+                    student.save()
+                    updated_count += 1
+                    self.stdout.write(f"Updated: {student.name} ({student.classroom})")
+
+            except Exception as e:
+                self.stdout.write(
+                    self.style.ERROR(f"Error processing student {student_data['id']}: {str(e)}")
+                )
+                error_count += 1
+
+        self.stdout.write(
+            self.style.SUCCESS(
+                f'Students: {created_count} created, {updated_count} updated, {error_count} errors'
+            )
+        )

@@ -1,0 +1,212 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Ambil Absensi{% endblock %}
+
+{% block page_actions %}
+<div class="btn-group" role="group">
+    <a href="{% url 'attendance_report' %}" class="btn btn-outline-primary">
+        <i class="fas fa-chart-bar"></i> Lihat Laporan
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<!-- Filter Form -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <label for="date" class="form-label">Tanggal</label>
+                <input type="date" class="form-control" id="date" name="date" value="{{ date|date:'Y-m-d' }}">
+            </div>
+            <div class="col-md-4">
+                <label for="class" class="form-label">Kelas</label>
+                <select class="form-control" id="class" name="class">
+                    <option value="">Semua Kelas</option>
+                    {% for class_name in classes %}
+                        <option value="{{ class_name }}" {% if class_name == current_class %}selected{% endif %}>
+                            {{ class_name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary me-2">
+                    <i class="fas fa-filter"></i> Filter
+                </button>
+                <button type="button" class="btn btn-success" onclick="markAllPresent()">
+                    <i class="fas fa-check-double"></i> Semua Hadir
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if students_with_records %}
+<!-- Attendance Form -->
+<form method="post" id="attendanceForm">
+    {% csrf_token %}
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary">
+                Absensi {{ current_class|default:"Semua Kelas" }} - {{ date|date:"d M Y" }}
+            </h6>
+            <span class="badge bg-info">{{ students_with_records|length }} Siswa</span>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th width="5%">No</th>
+                            <th width="15%">ID Siswa</th>
+                            <th width="30%">Nama</th>
+                            <th width="10%">Kelas</th>
+                            <th width="20%">Status</th>
+                            <th width="20%">Catatan</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in students_with_records %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td>{{ item.student.student_id }}</td>
+                            <td>
+                                <strong>{{ item.student.name }}</strong>
+                                {% if item.student.nisn %}
+                                    <br><small class="text-muted">NISN: {{ item.student.nisn }}</small>
+                                {% endif %}
+                            </td>
+                            <td><span class="badge bg-secondary">{{ item.student.class_name }}</span></td>
+                            <td>
+                                <select name="attendance" class="form-control form-control-sm status-select" data-student="{{ item.student.id }}">
+                                    {% for value, label in status_choices %}
+                                        <option value="{{ value }}" 
+                                            {% if item.existing_record and item.existing_record.status == value %}selected{% elif not item.existing_record and value == 'HADIR' %}selected{% endif %}>
+                                            {{ label }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+                            <td>
+                                <input type="text" name="notes" class="form-control form-control-sm" 
+                                       placeholder="Catatan..." value="{{ item.existing_record.notes|default:'' }}">
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card-footer">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <small class="text-muted">
+                        <i class="fas fa-info-circle"></i>
+                        Klik "Semua Hadir" untuk menandai semua siswa hadir sekaligus
+                    </small>
+                </div>
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <i class="fas fa-save"></i> Simpan Absensi
+                </button>
+            </div>
+        </div>
+    </div>
+</form>
+
+<!-- Quick Stats -->
+<div class="row mt-4">
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title text-success" id="hadirCount">0</h5>
+                <p class="card-text">Hadir</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title text-warning" id="sakitCount">0</h5>
+                <p class="card-text">Sakit</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title text-info" id="izinCount">0</h5>
+                <p class="card-text">Izin</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title text-danger" id="alpaCount">0</h5>
+                <p class="card-text">Alpa</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% else %}
+<div class="card">
+    <div class="card-body text-center">
+        <i class="fas fa-users fa-3x text-muted mb-3"></i>
+        <h5>Tidak ada siswa ditemukan</h5>
+        <p class="text-muted">Silakan pilih kelas atau ubah filter pencarian</p>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function markAllPresent() {
+    const selects = document.querySelectorAll('.status-select');
+    selects.forEach(select => {
+        select.value = 'HADIR';
+    });
+    updateCounts();
+}
+
+function updateCounts() {
+    const selects = document.querySelectorAll('.status-select');
+    let counts = {
+        'HADIR': 0,
+        'SAKIT': 0,
+        'IZIN': 0,
+        'ALPA': 0
+    };
+    
+    selects.forEach(select => {
+        counts[select.value]++;
+    });
+    
+    document.getElementById('hadirCount').textContent = counts['HADIR'];
+    document.getElementById('sakitCount').textContent = counts['SAKIT'];
+    document.getElementById('izinCount').textContent = counts['IZIN'];
+    document.getElementById('alpaCount').textContent = counts['ALPA'];
+}
+
+// Update counts when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    updateCounts();
+    
+    // Update counts when status changes
+    const selects = document.querySelectorAll('.status-select');
+    selects.forEach(select => {
+        select.addEventListener('change', updateCounts);
+    });
+});
+
+// Form validation
+document.getElementById('attendanceForm').addEventListener('submit', function(e) {
+    const confirmation = confirm('Apakah Anda yakin ingin menyimpan data absensi ini?');
+    if (!confirmation) {
+        e.preventDefault();
+    }
+});
+</script>
+{% endblock %}

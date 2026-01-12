@@ -1,0 +1,156 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Data Siswa{% endblock %}
+
+{% block page_actions %}
+<div class="btn-group" role="group">
+    <a href="{% url 'take_attendance' %}" class="btn btn-primary">
+        <i class="fas fa-check-circle"></i> Ambil Absensi
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<!-- Search and Filter -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <label for="search" class="form-label">Cari Siswa</label>
+                <input type="text" class="form-control" id="search" name="search" 
+                       placeholder="Nama, ID, atau NISN..." value="{{ search_query }}">
+            </div>
+            <div class="col-md-4">
+                <label for="class" class="form-label">Filter Kelas</label>
+                <select class="form-control" id="class" name="class">
+                    <option value="">Semua Kelas</option>
+                    {% for class_name in classes %}
+                        <option value="{{ class_name }}" {% if class_name == current_class %}selected{% endif %}>
+                            {{ class_name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary me-2">
+                    <i class="fas fa-search"></i> Cari
+                </button>
+                <a href="{% url 'student_list' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-times"></i> Reset
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Students List -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h6 class="m-0 font-weight-bold text-primary">Daftar Siswa</h6>
+        <span class="badge bg-info">{{ students.paginator.count }} Total Siswa</span>
+    </div>
+    <div class="card-body">
+        {% if students %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>ID Siswa</th>
+                        <th>Nama</th>
+                        <th>Kelas</th>
+                        <th>NISN</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for student in students %}
+                    <tr>
+                        <td><strong>{{ student.student_id }}</strong></td>
+                        <td>{{ student.name }}</td>
+                        <td><span class="badge bg-secondary">{{ student.class_name }}</span></td>
+                        <td>{{ student.nisn|default:"-" }}</td>
+                        <td>
+                            <a href="{% url 'student_detail' student.student_id %}" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-eye"></i> Detail
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if students.has_other_pages %}
+        <nav aria-label="Page navigation">
+            <ul class="pagination justify-content-center">
+                {% if students.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if current_class %}&class={{ current_class }}{% endif %}">
+                            <i class="fas fa-angle-double-left"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ students.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if current_class %}&class={{ current_class }}{% endif %}">
+                            <i class="fas fa-angle-left"></i>
+                        </a>
+                    </li>
+                {% endif %}
+
+                {% for num in students.paginator.page_range %}
+                    {% if students.number == num %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ num }}</span>
+                        </li>
+                    {% elif num > students.number|add:'-3' and num < students.number|add:'3' %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if current_class %}&class={{ current_class }}{% endif %}">{{ num }}</a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if students.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ students.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if current_class %}&class={{ current_class }}{% endif %}">
+                            <i class="fas fa-angle-right"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ students.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if current_class %}&class={{ current_class }}{% endif %}">
+                            <i class="fas fa-angle-double-right"></i>
+                        </a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-search fa-3x text-muted mb-3"></i>
+            <h5>Tidak ada siswa ditemukan</h5>
+            <p class="text-muted">Coba ubah kata kunci pencarian atau filter kelas</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Class Statistics -->
+<div class="row mt-4">
+    {% for class_name in classes %}
+    <div class="col-md-3 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title">{{ class_name }}</h5>
+                <p class="card-text">
+                    <span class="badge bg-primary">
+                        {{ students.paginator.object_list|length }} siswa
+                    </span>
+                </p>
+                <a href="?class={{ class_name }}" class="btn btn-sm btn-outline-primary">Lihat</a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

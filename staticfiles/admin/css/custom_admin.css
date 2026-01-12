@@ -1,0 +1,267 @@
+/* Custom CSS for SIPA YAUMI Admin with Grappelli */
+
+/* Custom branding colors */
+:root {
+    --sipa-primary: #2c5aa0;
+    --sipa-secondary: #1e3a5f;
+    --sipa-accent: #4a90e2;
+    --sipa-success: #28a745;
+    --sipa-warning: #ffc107;
+    --sipa-danger: #dc3545;
+}
+
+/* Header customization for Grappelli */
+#header {
+    background: linear-gradient(135deg, var(--sipa-primary) 0%, var(--sipa-secondary) 100%);
+    border-bottom: 3px solid var(--sipa-accent);
+}
+
+#header h1 a {
+    color: #ffffff !important;
+    font-weight: 600;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+}
+
+#site-name a {
+    color: #ffffff !important;
+    font-weight: 600;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+}
+
+/* Navigation styling */
+.module {
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: box-shadow 0.3s ease;
+    margin-bottom: 20px;
+}
+
+.module:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.module h2 {
+    background: linear-gradient(135deg, var(--sipa-primary) 0%, var(--sipa-accent) 100%);
+    color: white !important;
+    border-radius: 7px 7px 0 0;
+    padding: 12px 15px;
+    font-weight: 500;
+}
+
+.module caption {
+    background: linear-gradient(135deg, var(--sipa-primary) 0%, var(--sipa-accent) 100%);
+    color: white !important;
+    border-radius: 7px 7px 0 0;
+    padding: 12px 15px;
+    font-weight: 500;
+}
+
+/* Button styling */
+.button, input[type="submit"], .submit-row input {
+    background: linear-gradient(135deg, var(--sipa-primary) 0%, var(--sipa-accent) 100%) !important;
+    border: none !important;
+    border-radius: 5px;
+    padding: 8px 16px;
+    color: white !important;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.button:hover, input[type="submit"]:hover, .submit-row input:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    background: linear-gradient(135deg, var(--sipa-secondary) 0%, var(--sipa-primary) 100%) !important;
+}
+
+/* Success messages */
+.messagelist .success {
+    background-color: var(--sipa-success) !important;
+    border-left: 4px solid #1e7e34;
+    color: white !important;
+}
+
+/* Error messages */
+.messagelist .error {
+    background-color: var(--sipa-danger) !important;
+    border-left: 4px solid #bd2130;
+    color: white !important;
+}
+
+/* Warning messages */
+.messagelist .warning {
+    background-color: var(--sipa-warning) !important;
+    border-left: 4px solid #e0a800;
+    color: #856404 !important;
+}
+
+/* Table styling */
+#result_list {
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+#result_list thead th {
+    background: linear-gradient(135deg, var(--sipa-primary) 0%, var(--sipa-accent) 100%) !important;
+    color: white !important;
+    font-weight: 500;
+}
+
+#result_list tbody tr:nth-child(even) {
+    background-color: #f8f9fa;
+}
+
+#result_list tbody tr:hover {
+    background-color: #e3f2fd !important;
+}
+
+/* Custom logo area */
+.sipa-logo {
+    display: inline-block;
+    margin-right: 10px;
+    font-size: 24px;
+    font-weight: bold;
+    color: var(--sipa-accent);
+}
+
+/* Breadcrumbs */
+.breadcrumbs {
+    background: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+    padding: 10px 20px;
+}
+
+.breadcrumbs a {
+    color: var(--sipa-primary);
+    text-decoration: none;
+}
+
+.breadcrumbs a:hover {
+    color: var(--sipa-accent);
+    text-decoration: underline;
+}
+
+/* Form styling */
+.form-row {
+    border-bottom: 1px solid #f0f0f0;
+    padding: 15px 0;
+}
+
+.form-row:last-child {
+    border-bottom: none;
+}
+
+/* Dashboard app list */
+.app-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.app-list .module {
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    #header h1 {
+        font-size: 18px;
+    }
+    
+    .module {
+        margin-bottom: 15px;
+    }
+    
+    .app-list {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Custom attendance status colors */
+.status-hadir {
+    color: var(--sipa-success);
+    font-weight: bold;
+}
+
+.status-sakit {
+    color: var(--sipa-warning);
+    font-weight: bold;
+}
+
+.status-izin {
+    color: var(--sipa-accent);
+    font-weight: bold;
+}
+
+.status-alpa {
+    color: var(--sipa-danger);
+    font-weight: bold;
+}
+
+/* Dashboard statistics cards */
+.stats-card {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border-left: 4px solid var(--sipa-accent);
+    margin-bottom: 20px;
+}
+
+.stats-card h3 {
+    color: var(--sipa-primary);
+    margin-bottom: 10px;
+}
+
+.stats-number {
+    font-size: 2em;
+    font-weight: bold;
+    color: var(--sipa-accent);
+}
+
+/* Sidebar navigation */
+#nav-sidebar {
+    background: #f8f9fa;
+    border-right: 1px solid #dee2e6;
+}
+
+#nav-sidebar a {
+    color: var(--sipa-secondary);
+    transition: all 0.3s ease;
+}
+
+#nav-sidebar a:hover {
+    background-color: var(--sipa-accent);
+    color: white;
+}
+
+/* Content area */
+#content {
+    background: #ffffff;
+}
+
+/* Change list filters */
+#changelist-filter {
+    background: #f8f9fa;
+    border-left: 1px solid #dee2e6;
+}
+
+#changelist-filter h2 {
+    background: var(--sipa-primary);
+    color: white;
+    padding: 10px;
+    margin: 0;
+    font-size: 14px;
+}
+
+#changelist-filter h3 {
+    color: var(--sipa-secondary);
+    font-size: 13px;
+    margin: 15px 0 5px 0;
+    padding: 0 10px;
+}

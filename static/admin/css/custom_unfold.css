@@ -1,0 +1,195 @@
+/* Custom CSS for SIPA YAUMI Admin with Unfold */
+
+/* Custom branding colors for SIPA YAUMI */
+:root {
+    --sipa-primary: #2c5aa0;
+    --sipa-secondary: #1e3a5f;
+    --sipa-accent: #4a90e2;
+    --sipa-success: #28a745;
+    --sipa-warning: #ffc107;
+    --sipa-danger: #dc3545;
+}
+
+/* Header customization */
+.bg-primary-600 {
+    background-color: var(--sipa-primary) !important;
+}
+
+.bg-primary-700 {
+    background-color: var(--sipa-secondary) !important;
+}
+
+/* Custom logo styling */
+.site-logo {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: white;
+}
+
+/* Navigation styling */
+.sidebar-nav a:hover {
+    background-color: var(--sipa-accent) !important;
+    color: white !important;
+}
+
+/* Button styling */
+.btn-primary {
+    background: linear-gradient(135deg, var(--sipa-primary) 0%, var(--sipa-accent) 100%) !important;
+    border: none !important;
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    background: linear-gradient(135deg, var(--sipa-secondary) 0%, var(--sipa-primary) 100%) !important;
+}
+
+/* Card styling */
+.card {
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: box-shadow 0.3s ease;
+}
+
+.card:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+/* Table styling */
+.table thead th {
+    background: linear-gradient(135deg, var(--sipa-primary) 0%, var(--sipa-accent) 100%) !important;
+    color: white !important;
+    font-weight: 500;
+}
+
+.table tbody tr:nth-child(even) {
+    background-color: #f8f9fa;
+}
+
+.table tbody tr:hover {
+    background-color: #e3f2fd !important;
+}
+
+/* Status colors for attendance */
+.status-hadir {
+    color: var(--sipa-success);
+    font-weight: bold;
+}
+
+.status-sakit {
+    color: var(--sipa-warning);
+    font-weight: bold;
+}
+
+.status-izin {
+    color: var(--sipa-accent);
+    font-weight: bold;
+}
+
+.status-alpa {
+    color: var(--sipa-danger);
+    font-weight: bold;
+}
+
+/* Dashboard metrics */
+.metric-card {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border-left: 4px solid var(--sipa-accent);
+    margin-bottom: 20px;
+}
+
+.metric-number {
+    font-size: 2em;
+    font-weight: bold;
+    color: var(--sipa-accent);
+}
+
+/* Form styling */
+.form-control:focus {
+    border-color: var(--sipa-accent);
+    box-shadow: 0 0 0 0.2rem rgba(74, 144, 226, 0.25);
+}
+
+/* Alert styling */
+.alert-success {
+    background-color: var(--sipa-success);
+    border-color: #1e7e34;
+    color: white;
+}
+
+.alert-danger {
+    background-color: var(--sipa-danger);
+    border-color: #bd2130;
+    color: white;
+}
+
+.alert-warning {
+    background-color: var(--sipa-warning);
+    border-color: #e0a800;
+    color: #856404;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .metric-card {
+        margin-bottom: 15px;
+    }
+    
+    .metric-number {
+        font-size: 1.5em;
+    }
+}
+
+/* Dark mode adjustments */
+@media (prefers-color-scheme: dark) {
+    .metric-card {
+        background: #1f2937;
+        color: white;
+    }
+    
+    .table tbody tr:nth-child(even) {
+        background-color: #374151;
+    }
+    
+    .table tbody tr:hover {
+        background-color: #4b5563 !important;
+    }
+}
+
+/* Custom animations */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+    animation: fadeIn 0.3s ease-out;
+}
+
+/* Loading states */
+.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 2px solid var(--sipa-accent);
+    border-radius: 50%;
+    border-top-color: transparent;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
