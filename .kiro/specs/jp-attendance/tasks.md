@@ -90,7 +90,7 @@ Implementasi sistem rekap absensi per Jam Pelajaran (JP) dengan Custom Admin Pan
     - **Property 8: Past Date Acceptance**
     - **Validates: Requirements 2.3, 2.5, 2.6, 2.7**
 
-- [ ] 6. Checkpoint - Ensure attendance input works correctly
+- [x] 6. Checkpoint - Ensure attendance input works correctly
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 7. Implement Dashboard with Missing Input Warning
