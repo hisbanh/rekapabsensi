@@ -106,7 +106,7 @@
                     </div>
                     <div class="card-content">
                         <div class="quick-actions">
-                            <a href="/attendance/take/" class="quick-action primary">
+                            <a href="{% url 'take_attendance' %}" class="quick-action primary">
                                 <i class="fas fa-check-circle"></i>
                                 <span>Ambil Absensi</span>
                             </a>
@@ -114,7 +114,7 @@
                                 <i class="fas fa-user-plus"></i>
                                 <span>Tambah Siswa</span>
                             </a>
-                            <a href="/attendance/report/" class="quick-action info">
+                            <a href="{% url 'attendance_report' %}" class="quick-action info">
                                 <i class="fas fa-chart-line"></i>
                                 <span>Lihat Laporan</span>
                             </a>

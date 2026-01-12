@@ -322,7 +322,7 @@ UNFOLD = {
                     {
                         "title": "Ambil Absensi",
                         "icon": "check_circle",
-                        "link": lambda request: "/attendance/take/",
+                        "link": lambda request: "/attendance/",
                     },
                     {
                         "title": "Attendance Records",
