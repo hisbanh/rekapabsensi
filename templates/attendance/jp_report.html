@@ -1,0 +1,193 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Laporan Absensi JP{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+        <li class="breadcrumb-item active">Laporan JP</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block page_actions %}
+{% if report_data %}
+<div class="btn-group" role="group">
+    {% if report_type == 'class' %}
+    <a href="{% url 'export_pdf_class' %}?classroom={{ form.cleaned_data.classroom.id }}&start_date={{ form.cleaned_data.start_date|date:'Y-m-d' }}&end_date={{ form.cleaned_data.end_date|date:'Y-m-d' }}" 
+       class="btn btn-danger">
+        <i class="fas fa-file-pdf me-1"></i> Export PDF
+    </a>
+    <a href="{% url 'export_excel_class' %}?classroom={{ form.cleaned_data.classroom.id }}&start_date={{ form.cleaned_data.start_date|date:'Y-m-d' }}&end_date={{ form.cleaned_data.end_date|date:'Y-m-d' }}" 
+       class="btn btn-success">
+        <i class="fas fa-file-excel me-1"></i> Export Excel
+    </a>
+    <a href="{% url 'export_jp_csv' %}?classroom={{ form.cleaned_data.classroom.id }}&start_date={{ form.cleaned_data.start_date|date:'Y-m-d' }}&end_date={{ form.cleaned_data.end_date|date:'Y-m-d' }}" 
+       class="btn btn-outline-success">
+        <i class="fas fa-file-csv me-1"></i> Export CSV
+    </a>
+    {% else %}
+    <a href="{% url 'export_pdf_student' %}?student={{ form.cleaned_data.student.id }}&start_date={{ form.cleaned_data.start_date|date:'Y-m-d' }}&end_date={{ form.cleaned_data.end_date|date:'Y-m-d' }}" 
+       class="btn btn-danger">
+        <i class="fas fa-file-pdf me-1"></i> Export PDF
+    </a>
+    {% endif %}
+    <button type="button" class="btn btn-outline-primary" onclick="window.print()">
+        <i class="fas fa-print me-1"></i> Cetak
+    </button>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<!-- Filter Form -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h6 class="m-0 font-weight-bold text-primary">
+            <i class="fas fa-filter me-2"></i>Filter Laporan
+        </h6>
+    </div>
+    <div class="card-body">
+        <form method="get" id="reportForm">
+            <div class="row g-3">
+                <div class="col-md-2">
+                    <label class="form-label">Jenis Laporan</label>
+                    {{ form.report_type }}
+                </div>
+                <div class="col-md-3" id="classroomField">
+                    <label class="form-label">Kelas</label>
+                    {{ form.classroom }}
+                </div>
+                <div class="col-md-3" id="studentField" style="display: none;">
+                    <label class="form-label">Siswa</label>
+                    {{ form.student }}
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Tanggal Mulai</label>
+                    {{ form.start_date }}
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Tanggal Akhir</label>
+                    {{ form.end_date }}
+                </div>
+                <div class="col-md-12">
+                    <button type="submit" class="btn btn-primary me-2">
+                        <i class="fas fa-search me-1"></i> Tampilkan Laporan
+                    </button>
+                    <a href="{% url 'jp_report' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-times me-1"></i> Reset
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if form.errors %}
+<div class="alert alert-danger">
+    <i class="fas fa-exclamation-circle me-2"></i>
+    {% for error in form.non_field_errors %}
+        {{ error }}
+    {% endfor %}
+</div>
+{% endif %}
+
+{% if report_data %}
+    {% if report_type == 'class' %}
+        <!-- Class Report -->
+        {% include 'attendance/_class_report.html' %}
+    {% else %}
+        <!-- Student Report -->
+        {% include 'attendance/_student_report.html' %}
+    {% endif %}
+{% else %}
+    {% if request.GET %}
+    <div class="card">
+        <div class="card-body text-center py-5">
+            <i class="fas fa-chart-bar fa-3x text-muted mb-3"></i>
+            <h5>Tidak ada data ditemukan</h5>
+            <p class="text-muted">Coba ubah filter atau rentang tanggal</p>
+        </div>
+    </div>
+    {% else %}
+    <div class="card">
+        <div class="card-body text-center py-5">
+            <i class="fas fa-file-alt fa-3x text-muted mb-3"></i>
+            <h5>Pilih Filter untuk Menampilkan Laporan</h5>
+            <p class="text-muted">Pilih jenis laporan, kelas/siswa, dan rentang tanggal untuk melihat laporan absensi</p>
+        </div>
+    </div>
+    {% endif %}
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const reportType = document.getElementById('report_type');
+    const classroomField = document.getElementById('classroomField');
+    const studentField = document.getElementById('studentField');
+    const classroomSelect = document.getElementById('classroom');
+    const studentSelect = document.getElementById('student');
+    
+    function toggleFields() {
+        if (reportType.value === 'class') {
+            classroomField.style.display = 'block';
+            studentField.style.display = 'none';
+            classroomSelect.required = true;
+            studentSelect.required = false;
+        } else {
+            classroomField.style.display = 'none';
+            studentField.style.display = 'block';
+            classroomSelect.required = false;
+            studentSelect.required = true;
+        }
+    }
+    
+    // Initial toggle
+    toggleFields();
+    
+    // Listen for changes
+    reportType.addEventListener('change', toggleFields);
+});
+</script>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Print styles */
+    @media print {
+        .sidebar, .top-navbar, .card-header, form, .btn-group, .alert {
+            display: none !important;
+        }
+        .main-content {
+            margin-left: 0 !important;
+        }
+        .card {
+            border: none !important;
+            box-shadow: none !important;
+        }
+        .table {
+            font-size: 10px;
+        }
+    }
+    
+    /* Status cell colors */
+    .status-cell {
+        width: 30px;
+        height: 30px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 4px;
+        font-weight: 600;
+        font-size: 0.75rem;
+    }
+    .status-cell.H { background-color: var(--status-hadir-bg); color: var(--status-hadir); }
+    .status-cell.S { background-color: var(--status-sakit-bg); color: var(--status-sakit); }
+    .status-cell.I { background-color: var(--status-izin-bg); color: var(--status-izin); }
+    .status-cell.A { background-color: var(--status-alpa-bg); color: var(--status-alpa); }
+    .status-cell.empty { background-color: #f5f5f5; color: #999; }
+</style>
+{% endblock %}

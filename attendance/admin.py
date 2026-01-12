@@ -416,9 +416,9 @@ class AuditLogAdmin(admin.ModelAdmin):
 
 
 # Customize the default admin site
-admin.site.site_header = "SIPA YAUMI Administration"
-admin.site.site_title = "SIPA YAUMI Admin"
-admin.site.index_title = "Dashboard Administrasi SIPA YAUMI"
+admin.site.site_header = "SIPA Beta  Administration"
+admin.site.site_title = "SIPA Beta  Admin"
+admin.site.index_title = "Dashboard Administrasi SIPA Beta "
 
 # Additional customizations
 admin.site.site_url = "/"  # Link to main site

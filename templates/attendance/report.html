@@ -30,8 +30,8 @@
                 {{ form.end_date }}
             </div>
             <div class="col-md-3">
-                {{ form.class_name.label_tag }}
-                {{ form.class_name }}
+                <label class="form-label">Kelas</label>
+                {{ form.classroom }}
             </div>
             <div class="col-md-3">
                 {{ form.status.label_tag }}
@@ -80,7 +80,7 @@
                                 {{ record.student.name }}
                             </a>
                         </td>
-                        <td><span class="badge bg-secondary">{{ record.student.class_name }}</span></td>
+                        <td><span class="badge bg-secondary">{{ record.student.classroom }}</span></td>
                         <td>{{ record.student.nisn|default:"-" }}</td>
                         <td>
                             <span class="badge status-{{ record.status|lower }}">
@@ -152,13 +152,13 @@
 </div>
 
 <!-- Summary Statistics -->
-{% if records %}
+{% if records and summary %}
 <div class="row mt-4">
     <div class="col-md-3">
         <div class="card text-center border-success">
             <div class="card-body">
                 <h5 class="card-title text-success">
-                    {{ records.paginator.object_list|length }}
+                    {{ summary.present }}
                 </h5>
                 <p class="card-text">Total Hadir</p>
             </div>
@@ -167,7 +167,7 @@
     <div class="col-md-3">
         <div class="card text-center border-warning">
             <div class="card-body">
-                <h5 class="card-title text-warning">0</h5>
+                <h5 class="card-title text-warning">{{ summary.sick }}</h5>
                 <p class="card-text">Total Sakit</p>
             </div>
         </div>
@@ -175,7 +175,7 @@
     <div class="col-md-3">
         <div class="card text-center border-info">
             <div class="card-body">
-                <h5 class="card-title text-info">0</h5>
+                <h5 class="card-title text-info">{{ summary.permission }}</h5>
                 <p class="card-text">Total Izin</p>
             </div>
         </div>
@@ -183,7 +183,7 @@
     <div class="col-md-3">
         <div class="card text-center border-danger">
             <div class="card-body">
-                <h5 class="card-title text-danger">0</h5>
+                <h5 class="card-title text-danger">{{ summary.absent }}</h5>
                 <p class="card-text">Total Alpa</p>
             </div>
         </div>

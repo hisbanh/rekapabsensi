@@ -1,0 +1,100 @@
+{% comment %}
+Delete Confirmation Modal Component
+
+Usage:
+{% include 'components/_delete_modal.html' with 
+    modal_id="deleteModal"
+    delete_url_name="student_delete"
+%}
+
+This modal is designed to work with data-delete-id and data-delete-name attributes
+on trigger buttons.
+{% endcomment %}
+
+<div class="modal fade" id="{{ modal_id|default:'deleteModal' }}" tabindex="-1" aria-labelledby="{{ modal_id|default:'deleteModal' }}Label" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0 pb-0">
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center pt-0">
+                <div class="delete-icon-wrapper mb-3">
+                    <i class="fas fa-trash-alt"></i>
+                </div>
+                <h5 class="modal-title mb-2">Hapus Data?</h5>
+                <p class="text-muted mb-0">
+                    Apakah Anda yakin ingin menghapus <strong id="{{ modal_id|default:'deleteModal' }}_itemName"></strong>?
+                </p>
+                <p class="text-muted small">
+                    Tindakan ini tidak dapat dibatalkan.
+                </p>
+            </div>
+            <div class="modal-footer border-0 justify-content-center pt-0">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                    Batal
+                </button>
+                <form id="{{ modal_id|default:'deleteModal' }}_form" method="post" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash me-1"></i> Hapus
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.delete-icon-wrapper {
+    width: 80px;
+    height: 80px;
+    background-color: var(--status-alpa-bg);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+}
+
+.delete-icon-wrapper i {
+    font-size: 2rem;
+    color: var(--status-alpa);
+}
+
+#{{ modal_id|default:'deleteModal' }} .modal-content {
+    border: none;
+    border-radius: 16px;
+}
+
+#{{ modal_id|default:'deleteModal' }} .modal-footer .btn {
+    min-width: 100px;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const modalId = '{{ modal_id|default:"deleteModal" }}';
+    const modal = document.getElementById(modalId);
+    
+    if (modal) {
+        modal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            const itemId = button.getAttribute('data-delete-id');
+            const itemName = button.getAttribute('data-delete-name');
+            const deleteUrl = button.getAttribute('data-delete-url');
+            
+            // Update modal content
+            const itemNameEl = document.getElementById(`${modalId}_itemName`);
+            if (itemNameEl) {
+                itemNameEl.textContent = itemName || 'item ini';
+            }
+            
+            // Update form action
+            const form = document.getElementById(`${modalId}_form`);
+            if (form && deleteUrl) {
+                form.action = deleteUrl;
+            }
+        });
+    }
+});
+</script>

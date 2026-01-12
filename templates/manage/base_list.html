@@ -1,0 +1,231 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% comment %}
+Base List Template for Management Pages
+
+Usage:
+{% extends 'manage/base_list.html' %}
+
+Required blocks:
+- page_title: Title shown in navbar
+- breadcrumb: Breadcrumb navigation
+- list_content: Main list content (usually a data table)
+
+Optional blocks:
+- page_actions: Action buttons in navbar (e.g., Add button)
+- filters: Filter section above the list
+- extra_css: Additional CSS
+- extra_js: Additional JavaScript
+{% endcomment %}
+
+{% block extra_css %}
+<style>
+    .list-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+    
+    .list-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin: 0;
+    }
+    
+    .list-subtitle {
+        font-size: 0.875rem;
+        color: var(--text-muted);
+        margin-top: 0.25rem;
+    }
+    
+    .filter-section {
+        background: var(--bg-white);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 1rem 1.25rem;
+        margin-bottom: 1rem;
+    }
+    
+    .filter-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        align-items: flex-end;
+    }
+    
+    .filter-group {
+        flex: 1;
+        min-width: 150px;
+        max-width: 250px;
+    }
+    
+    .filter-group label {
+        font-size: 0.8rem;
+        font-weight: 500;
+        color: var(--text-secondary);
+        margin-bottom: 0.25rem;
+        display: block;
+    }
+    
+    .filter-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+    
+    .stats-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .stat-card {
+        background: var(--bg-white);
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        padding: 1rem 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+    
+    .stat-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+    }
+    
+    .stat-icon.primary {
+        background: rgba(139, 115, 85, 0.1);
+        color: var(--primary);
+    }
+    
+    .stat-icon.success {
+        background: var(--status-hadir-bg);
+        color: var(--status-hadir);
+    }
+    
+    .stat-icon.warning {
+        background: var(--status-sakit-bg);
+        color: var(--status-sakit);
+    }
+    
+    .stat-icon.danger {
+        background: var(--status-alpa-bg);
+        color: var(--status-alpa);
+    }
+    
+    .stat-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        line-height: 1;
+    }
+    
+    .stat-label {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        margin-top: 0.25rem;
+    }
+    
+    @media (max-width: 767.98px) {
+        .list-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        
+        .filter-group {
+            max-width: none;
+        }
+    }
+</style>
+{% block list_extra_css %}{% endblock %}
+{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+        {% block breadcrumb_items %}{% endblock %}
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<!-- Stats Row (Optional) -->
+{% block stats_row %}{% endblock %}
+
+<!-- Filter Section (Optional) -->
+{% block filters %}{% endblock %}
+
+<!-- List Content -->
+{% block list_content %}{% endblock %}
+
+<!-- Delete Confirmation Modal -->
+{% include 'components/_delete_modal.html' %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle delete modal
+    const deleteModal = document.getElementById('deleteModal');
+    if (deleteModal) {
+        deleteModal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            const deleteId = button.getAttribute('data-delete-id');
+            const deleteName = button.getAttribute('data-delete-name');
+            const deleteUrl = button.getAttribute('data-delete-url');
+            
+            const modalBody = deleteModal.querySelector('.modal-body');
+            const deleteForm = deleteModal.querySelector('#deleteForm');
+            
+            if (modalBody && deleteName) {
+                modalBody.innerHTML = `<p>Apakah Anda yakin ingin menghapus <strong>${deleteName}</strong>?</p><p class="text-muted mb-0">Tindakan ini tidak dapat dibatalkan.</p>`;
+            }
+            
+            if (deleteForm && deleteUrl) {
+                deleteForm.action = deleteUrl;
+            }
+        });
+    }
+    
+    // Handle bulk actions
+    const bulkForm = document.getElementById('bulkActionForm');
+    if (bulkForm) {
+        bulkForm.addEventListener('submit', function(e) {
+            const action = document.getElementById('bulkAction').value;
+            const checkboxes = document.querySelectorAll('.row-checkbox:checked');
+            
+            if (!action) {
+                e.preventDefault();
+                alert('Pilih aksi terlebih dahulu');
+                return;
+            }
+            
+            if (checkboxes.length === 0) {
+                e.preventDefault();
+                alert('Pilih minimal satu item');
+                return;
+            }
+            
+            if (action === 'delete') {
+                if (!confirm(`Apakah Anda yakin ingin menghapus ${checkboxes.length} item?`)) {
+                    e.preventDefault();
+                }
+            }
+        });
+    }
+});
+</script>
+{% block list_extra_js %}{% endblock %}
+{% endblock %}

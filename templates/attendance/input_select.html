@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+
+{% block title %}Input Absensi - SIPA Beta {% endblock %}
+
+{% block page_title %}Input Absensi{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+        <li class="breadcrumb-item active">Input Absensi</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-clipboard-check me-2"></i>
+                    Pilih Kelas dan Tanggal
+                </h5>
+            </div>
+            <div class="card-body">
+                <form id="selectForm" method="get" action="">
+                    <div class="row g-4">
+                        <!-- Classroom Selection -->
+                        <div class="col-md-6">
+                            <label for="classroom" class="form-label">
+                                <i class="fas fa-school me-1"></i> Kelas
+                            </label>
+                            <select class="form-select form-select-lg" id="classroom" name="classroom" required>
+                                <option value="">-- Pilih Kelas --</option>
+                                {% for classroom in classrooms %}
+                                <option value="{{ classroom.id }}">
+                                    {{ classroom.full_name }} ({{ classroom.student_count }} siswa)
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">Pilih kelas yang akan diinput absensinya</div>
+                        </div>
+                        
+                        <!-- Date Selection -->
+                        <div class="col-md-6">
+                            <label for="date" class="form-label">
+                                <i class="fas fa-calendar-alt me-1"></i> Tanggal
+                            </label>
+                            <input type="date" class="form-control form-control-lg" id="date" name="date" 
+                                   value="{{ today|date:'Y-m-d' }}" required>
+                            <div class="form-text">Pilih tanggal absensi (bisa tanggal lampau)</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Submit Button -->
+                    <div class="mt-4 text-center">
+                        <button type="submit" class="btn btn-primary btn-lg px-5" id="loadBtn">
+                            <i class="fas fa-arrow-right me-2"></i>
+                            Lanjutkan ke Input Absensi
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Quick Info Card -->
+        <div class="card mt-4">
+            <div class="card-body">
+                <h6 class="card-title">
+                    <i class="fas fa-info-circle me-2 text-primary"></i>
+                    Informasi
+                </h6>
+                <ul class="mb-0 text-muted">
+                    <li>Jumlah JP (Jam Pelajaran) akan menyesuaikan dengan jadwal hari yang dipilih</li>
+                    <li>Anda dapat menginput absensi untuk tanggal lampau</li>
+                    <li>Jika tanggal yang dipilih adalah hari libur, akan muncul peringatan</li>
+                    <li>Data absensi yang sudah ada akan ditampilkan untuk diedit</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('selectForm');
+    const classroomSelect = document.getElementById('classroom');
+    const dateInput = document.getElementById('date');
+    const loadBtn = document.getElementById('loadBtn');
+    
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const classroomId = classroomSelect.value;
+        const dateValue = dateInput.value;
+        
+        if (!classroomId) {
+            alert('Silakan pilih kelas terlebih dahulu');
+            classroomSelect.focus();
+            return;
+        }
+        
+        if (!dateValue) {
+            alert('Silakan pilih tanggal');
+            dateInput.focus();
+            return;
+        }
+        
+        // Redirect to input form
+        const url = `/input/${classroomId}/${dateValue}/`;
+        window.location.href = url;
+    });
+});
+</script>
+{% endblock %}

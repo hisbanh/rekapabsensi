@@ -8,6 +8,20 @@ def get_item(dictionary, key):
     return dictionary.get(key)
 
 @register.filter
+def get_attr(obj, attr):
+    """Get an attribute from an object using a string key.
+    Supports nested attributes using dot notation (e.g., 'student.name')
+    """
+    try:
+        for part in attr.split('.'):
+            obj = getattr(obj, part, None)
+            if obj is None:
+                return ''
+        return obj
+    except (AttributeError, TypeError):
+        return ''
+
+@register.filter
 def multiply(value, arg):
     """Multiply the value by the argument"""
     try:
@@ -23,4 +37,22 @@ def percentage(value, total):
             return 0
         return round((int(value) / int(total)) * 100, 1)
     except (ValueError, TypeError, ZeroDivisionError):
+        return 0
+
+@register.filter
+def make_list(value):
+    """Convert a number to a range list for iteration in templates.
+    Usage: {% for i in 6|make_list %}
+    """
+    try:
+        return range(1, int(value) + 1)
+    except (ValueError, TypeError):
+        return []
+
+@register.filter
+def subtract(value, arg):
+    """Subtract arg from value"""
+    try:
+        return int(value) - int(arg)
+    except (ValueError, TypeError):
         return 0

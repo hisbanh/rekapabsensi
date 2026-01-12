@@ -1,0 +1,736 @@
+{% comment %}
+DataTable Reusable Component
+
+Usage:
+{% include 'components/_data_table.html' with 
+    table_id="myTable"
+    columns=columns 
+    items=items 
+    searchable=True 
+    sortable=True 
+    bulk_actions=True
+    export_csv=True
+    export_excel=True
+    empty_message="No data available"
+%}
+
+Expected context variables:
+- table_id: Unique ID for the table (default: 'dataTable')
+- columns: List of column definitions [{'key': 'name', 'label': 'Name', 'sortable': True}]
+- items: QuerySet or list of items to display
+- searchable: Enable search input (default: True)
+- sortable: Enable column sorting (default: True)
+- bulk_actions: Enable bulk action checkboxes (default: False)
+- export_csv: Show CSV export button (default: False)
+- export_excel: Show Excel export button (default: False)
+- empty_message: Message when no data (default: 'Tidak ada data')
+- create_url: URL for create button (optional)
+- create_label: Label for create button (default: 'Tambah')
+{% endcomment %}
+
+{% load attendance_extras %}
+
+<div class="data-table-wrapper">
+    <!-- Table Header with Search and Actions -->
+    <div class="data-table-header">
+        <div class="data-table-search">
+            {% if searchable|default:True %}
+            <div class="input-group">
+                <span class="input-group-text bg-white border-end-0">
+                    <i class="fas fa-search text-muted"></i>
+                </span>
+                <input type="text" 
+                       class="form-control border-start-0 ps-0" 
+                       id="{{ table_id|default:'dataTable' }}_search"
+                       placeholder="Cari..."
+                       data-table-search="{{ table_id|default:'dataTable' }}">
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="data-table-actions">
+            {% if export_csv or export_excel %}
+            <div class="btn-group me-2">
+                {% if export_csv %}
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-export="csv" data-table="{{ table_id|default:'dataTable' }}">
+                    <i class="fas fa-file-csv me-1"></i> CSV
+                </button>
+                {% endif %}
+                {% if export_excel %}
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-export="excel" data-table="{{ table_id|default:'dataTable' }}">
+                    <i class="fas fa-file-excel me-1"></i> Excel
+                </button>
+                {% endif %}
+            </div>
+            {% endif %}
+            
+            {% if create_url %}
+            <a href="{{ create_url }}" class="btn btn-primary btn-sm">
+                <i class="fas fa-plus me-1"></i> {{ create_label|default:'Tambah' }}
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Bulk Actions Bar (hidden by default) -->
+    {% if bulk_actions %}
+    <div class="bulk-actions-bar" id="{{ table_id|default:'dataTable' }}_bulkActions" style="display: none;">
+        <div class="d-flex align-items-center gap-3">
+            <span class="selected-count">
+                <strong id="{{ table_id|default:'dataTable' }}_selectedCount">0</strong> item dipilih
+            </span>
+            <div class="btn-group">
+                <button type="button" class="btn btn-outline-danger btn-sm" data-bulk-action="delete">
+                    <i class="fas fa-trash me-1"></i> Hapus
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-bulk-action="activate">
+                    <i class="fas fa-check me-1"></i> Aktifkan
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-bulk-action="deactivate">
+                    <i class="fas fa-ban me-1"></i> Nonaktifkan
+                </button>
+            </div>
+            <button type="button" class="btn btn-link btn-sm text-muted" data-bulk-action="cancel">
+                Batal
+            </button>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Table -->
+    <div class="table-responsive">
+        <table class="table table-hover" id="{{ table_id|default:'dataTable' }}">
+            <thead>
+                <tr>
+                    {% if bulk_actions %}
+                    <th class="checkbox-column" style="width: 40px;">
+                        <input type="checkbox" class="form-check-input" id="{{ table_id|default:'dataTable' }}_selectAll">
+                    </th>
+                    {% endif %}
+                    
+                    {% for col in columns %}
+                    <th {% if col.width %}style="width: {{ col.width }};"{% endif %}
+                        {% if sortable|default:True and col.sortable|default:True %}
+                        class="sortable" 
+                        data-sort-key="{{ col.key }}"
+                        data-sort-dir="none"
+                        {% endif %}>
+                        {{ col.label }}
+                        {% if sortable|default:True and col.sortable|default:True %}
+                        <span class="sort-icon">
+                            <i class="fas fa-sort text-muted"></i>
+                        </span>
+                        {% endif %}
+                    </th>
+                    {% endfor %}
+                    
+                    {% if show_actions|default:True %}
+                    <th style="width: 100px;" class="text-center">Aksi</th>
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                <tr data-id="{{ item.id|default:item.pk }}">
+                    {% if bulk_actions %}
+                    <td class="checkbox-column">
+                        <input type="checkbox" class="form-check-input row-checkbox" value="{{ item.id|default:item.pk }}">
+                    </td>
+                    {% endif %}
+                    
+                    {% block table_row %}
+                    <!-- Override this block in extending templates -->
+                    {% for col in columns %}
+                    <td data-label="{{ col.label }}">
+                        {% if col.key == 'status' %}
+                            {% if item.is_active %}
+                            <span class="status-badge status-hadir">Aktif</span>
+                            {% else %}
+                            <span class="status-badge status-alpa">Nonaktif</span>
+                            {% endif %}
+                        {% else %}
+                            {{ item|get_attr:col.key }}
+                        {% endif %}
+                    </td>
+                    {% endfor %}
+                    {% endblock %}
+                    
+                    {% if show_actions|default:True %}
+                    <td class="text-center">
+                        {% block row_actions %}
+                        <div class="btn-group btn-group-sm">
+                            {% if edit_url_name %}
+                            <a href="{% url edit_url_name item.pk %}" class="btn btn-outline-primary" title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            {% endif %}
+                            {% if delete_url_name %}
+                            <button type="button" class="btn btn-outline-danger" title="Hapus" 
+                                    data-bs-toggle="modal" 
+                                    data-bs-target="#deleteModal"
+                                    data-delete-id="{{ item.pk }}"
+                                    data-delete-name="{{ item }}">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                            {% endif %}
+                        </div>
+                        {% endblock %}
+                    </td>
+                    {% endif %}
+                </tr>
+                {% empty %}
+                <tr class="empty-row">
+                    <td colspan="100" class="text-center py-4 text-muted">
+                        <i class="fas fa-inbox fa-2x mb-2 d-block"></i>
+                        {{ empty_message|default:'Tidak ada data' }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Pagination -->
+    {% if items.paginator %}
+    {% include 'components/_pagination.html' with page_obj=items %}
+    {% endif %}
+</div>
+
+<style>
+.data-table-wrapper {
+    background: var(--bg-white);
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+}
+
+.data-table-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--border-color);
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.data-table-search {
+    flex: 1;
+    max-width: 300px;
+}
+
+.data-table-search .input-group {
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.data-table-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.bulk-actions-bar {
+    background-color: var(--bg-light);
+    padding: 0.75rem 1.25rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.checkbox-column {
+    text-align: center;
+}
+
+th.sortable {
+    cursor: pointer;
+    user-select: none;
+}
+
+th.sortable:hover {
+    background-color: var(--bg-light);
+}
+
+.sort-icon {
+    margin-left: 0.25rem;
+}
+
+th.sortable[data-sort-dir="asc"] .sort-icon i::before {
+    content: "\f0de";
+}
+
+th.sortable[data-sort-dir="desc"] .sort-icon i::before {
+    content: "\f0dd";
+}
+
+/* Mobile Card Layout */
+@media (max-width: 767.98px) {
+    .data-table-wrapper .table thead {
+        display: none;
+    }
+    
+    .data-table-wrapper .table tbody tr {
+        display: block;
+        margin-bottom: 1rem;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 0.5rem;
+    }
+    
+    .data-table-wrapper .table tbody td {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem 0.75rem;
+        border-bottom: 1px solid var(--border-light);
+    }
+    
+    .data-table-wrapper .table tbody td:last-child {
+        border-bottom: none;
+    }
+    
+    .data-table-wrapper .table tbody td::before {
+        content: attr(data-label);
+        font-weight: 600;
+        color: var(--text-secondary);
+        font-size: 0.85rem;
+    }
+    
+    .data-table-wrapper .table tbody td.checkbox-column::before {
+        content: none;
+    }
+    
+    .empty-row td {
+        display: block !important;
+    }
+    
+    .empty-row td::before {
+        content: none !important;
+    }
+}
+
+/* Inline Edit Styles */
+.editable {
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    display: inline-block;
+    min-width: 50px;
+    position: relative;
+}
+
+.editable:hover {
+    background-color: var(--bg-light, #f8f6f4);
+    box-shadow: 0 0 0 2px var(--primary-light, #a89078);
+}
+
+.editable::after {
+    content: '\f303'; /* Font Awesome pencil icon */
+    font-family: 'Font Awesome 6 Free', 'Font Awesome 5 Free';
+    font-weight: 900;
+    font-size: 0.7em;
+    margin-left: 4px;
+    opacity: 0;
+    transition: opacity 0.2s;
+    color: var(--primary, #8b7355);
+}
+
+.editable:hover::after {
+    opacity: 0.6;
+}
+
+.editable.editing {
+    background-color: var(--bg-white, #ffffff);
+    box-shadow: 0 0 0 2px var(--primary, #8b7355);
+    padding: 0;
+}
+
+.editable.editing::after {
+    display: none;
+}
+
+.editable.saving {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.editable.edit-success {
+    animation: editSuccessPulse 0.5s ease;
+}
+
+@keyframes editSuccessPulse {
+    0% { background-color: var(--status-hadir, #4caf50); color: white; }
+    100% { background-color: transparent; color: inherit; }
+}
+
+.inline-edit-input {
+    border: 1px solid var(--primary, #8b7355);
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: inherit;
+    font-family: inherit;
+    width: 100%;
+    min-width: 100px;
+    max-width: 250px;
+    outline: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.inline-edit-input:focus {
+    border-color: var(--primary-dark, #6b5344);
+    box-shadow: 0 0 0 3px rgba(139, 115, 85, 0.2);
+}
+
+textarea.inline-edit-input {
+    resize: vertical;
+    min-height: 60px;
+}
+
+select.inline-edit-input {
+    cursor: pointer;
+}
+
+.inline-edit-error {
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    background-color: var(--status-alpa, #f44336);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    z-index: 1000;
+    animation: fadeInUp 0.2s ease;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.inline-edit-error::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 10px;
+    border: 5px solid transparent;
+    border-top-color: var(--status-alpa, #f44336);
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const tableId = '{{ table_id|default:"dataTable" }}';
+    const table = document.getElementById(tableId);
+    if (!table) return;
+    
+    // Search functionality
+    const searchInput = document.querySelector(`[data-table-search="${tableId}"]`);
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            const rows = table.querySelectorAll('tbody tr:not(.empty-row)');
+            
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(searchTerm) ? '' : 'none';
+            });
+        });
+    }
+    
+    // Sort functionality
+    const sortableHeaders = table.querySelectorAll('th.sortable');
+    sortableHeaders.forEach(header => {
+        header.addEventListener('click', function() {
+            const key = this.dataset.sortKey;
+            const currentDir = this.dataset.sortDir;
+            const newDir = currentDir === 'asc' ? 'desc' : 'asc';
+            
+            // Reset all headers
+            sortableHeaders.forEach(h => {
+                h.dataset.sortDir = 'none';
+                h.querySelector('.sort-icon i').className = 'fas fa-sort text-muted';
+            });
+            
+            // Set current header
+            this.dataset.sortDir = newDir;
+            this.querySelector('.sort-icon i').className = `fas fa-sort-${newDir === 'asc' ? 'up' : 'down'} text-primary`;
+            
+            // Sort rows
+            const tbody = table.querySelector('tbody');
+            const rows = Array.from(tbody.querySelectorAll('tr:not(.empty-row)'));
+            const colIndex = Array.from(this.parentNode.children).indexOf(this);
+            
+            rows.sort((a, b) => {
+                const aVal = a.children[colIndex]?.textContent.trim() || '';
+                const bVal = b.children[colIndex]?.textContent.trim() || '';
+                
+                const comparison = aVal.localeCompare(bVal, 'id', { numeric: true });
+                return newDir === 'asc' ? comparison : -comparison;
+            });
+            
+            rows.forEach(row => tbody.appendChild(row));
+        });
+    });
+    
+    // Bulk selection
+    const selectAll = document.getElementById(`${tableId}_selectAll`);
+    const bulkActionsBar = document.getElementById(`${tableId}_bulkActions`);
+    const selectedCountEl = document.getElementById(`${tableId}_selectedCount`);
+    
+    if (selectAll) {
+        selectAll.addEventListener('change', function() {
+            const checkboxes = table.querySelectorAll('.row-checkbox');
+            checkboxes.forEach(cb => cb.checked = this.checked);
+            updateBulkActions();
+        });
+        
+        table.addEventListener('change', function(e) {
+            if (e.target.classList.contains('row-checkbox')) {
+                updateBulkActions();
+            }
+        });
+    }
+    
+    function updateBulkActions() {
+        const checkboxes = table.querySelectorAll('.row-checkbox:checked');
+        const count = checkboxes.length;
+        
+        if (bulkActionsBar) {
+            bulkActionsBar.style.display = count > 0 ? 'block' : 'none';
+        }
+        if (selectedCountEl) {
+            selectedCountEl.textContent = count;
+        }
+        if (selectAll) {
+            const total = table.querySelectorAll('.row-checkbox').length;
+            selectAll.checked = count === total && total > 0;
+            selectAll.indeterminate = count > 0 && count < total;
+        }
+    }
+    
+    // Cancel bulk selection
+    const cancelBtn = document.querySelector('[data-bulk-action="cancel"]');
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', function() {
+            const checkboxes = table.querySelectorAll('.row-checkbox');
+            checkboxes.forEach(cb => cb.checked = false);
+            if (selectAll) selectAll.checked = false;
+            updateBulkActions();
+        });
+    }
+});
+
+/**
+ * Generic Inline Edit Handler for DataTable
+ * 
+ * Usage:
+ * 1. Add class "editable" to elements that should be editable
+ * 2. Add data attributes:
+ *    - data-field: The field name to edit
+ *    - data-id: The object ID
+ *    - data-model: The model type (student, classroom, holiday, user)
+ * 3. Call initInlineEdit(tableSelector, apiUrl, csrfToken) to initialize
+ * 
+ * Example:
+ * <span class="editable" data-field="name" data-id="{{ obj.pk }}" data-model="student">
+ *     {{ obj.name }}
+ * </span>
+ * 
+ * Features:
+ * - Double-click to edit
+ * - Enter to save
+ * - Escape to cancel
+ * - Click outside to save
+ * - Visual feedback during editing
+ * 
+ * Requirements: 7.7
+ */
+function initInlineEdit(tableSelector, apiUrl, csrfToken) {
+    const table = document.querySelector(tableSelector);
+    if (!table) return;
+    
+    const editables = table.querySelectorAll('.editable');
+    
+    editables.forEach(el => {
+        // Double-click to start editing
+        el.addEventListener('dblclick', function(e) {
+            e.preventDefault();
+            startEditing(this, apiUrl, csrfToken);
+        });
+        
+        // Add visual hint for editable cells
+        el.setAttribute('title', 'Klik dua kali untuk edit');
+    });
+}
+
+/**
+ * Start inline editing for an element
+ */
+function startEditing(element, apiUrl, csrfToken) {
+    // Prevent multiple edits
+    if (element.classList.contains('editing')) return;
+    
+    const field = element.dataset.field;
+    const id = element.dataset.id;
+    const modelType = element.dataset.model || 'student'; // Default to student for backward compatibility
+    const currentValue = element.textContent.trim();
+    const inputType = element.dataset.inputType || 'text';
+    
+    // Mark as editing
+    element.classList.add('editing');
+    
+    // Create input element
+    let input;
+    if (inputType === 'textarea') {
+        input = document.createElement('textarea');
+        input.rows = 2;
+    } else if (inputType === 'select') {
+        input = document.createElement('select');
+        const options = element.dataset.options ? JSON.parse(element.dataset.options) : [];
+        options.forEach(opt => {
+            const option = document.createElement('option');
+            option.value = opt.value;
+            option.textContent = opt.label;
+            if (opt.value === currentValue) option.selected = true;
+            input.appendChild(option);
+        });
+    } else {
+        input = document.createElement('input');
+        input.type = inputType;
+    }
+    
+    input.value = currentValue;
+    input.className = 'inline-edit-input';
+    
+    // Replace content with input
+    element.textContent = '';
+    element.appendChild(input);
+    input.focus();
+    input.select();
+    
+    // Save function
+    const saveEdit = async () => {
+        const newValue = input.value.trim();
+        
+        // If value hasn't changed, just cancel
+        if (newValue === currentValue) {
+            cancelEdit(element, currentValue);
+            return;
+        }
+        
+        // Don't allow empty values for required fields
+        if (newValue === '' && !element.dataset.allowEmpty) {
+            showEditError(element, 'Nilai tidak boleh kosong');
+            cancelEdit(element, currentValue);
+            return;
+        }
+        
+        // Show loading state
+        element.classList.add('saving');
+        input.disabled = true;
+        
+        try {
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({
+                    model_type: modelType,
+                    id: id,
+                    field: field,
+                    value: newValue
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                // Update the element with new value
+                element.textContent = data.display_value || data.value;
+                element.classList.remove('editing', 'saving');
+                
+                // Show success feedback
+                showEditSuccess(element);
+                
+                // Trigger custom event for any listeners
+                element.dispatchEvent(new CustomEvent('inlineEditSaved', {
+                    detail: { field, value: data.value, displayValue: data.display_value }
+                }));
+            } else {
+                showEditError(element, data.error || 'Gagal menyimpan');
+                cancelEdit(element, currentValue);
+            }
+        } catch (error) {
+            console.error('Inline edit error:', error);
+            showEditError(element, 'Terjadi kesalahan jaringan');
+            cancelEdit(element, currentValue);
+        }
+    };
+    
+    // Cancel function
+    const cancelEdit = (el, originalValue) => {
+        el.textContent = originalValue;
+        el.classList.remove('editing', 'saving');
+    };
+    
+    // Event listeners
+    input.addEventListener('blur', function(e) {
+        // Small delay to allow click events to fire first
+        setTimeout(() => {
+            if (element.classList.contains('editing')) {
+                saveEdit();
+            }
+        }, 100);
+    });
+    
+    input.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && inputType !== 'textarea') {
+            e.preventDefault();
+            saveEdit();
+        } else if (e.key === 'Enter' && e.ctrlKey && inputType === 'textarea') {
+            e.preventDefault();
+            saveEdit();
+        } else if (e.key === 'Escape') {
+            e.preventDefault();
+            cancelEdit(element, currentValue);
+        }
+    });
+}
+
+/**
+ * Show success feedback after edit
+ */
+function showEditSuccess(element) {
+    element.classList.add('edit-success');
+    setTimeout(() => {
+        element.classList.remove('edit-success');
+    }, 1500);
+}
+
+/**
+ * Show error feedback
+ */
+function showEditError(element, message) {
+    // Create error tooltip
+    const tooltip = document.createElement('div');
+    tooltip.className = 'inline-edit-error';
+    tooltip.textContent = message;
+    
+    element.style.position = 'relative';
+    element.appendChild(tooltip);
+    
+    setTimeout(() => {
+        tooltip.remove();
+    }, 3000);
+}
+</script>

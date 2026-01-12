@@ -5,7 +5,7 @@ Following enterprise architecture patterns with proper validation and business l
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
-from django.core.validators import RegexValidator, MinLengthValidator
+from django.core.validators import RegexValidator, MinLengthValidator, MinValueValidator, MaxValueValidator
 from django.core.exceptions import ValidationError
 import uuid
 
@@ -19,7 +19,7 @@ class AttendanceStatus(models.TextChoices):
 
 
 class BaseModel(models.Model):
-    """Abstract base model with common fields"""
+    """Abstract base model with common fields and auto-populated audit fields"""
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -40,6 +40,27 @@ class BaseModel(models.Model):
     
     class Meta:
         abstract = True
+    
+    def save(self, *args, **kwargs):
+        """
+        Override save to auto-populate created_by and updated_by fields.
+        Uses thread-local storage to get the current user from middleware.
+        """
+        # Import here to avoid circular import
+        from attendance.middleware import get_current_user
+        
+        current_user = get_current_user()
+        
+        # Set created_by only on creation (when pk doesn't exist yet or _state.adding is True)
+        if self._state.adding and current_user:
+            if not self.created_by_id:
+                self.created_by = current_user
+        
+        # Always update updated_by if we have a current user
+        if current_user:
+            self.updated_by = current_user
+        
+        super().save(*args, **kwargs)
 
 
 class AcademicLevel(models.Model):
@@ -444,6 +465,234 @@ class AttendanceSummary(models.Model):
         self.calculate_percentage()
         self.full_clean()
         super().save(*args, **kwargs)
+
+
+class DaySchedule(models.Model):
+    """Configuration for JP (Jam Pelajaran) count per day of week"""
+    
+    DAY_CHOICES = [
+        (0, 'Senin'),
+        (1, 'Selasa'),
+        (2, 'Rabu'),
+        (3, 'Kamis'),
+        (4, 'Jumat'),
+        (5, 'Sabtu'),
+        (6, 'Minggu'),
+    ]
+    
+    day_of_week = models.IntegerField(
+        choices=DAY_CHOICES, 
+        unique=True, 
+        primary_key=True,
+        help_text='Day of week (0=Senin, 6=Minggu)'
+    )
+    day_name = models.CharField(
+        max_length=10,
+        help_text='Display name for the day'
+    )
+    default_jp_count = models.PositiveIntegerField(
+        validators=[
+            MinValueValidator(1, message='JP count must be at least 1'),
+            MaxValueValidator(10, message='JP count cannot exceed 10')
+        ],
+        help_text='Number of JP (Jam Pelajaran) for this day (1-10)'
+    )
+    is_school_day = models.BooleanField(
+        default=True,
+        help_text='Whether this is a school day'
+    )
+    updated_at = models.DateTimeField(auto_now=True)
+    updated_by = models.ForeignKey(
+        User, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True,
+        related_name='dayschedule_updated'
+    )
+    
+    class Meta:
+        ordering = ['day_of_week']
+        verbose_name = 'Day Schedule'
+        verbose_name_plural = 'Day Schedules'
+    
+    def __str__(self):
+        return f"{self.day_name} - {self.default_jp_count} JP"
+    
+    def clean(self):
+        """Custom validation"""
+        super().clean()
+        # Validate jp_count range
+        if self.default_jp_count is not None:
+            if self.default_jp_count < 1 or self.default_jp_count > 10:
+                raise ValidationError({
+                    'default_jp_count': 'JP count must be between 1 and 10'
+                })
+    
+    def save(self, *args, **kwargs):
+        """Override save to ensure validation"""
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+
+class DailyAttendance(BaseModel):
+    """Daily attendance record with JP statuses stored as JSON"""
+    
+    student = models.ForeignKey(
+        Student, 
+        on_delete=models.CASCADE,
+        related_name='daily_attendances',
+        help_text='Student for this attendance record'
+    )
+    date = models.DateField(
+        help_text='Date of attendance'
+    )
+    jp_statuses = models.JSONField(
+        default=dict,
+        help_text='JP statuses as JSON: {"1": "H", "2": "H", "3": "S", ...}'
+    )
+    notes = models.TextField(
+        blank=True,
+        help_text='Additional notes about the attendance'
+    )
+    recorded_by = models.ForeignKey(
+        User, 
+        on_delete=models.SET_NULL, 
+        null=True,
+        related_name='recorded_attendances',
+        help_text='User who recorded this attendance'
+    )
+    recorded_at = models.DateTimeField(
+        auto_now_add=True,
+        help_text='Timestamp when attendance was recorded'
+    )
+    
+    class Meta:
+        unique_together = ['student', 'date']
+        ordering = ['-date', 'student__name']
+        indexes = [
+            models.Index(fields=['date']),
+            models.Index(fields=['student', 'date']),
+        ]
+        verbose_name = 'Daily Attendance'
+        verbose_name_plural = 'Daily Attendances'
+    
+    def __str__(self):
+        return f"{self.student.name} - {self.date}"
+    
+    def clean(self):
+        """Custom validation logic"""
+        super().clean()
+        
+        # Validate jp_statuses contains only valid status values
+        valid_statuses = {'H', 'S', 'I', 'A'}
+        if self.jp_statuses:
+            for jp_num, status in self.jp_statuses.items():
+                if status not in valid_statuses:
+                    raise ValidationError({
+                        'jp_statuses': f'Invalid status "{status}" for JP {jp_num}. Valid values: H, S, I, A'
+                    })
+    
+    def save(self, *args, **kwargs):
+        """Override save to ensure validation"""
+        self.full_clean()
+        super().save(*args, **kwargs)
+    
+    @property
+    def total_hadir(self):
+        """Count total Hadir (H) status"""
+        return sum(1 for status in self.jp_statuses.values() if status == 'H')
+    
+    @property
+    def total_sakit(self):
+        """Count total Sakit (S) status"""
+        return sum(1 for status in self.jp_statuses.values() if status == 'S')
+    
+    @property
+    def total_izin(self):
+        """Count total Izin (I) status"""
+        return sum(1 for status in self.jp_statuses.values() if status == 'I')
+    
+    @property
+    def total_alpa(self):
+        """Count total Alpa (A) status"""
+        return sum(1 for status in self.jp_statuses.values() if status == 'A')
+    
+    @property
+    def total_jp(self):
+        """Get total number of JP slots"""
+        return len(self.jp_statuses)
+
+
+class Holiday(BaseModel):
+    """Holiday/non-school day configuration"""
+    
+    HOLIDAY_TYPES = [
+        ('UAS', 'Ujian Akhir Semester'),
+        ('UN', 'Ujian Nasional'),
+        ('PESANTREN', 'Libur Pesantren'),
+        ('LAINNYA', 'Lainnya'),
+    ]
+    
+    date = models.DateField(
+        help_text='Date of the holiday'
+    )
+    name = models.CharField(
+        max_length=100,
+        help_text='Name of the holiday'
+    )
+    holiday_type = models.CharField(
+        max_length=20, 
+        choices=HOLIDAY_TYPES,
+        help_text='Type of holiday'
+    )
+    apply_to_all = models.BooleanField(
+        default=True,
+        help_text='If True, applies to all classrooms'
+    )
+    classrooms = models.ManyToManyField(
+        Classroom, 
+        blank=True,
+        related_name='holidays',
+        help_text='Specific classrooms this holiday applies to (if apply_to_all is False)'
+    )
+    description = models.TextField(
+        blank=True,
+        help_text='Additional description about the holiday'
+    )
+    
+    class Meta:
+        ordering = ['-date']
+        indexes = [
+            models.Index(fields=['date']),
+            models.Index(fields=['apply_to_all']),
+        ]
+        verbose_name = 'Holiday'
+        verbose_name_plural = 'Holidays'
+    
+    def __str__(self):
+        return f"{self.name} - {self.date}"
+    
+    def clean(self):
+        """Custom validation logic"""
+        super().clean()
+        
+        # Validate holiday_type is valid
+        valid_types = [choice[0] for choice in self.HOLIDAY_TYPES]
+        if self.holiday_type and self.holiday_type not in valid_types:
+            raise ValidationError({
+                'holiday_type': f'Invalid holiday type. Valid types: {", ".join(valid_types)}'
+            })
+    
+    def save(self, *args, **kwargs):
+        """Override save to ensure validation"""
+        self.full_clean()
+        super().save(*args, **kwargs)
+    
+    def applies_to_classroom(self, classroom):
+        """Check if this holiday applies to a specific classroom"""
+        if self.apply_to_all:
+            return True
+        return self.classrooms.filter(pk=classroom.pk).exists()
 
 
 class AuditLog(models.Model):

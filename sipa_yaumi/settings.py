@@ -24,6 +24,8 @@ ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1,testserver'
 # Application definition
 DJANGO_APPS = [
     'unfold',  # Must be before django.contrib.admin
+    'unfold.contrib.filters',  # Optional: Unfold filters
+    'unfold.contrib.forms',  # Optional: Unfold forms
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -49,6 +51,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'attendance.middleware.CurrentUserMiddleware',  # Must be after AuthenticationMiddleware
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'attendance.middleware.AuditMiddleware',  # Custom audit middleware
@@ -216,7 +219,7 @@ os.makedirs(BASE_DIR / 'logs', exist_ok=True)
 # Application-specific settings
 SIPA_YAUMI = {
     'SCHOOL_NAME': 'PESANTREN YAUMI YOGYAKARTA',
-    'APP_NAME': 'SIPA YAUMI',
+    'APP_NAME': 'SIPA Beta ',
     'APP_SUBTITLE': 'Sistem Informasi Presensi Pesantren Yaumi',
     'APP_INITIALS': 'SY',
     'VERSION': '2.0.0',
@@ -251,8 +254,8 @@ if not DEBUG:
 
 # Unfold settings - Fixed configuration
 UNFOLD = {
-    "SITE_TITLE": "SIPA YAUMI",
-    "SITE_HEADER": "SIPA YAUMI Administration", 
+    "SITE_TITLE": "SIPA Beta ",
+    "SITE_HEADER": "SIPA Beta  Administration", 
     "SITE_URL": "/admin/",
     "SITE_SYMBOL": "📚",
     "SHOW_HISTORY": True,

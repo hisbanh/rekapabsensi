@@ -1,0 +1,274 @@
+{% extends 'manage/base_form.html' %}
+{% load static %}
+
+{% block page_title %}Pengaturan Jadwal JP{% endblock %}
+
+{% block breadcrumb_items %}
+<li class="breadcrumb-item active">Jadwal JP</li>
+{% endblock %}
+
+{% block form_title %}Pengaturan Jadwal JP{% endblock %}
+
+{% block form_subtitle %}
+Atur jumlah Jam Pelajaran (JP) untuk setiap hari dalam seminggu
+{% endblock %}
+
+{% block cancel_url %}{% url 'dashboard' %}{% endblock %}
+
+{% block submit_text %}Simpan Perubahan{% endblock %}
+
+{% block form_content %}
+<div class="form-section">
+    <h6 class="form-section-title">
+        <i class="fas fa-clock me-2"></i>Jadwal Mingguan
+    </h6>
+    
+    <div class="schedule-grid">
+        {% for schedule in schedules %}
+        <div class="schedule-card {% if not schedule.is_school_day %}inactive{% endif %}">
+            <div class="schedule-header">
+                <div class="day-name">{{ schedule.day_name }}</div>
+                <div class="form-check form-switch">
+                    <input type="checkbox" 
+                           class="form-check-input" 
+                           id="is_school_day_{{ schedule.day_of_week }}"
+                           name="is_school_day_{{ schedule.day_of_week }}"
+                           {% if schedule.is_school_day %}checked{% endif %}>
+                    <label class="form-check-label small" for="is_school_day_{{ schedule.day_of_week }}">
+                        Hari Sekolah
+                    </label>
+                </div>
+            </div>
+            <div class="schedule-body">
+                <label for="jp_count_{{ schedule.day_of_week }}" class="form-label">
+                    Jumlah JP
+                </label>
+                <div class="jp-input-wrapper">
+                    <button type="button" class="btn btn-outline-secondary btn-sm jp-btn-minus" 
+                            data-target="jp_count_{{ schedule.day_of_week }}">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                    <input type="number" 
+                           class="form-control jp-input" 
+                           id="jp_count_{{ schedule.day_of_week }}"
+                           name="jp_count_{{ schedule.day_of_week }}"
+                           value="{{ schedule.default_jp_count }}"
+                           min="1" 
+                           max="10"
+                           {% if not schedule.is_school_day %}disabled{% endif %}>
+                    <button type="button" class="btn btn-outline-secondary btn-sm jp-btn-plus" 
+                            data-target="jp_count_{{ schedule.day_of_week }}">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </div>
+                <div class="jp-preview">
+                    {% for i in "1234567890"|make_list %}
+                    {% if forloop.counter <= schedule.default_jp_count %}
+                    <span class="jp-dot active" data-jp="{{ forloop.counter }}"></span>
+                    {% elif forloop.counter <= 10 %}
+                    <span class="jp-dot" data-jp="{{ forloop.counter }}"></span>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="form-section">
+    <div class="alert alert-info mb-0">
+        <i class="fas fa-info-circle me-2"></i>
+        <strong>Catatan:</strong>
+        <ul class="mb-0 mt-2">
+            <li>Jumlah JP menentukan berapa kolom status yang ditampilkan di form input absensi</li>
+            <li>Hari yang bukan hari sekolah tidak akan dihitung dalam perhitungan absensi yang hilang</li>
+            <li>Perubahan akan berlaku untuk input absensi selanjutnya</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}
+
+{% block form_extra_css %}
+<style>
+    .schedule-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 1rem;
+    }
+    
+    .schedule-card {
+        background: var(--bg-white);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        overflow: hidden;
+        transition: all 0.2s;
+    }
+    
+    .schedule-card:hover {
+        box-shadow: var(--shadow-md);
+    }
+    
+    .schedule-card.inactive {
+        opacity: 0.6;
+        background: var(--bg-light);
+    }
+    
+    .schedule-header {
+        background: var(--primary);
+        color: white;
+        padding: 0.75rem 1rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .schedule-card.inactive .schedule-header {
+        background: var(--text-muted);
+    }
+    
+    .day-name {
+        font-weight: 600;
+        font-size: 1rem;
+    }
+    
+    .schedule-header .form-check-input {
+        background-color: rgba(255,255,255,0.3);
+        border-color: rgba(255,255,255,0.5);
+    }
+    
+    .schedule-header .form-check-input:checked {
+        background-color: var(--status-hadir);
+        border-color: var(--status-hadir);
+    }
+    
+    .schedule-header .form-check-label {
+        color: rgba(255,255,255,0.9);
+    }
+    
+    .schedule-body {
+        padding: 1rem;
+    }
+    
+    .jp-input-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 0.75rem;
+    }
+    
+    .jp-input {
+        width: 60px;
+        text-align: center;
+        font-weight: 600;
+        font-size: 1.1rem;
+    }
+    
+    .jp-input::-webkit-inner-spin-button,
+    .jp-input::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+    
+    .jp-preview {
+        display: flex;
+        gap: 4px;
+        flex-wrap: wrap;
+    }
+    
+    .jp-dot {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: var(--border-color);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.6rem;
+        color: var(--text-muted);
+        transition: all 0.2s;
+    }
+    
+    .jp-dot.active {
+        background: var(--primary);
+        color: white;
+    }
+    
+    .jp-dot::after {
+        content: attr(data-jp);
+    }
+    
+    @media (max-width: 575.98px) {
+        .schedule-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block form_extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Plus/Minus buttons
+    document.querySelectorAll('.jp-btn-minus, .jp-btn-plus').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const targetId = this.dataset.target;
+            const input = document.getElementById(targetId);
+            if (!input || input.disabled) return;
+            
+            let value = parseInt(input.value) || 1;
+            
+            if (this.classList.contains('jp-btn-minus')) {
+                value = Math.max(1, value - 1);
+            } else {
+                value = Math.min(10, value + 1);
+            }
+            
+            input.value = value;
+            updateJpPreview(input);
+        });
+    });
+    
+    // Input change
+    document.querySelectorAll('.jp-input').forEach(input => {
+        input.addEventListener('change', function() {
+            let value = parseInt(this.value) || 1;
+            value = Math.max(1, Math.min(10, value));
+            this.value = value;
+            updateJpPreview(this);
+        });
+    });
+    
+    // School day toggle
+    document.querySelectorAll('[id^="is_school_day_"]').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const dayOfWeek = this.id.replace('is_school_day_', '');
+            const jpInput = document.getElementById('jp_count_' + dayOfWeek);
+            const card = this.closest('.schedule-card');
+            
+            if (this.checked) {
+                jpInput.disabled = false;
+                card.classList.remove('inactive');
+            } else {
+                jpInput.disabled = true;
+                card.classList.add('inactive');
+            }
+        });
+    });
+    
+    function updateJpPreview(input) {
+        const card = input.closest('.schedule-card');
+        const dots = card.querySelectorAll('.jp-dot');
+        const value = parseInt(input.value) || 1;
+        
+        dots.forEach((dot, index) => {
+            if (index < value) {
+                dot.classList.add('active');
+            } else {
+                dot.classList.remove('active');
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

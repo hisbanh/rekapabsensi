@@ -1,0 +1,182 @@
+<!-- Class Report Partial Template -->
+{% load attendance_extras %}
+
+<!-- Report Header -->
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h6 class="m-0 font-weight-bold text-primary">
+            <i class="fas fa-users me-2"></i>Laporan Absensi Kelas: {{ report_data.classroom }}
+        </h6>
+        <span class="badge bg-info">
+            {{ report_data.period.start_date|date:"d M Y" }} - {{ report_data.period.end_date|date:"d M Y" }}
+        </span>
+    </div>
+</div>
+
+<!-- Summary Statistics -->
+<div class="row mb-4">
+    <div class="col-md-2">
+        <div class="card text-center border-secondary">
+            <div class="card-body py-3">
+                <h4 class="mb-1">{{ report_data.class_summary.total_students }}</h4>
+                <small class="text-muted">Total Siswa</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card text-center border-success">
+            <div class="card-body py-3">
+                <h4 class="mb-1 text-success">{{ report_data.class_summary.total_hadir }}</h4>
+                <small class="text-muted">Total Hadir</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card text-center border-warning">
+            <div class="card-body py-3">
+                <h4 class="mb-1 text-warning">{{ report_data.class_summary.total_sakit }}</h4>
+                <small class="text-muted">Total Sakit</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card text-center border-info">
+            <div class="card-body py-3">
+                <h4 class="mb-1 text-info">{{ report_data.class_summary.total_izin }}</h4>
+                <small class="text-muted">Total Izin</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card text-center border-danger">
+            <div class="card-body py-3">
+                <h4 class="mb-1 text-danger">{{ report_data.class_summary.total_alpa }}</h4>
+                <small class="text-muted">Total Alpa</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card text-center border-primary">
+            <div class="card-body py-3">
+                <h4 class="mb-1 text-primary">{{ report_data.class_summary.attendance_percentage }}%</h4>
+                <small class="text-muted">Rata-rata Kehadiran</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Attendance Table -->
+<div class="card">
+    <div class="card-header">
+        <h6 class="m-0 font-weight-bold text-primary">
+            <i class="fas fa-table me-2"></i>Detail Absensi Per Siswa
+        </h6>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="text-center" style="width: 50px;">No</th>
+                        <th style="min-width: 80px;">NIS</th>
+                        <th style="min-width: 150px;">Nama Siswa</th>
+                        {% for school_date in report_data.dates %}
+                        <th class="text-center" style="min-width: 60px;">
+                            <small>{{ school_date|date:"d/m" }}</small>
+                        </th>
+                        {% endfor %}
+                        <th class="text-center bg-success text-white" style="width: 50px;">H</th>
+                        <th class="text-center bg-warning" style="width: 50px;">S</th>
+                        <th class="text-center bg-info text-white" style="width: 50px;">I</th>
+                        <th class="text-center bg-danger text-white" style="width: 50px;">A</th>
+                        <th class="text-center" style="width: 70px;">%</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for student_data in report_data.students %}
+                    <tr>
+                        <td class="text-center">{{ forloop.counter }}</td>
+                        <td>{{ student_data.student.student_id }}</td>
+                        <td>{{ student_data.student.name }}</td>
+                        {% for daily in student_data.daily_data %}
+                        <td class="text-center p-1">
+                            {% if daily.has_record %}
+                            <small class="d-block" title="H:{{ daily.hadir }} S:{{ daily.sakit }} I:{{ daily.izin }} A:{{ daily.alpa }}">
+                                {% if daily.hadir == daily.jp_count %}
+                                <span class="status-cell H">✓</span>
+                                {% elif daily.alpa > 0 %}
+                                <span class="status-cell A">{{ daily.alpa }}</span>
+                                {% elif daily.sakit > 0 %}
+                                <span class="status-cell S">{{ daily.sakit }}</span>
+                                {% elif daily.izin > 0 %}
+                                <span class="status-cell I">{{ daily.izin }}</span>
+                                {% else %}
+                                <span class="status-cell H">✓</span>
+                                {% endif %}
+                            </small>
+                            {% else %}
+                            <span class="status-cell empty">-</span>
+                            {% endif %}
+                        </td>
+                        {% endfor %}
+                        <td class="text-center fw-bold text-success">{{ student_data.total_hadir }}</td>
+                        <td class="text-center fw-bold text-warning">{{ student_data.total_sakit }}</td>
+                        <td class="text-center fw-bold text-info">{{ student_data.total_izin }}</td>
+                        <td class="text-center fw-bold text-danger">{{ student_data.total_alpa }}</td>
+                        <td class="text-center fw-bold">
+                            {% if student_data.attendance_percentage >= 90 %}
+                            <span class="badge bg-success">{{ student_data.attendance_percentage }}%</span>
+                            {% elif student_data.attendance_percentage >= 75 %}
+                            <span class="badge bg-warning">{{ student_data.attendance_percentage }}%</span>
+                            {% else %}
+                            <span class="badge bg-danger">{{ student_data.attendance_percentage }}%</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="{{ report_data.dates|length|add:8 }}" class="text-center py-4">
+                            <i class="fas fa-inbox fa-2x text-muted mb-2"></i>
+                            <p class="text-muted mb-0">Tidak ada data siswa</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot class="table-light">
+                    <tr class="fw-bold">
+                        <td colspan="3" class="text-end">TOTAL</td>
+                        {% for school_date in report_data.dates %}
+                        <td class="text-center">-</td>
+                        {% endfor %}
+                        <td class="text-center text-success">{{ report_data.class_summary.total_hadir }}</td>
+                        <td class="text-center text-warning">{{ report_data.class_summary.total_sakit }}</td>
+                        <td class="text-center text-info">{{ report_data.class_summary.total_izin }}</td>
+                        <td class="text-center text-danger">{{ report_data.class_summary.total_alpa }}</td>
+                        <td class="text-center">{{ report_data.class_summary.attendance_percentage }}%</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Legend -->
+<div class="card mt-4">
+    <div class="card-body">
+        <h6 class="mb-3">Keterangan:</h6>
+        <div class="d-flex flex-wrap gap-3">
+            <span><span class="status-cell H me-1">H</span> Hadir</span>
+            <span><span class="status-cell S me-1">S</span> Sakit</span>
+            <span><span class="status-cell I me-1">I</span> Izin</span>
+            <span><span class="status-cell A me-1">A</span> Alpa</span>
+            <span><span class="status-cell empty me-1">-</span> Belum Diinput</span>
+        </div>
+        <hr>
+        <small class="text-muted">
+            <i class="fas fa-info-circle me-1"></i>
+            Periode: {{ report_data.period.start_date|date:"d M Y" }} - {{ report_data.period.end_date|date:"d M Y" }} |
+            Total Hari Sekolah: {{ report_data.total_school_days }} hari |
+            Total JP: {{ report_data.class_summary.total_jp }} JP
+        </small>
+    </div>
+</div>

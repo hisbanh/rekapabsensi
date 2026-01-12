@@ -325,6 +325,6 @@ export const INITIAL_STUDENTS = [
 ];
 
 export const SCHOOL_NAME = "PESANTREN YAUMI YOGYAKARTA";
-export const APP_NAME = "SIPA YAUMI";
+export const APP_NAME = "SIPA Beta ";
 export const APP_SUBTITLE = "Sistem Informasi Presensi Pesantren Yaumi";
 export const APP_INITIALS = "SY";

@@ -1,0 +1,249 @@
+<!-- Student Report Partial Template -->
+{% load attendance_extras %}
+
+<!-- Report Header -->
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h6 class="m-0 font-weight-bold text-primary">
+            <i class="fas fa-user me-2"></i>Laporan Absensi Siswa: {{ report_data.student.name }}
+        </h6>
+        <span class="badge bg-info">
+            {{ report_data.period.start_date|date:"d M Y" }} - {{ report_data.period.end_date|date:"d M Y" }}
+        </span>
+    </div>
+</div>
+
+<!-- Student Info -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <table class="table table-borderless mb-0">
+                    <tr>
+                        <td class="text-muted" style="width: 150px;">Nama Siswa</td>
+                        <td class="fw-bold">{{ report_data.student.name }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">NIS</td>
+                        <td>{{ report_data.student.student_id }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">NISN</td>
+                        <td>{{ report_data.student.nisn|default:"-" }}</td>
+                    </tr>
+                </table>
+            </div>
+            <div class="col-md-6">
+                <table class="table table-borderless mb-0">
+                    <tr>
+                        <td class="text-muted" style="width: 150px;">Kelas</td>
+                        <td class="fw-bold">{{ report_data.classroom }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Periode</td>
+                        <td>{{ report_data.period.start_date|date:"d M Y" }} - {{ report_data.period.end_date|date:"d M Y" }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Total Hari Sekolah</td>
+                        <td>{{ report_data.total_school_days }} hari</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Summary Statistics -->
+<div class="row mb-4">
+    <div class="col-md-2">
+        <div class="card text-center border-success">
+            <div class="card-body py-3">
+                <h4 class="mb-1 text-success">{{ report_data.summary.total_hadir }}</h4>
+                <small class="text-muted">Total Hadir</small>
+                <div class="small text-success">{{ report_data.summary.attendance_percentage }}%</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card text-center border-warning">
+            <div class="card-body py-3">
+                <h4 class="mb-1 text-warning">{{ report_data.summary.total_sakit }}</h4>
+                <small class="text-muted">Total Sakit</small>
+                <div class="small text-warning">{{ report_data.summary.sakit_percentage }}%</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card text-center border-info">
+            <div class="card-body py-3">
+                <h4 class="mb-1 text-info">{{ report_data.summary.total_izin }}</h4>
+                <small class="text-muted">Total Izin</small>
+                <div class="small text-info">{{ report_data.summary.izin_percentage }}%</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card text-center border-danger">
+            <div class="card-body py-3">
+                <h4 class="mb-1 text-danger">{{ report_data.summary.total_alpa }}</h4>
+                <small class="text-muted">Total Alpa</small>
+                <div class="small text-danger">{{ report_data.summary.alpa_percentage }}%</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card text-center border-secondary">
+            <div class="card-body py-3">
+                <h4 class="mb-1">{{ report_data.summary.total_jp }}</h4>
+                <small class="text-muted">Total JP</small>
+                <div class="small text-muted">Tercatat</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card text-center border-primary">
+            <div class="card-body py-3">
+                <h4 class="mb-1 text-primary">
+                    {% if report_data.summary.attendance_percentage >= 90 %}
+                    <i class="fas fa-smile text-success"></i>
+                    {% elif report_data.summary.attendance_percentage >= 75 %}
+                    <i class="fas fa-meh text-warning"></i>
+                    {% else %}
+                    <i class="fas fa-frown text-danger"></i>
+                    {% endif %}
+                </h4>
+                <small class="text-muted">Status</small>
+                <div class="small">
+                    {% if report_data.summary.attendance_percentage >= 90 %}
+                    <span class="badge bg-success">Baik</span>
+                    {% elif report_data.summary.attendance_percentage >= 75 %}
+                    <span class="badge bg-warning">Cukup</span>
+                    {% else %}
+                    <span class="badge bg-danger">Kurang</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Detailed Attendance Table -->
+<div class="card">
+    <div class="card-header">
+        <h6 class="m-0 font-weight-bold text-primary">
+            <i class="fas fa-calendar-alt me-2"></i>Detail Absensi Per Hari
+        </h6>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="text-center" style="width: 50px;">No</th>
+                        <th style="width: 120px;">Tanggal</th>
+                        <th style="width: 100px;">Hari</th>
+                        {% for jp_num in report_data.max_jp_count|make_list %}
+                        <th class="text-center" style="width: 50px;">JP{{ forloop.counter }}</th>
+                        {% endfor %}
+                        <th class="text-center" style="width: 60px;">H</th>
+                        <th class="text-center" style="width: 60px;">S</th>
+                        <th class="text-center" style="width: 60px;">I</th>
+                        <th class="text-center" style="width: 60px;">A</th>
+                        <th style="min-width: 150px;">Catatan</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for daily in report_data.daily_records %}
+                    <tr {% if not daily.has_record %}class="table-light"{% endif %}>
+                        <td class="text-center">{{ forloop.counter }}</td>
+                        <td>{{ daily.date|date:"d M Y" }}</td>
+                        <td>{{ daily.day_name }}</td>
+                        {% for jp in daily.jp_details %}
+                        <td class="text-center p-1">
+                            {% if jp.status %}
+                            <span class="status-cell {{ jp.status }}">{{ jp.status }}</span>
+                            {% else %}
+                            <span class="status-cell empty">-</span>
+                            {% endif %}
+                        </td>
+                        {% endfor %}
+                        {% with empty_cols=report_data.max_jp_count|add:"-"|add:daily.jp_count|default:0 %}
+                        {% for i in empty_cols|make_list %}
+                        <td class="text-center p-1 bg-light">-</td>
+                        {% endfor %}
+                        {% endwith %}
+                        <td class="text-center">
+                            {% if daily.has_record %}
+                            <span class="fw-bold text-success">{{ daily.day_summary.hadir }}</span>
+                            {% else %}-{% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if daily.has_record %}
+                            <span class="fw-bold text-warning">{{ daily.day_summary.sakit }}</span>
+                            {% else %}-{% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if daily.has_record %}
+                            <span class="fw-bold text-info">{{ daily.day_summary.izin }}</span>
+                            {% else %}-{% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if daily.has_record %}
+                            <span class="fw-bold text-danger">{{ daily.day_summary.alpa }}</span>
+                            {% else %}-{% endif %}
+                        </td>
+                        <td>
+                            {% if daily.notes %}
+                            <small>{{ daily.notes }}</small>
+                            {% else %}
+                            <small class="text-muted">-</small>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="{{ report_data.max_jp_count|add:9 }}" class="text-center py-4">
+                            <i class="fas fa-inbox fa-2x text-muted mb-2"></i>
+                            <p class="text-muted mb-0">Tidak ada data absensi</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot class="table-light">
+                    <tr class="fw-bold">
+                        <td colspan="3" class="text-end">TOTAL</td>
+                        {% for i in report_data.max_jp_count|make_list %}
+                        <td class="text-center">-</td>
+                        {% endfor %}
+                        <td class="text-center text-success">{{ report_data.summary.total_hadir }}</td>
+                        <td class="text-center text-warning">{{ report_data.summary.total_sakit }}</td>
+                        <td class="text-center text-info">{{ report_data.summary.total_izin }}</td>
+                        <td class="text-center text-danger">{{ report_data.summary.total_alpa }}</td>
+                        <td></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Legend -->
+<div class="card mt-4">
+    <div class="card-body">
+        <h6 class="mb-3">Keterangan:</h6>
+        <div class="d-flex flex-wrap gap-3">
+            <span><span class="status-cell H me-1">H</span> Hadir</span>
+            <span><span class="status-cell S me-1">S</span> Sakit</span>
+            <span><span class="status-cell I me-1">I</span> Izin</span>
+            <span><span class="status-cell A me-1">A</span> Alpa</span>
+            <span><span class="status-cell empty me-1">-</span> Belum Diinput</span>
+        </div>
+        <hr>
+        <small class="text-muted">
+            <i class="fas fa-info-circle me-1"></i>
+            Periode: {{ report_data.period.start_date|date:"d M Y" }} - {{ report_data.period.end_date|date:"d M Y" }} |
+            Total Hari Sekolah: {{ report_data.total_school_days }} hari |
+            Total JP Tercatat: {{ report_data.summary.total_jp }} JP
+        </small>
+    </div>
+</div>
