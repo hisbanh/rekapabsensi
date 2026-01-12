@@ -140,7 +140,7 @@ Implementasi sistem rekap absensi per Jam Pelajaran (JP) dengan Custom Admin Pan
     - **Property 19: Attendance Uniqueness**
     - **Validates: Requirements 8.2, 8.5, 10.3, 10.5**
 
-- [ ] 9. Checkpoint - Ensure management pages work correctly
+- [x] 9. Checkpoint - Ensure management pages work correctly
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 10. Implement Authorization
