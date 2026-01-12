@@ -188,19 +188,19 @@ Implementasi sistem rekap absensi per Jam Pelajaran (JP) dengan Custom Admin Pan
   - [x] 12.4 Create PDF export endpoint
     - _Requirements: 5.7_
 
-- [ ] 13. Implement Excel/CSV Export
-  - [ ] 13.1 Install and configure openpyxl for Excel generation
+- [x] 13. Implement Excel/CSV Export
+  - [x] 13.1 Install and configure openpyxl for Excel generation
     - Add to requirements.txt
     - _Requirements: 6.1_
-  - [ ] 13.2 Implement export_excel method
+  - [x] 13.2 Implement export_excel method
     - Separate sheets per classroom
     - SUM and COUNTIF formulas
     - Conditional formatting (red=Alpa, orange=Sakit, blue=Izin)
     - _Requirements: 6.2, 6.3, 6.4, 6.5_
-  - [ ] 13.3 Implement export_csv method
+  - [x] 13.3 Implement export_csv method
     - Simple CSV format
     - _Requirements: 6.6_
-  - [ ] 13.4 Create export endpoints and integrate with report page
+  - [x] 13.4 Create export endpoints and integrate with report page
     - _Requirements: 6.1_
   - [ ]* 13.5 Write property tests for Excel export
     - **Property 15: Excel Sheet Count**

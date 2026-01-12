@@ -9463,3 +9463,16 @@ INFO 2026-01-12 18:13:08,995 log 73540 6205485056 "GET /manage/classrooms/ HTTP/
 INFO 2026-01-12 18:13:12,305 log 73540 6205485056 "GET /manage/students/ HTTP/1.1" 200 105452
 INFO 2026-01-12 18:13:15,402 log 73540 6205485056 "GET /manage/students/5606a420-de0d-4b33-b014-2ca0c36762a4/edit/ HTTP/1.1" 200 32480
 INFO 2026-01-12 18:13:17,883 log 73540 6205485056 "GET / HTTP/1.1" 200 40982
+INFO 2026-01-12 18:17:39,566 autoreload 73540 8542499392 /Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/services/report_service.py changed, reloading.
+INFO 2026-01-12 18:17:40,081 autoreload 75098 8542499392 Watching for file changes with StatReloader
+INFO 2026-01-12 18:17:52,872 log 75098 6204862464 "GET / HTTP/1.1" 200 40982
+INFO 2026-01-12 18:17:52,903 log 75098 6204862464 "GET /static/css/responsive.css HTTP/1.1" 304 0
+INFO 2026-01-12 18:17:54,265 log 75098 6204862464 "GET /input/ HTTP/1.1" 200 27092
+INFO 2026-01-12 18:17:55,036 log 75098 6204862464 "GET /report/ HTTP/1.1" 200 68947
+INFO 2026-01-12 18:17:56,114 log 75098 6204862464 "GET /jp-report/ HTTP/1.1" 200 51116
+INFO 2026-01-12 18:18:28,341 autoreload 75098 8542499392 /Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/services/report_service.py changed, reloading.
+INFO 2026-01-12 18:18:28,741 autoreload 75144 8542499392 Watching for file changes with StatReloader
+INFO 2026-01-12 18:19:27,037 autoreload 75144 8542499392 /Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/views.py changed, reloading.
+INFO 2026-01-12 18:19:27,483 autoreload 75261 8542499392 Watching for file changes with StatReloader
+INFO 2026-01-12 18:19:37,877 autoreload 75261 8542499392 /Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/urls.py changed, reloading.
+INFO 2026-01-12 18:19:38,196 autoreload 75282 8542499392 Watching for file changes with StatReloader

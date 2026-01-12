@@ -1597,3 +1597,147 @@ def export_pdf_student(request):
         logger.error(f"Error exporting student PDF: {str(e)}")
         messages.error(request, f"Gagal mengekspor PDF: {str(e)}")
         return redirect('jp_report')
+
+
+# ============================================
+# Excel Export Views
+# ============================================
+
+@login_required
+def export_excel_class(request):
+    """
+    Export class attendance report as Excel with advanced features.
+    
+    Query Parameters:
+        - classroom: UUID of the classroom (can be multiple, comma-separated)
+        - start_date: Start date (YYYY-MM-DD)
+        - end_date: End date (YYYY-MM-DD)
+    
+    Requirements: 6.1, 6.2, 6.3, 6.4, 6.5
+    """
+    try:
+        # Get parameters
+        classroom_ids = request.GET.get('classroom', '')
+        start_date_str = request.GET.get('start_date')
+        end_date_str = request.GET.get('end_date')
+        
+        if not all([classroom_ids, start_date_str, end_date_str]):
+            messages.error(request, 'Parameter tidak lengkap')
+            return redirect('jp_report')
+        
+        # Parse dates
+        try:
+            start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+            end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+        except ValueError:
+            messages.error(request, 'Format tanggal tidak valid')
+            return redirect('jp_report')
+        
+        # Get classrooms (support multiple classrooms separated by comma)
+        classroom_id_list = [cid.strip() for cid in classroom_ids.split(',') if cid.strip()]
+        classrooms = []
+        
+        for classroom_id in classroom_id_list:
+            try:
+                classroom = Classroom.objects.get(id=classroom_id, is_active=True)
+                classrooms.append(classroom)
+            except Classroom.DoesNotExist:
+                continue
+        
+        if not classrooms:
+            messages.error(request, 'Kelas tidak ditemukan')
+            return redirect('jp_report')
+        
+        # Generate Excel
+        excel_content = ReportService.export_jp_attendance_to_excel(
+            classrooms=classrooms,
+            start_date=start_date,
+            end_date=end_date
+        )
+        
+        # Create response
+        response = HttpResponse(
+            excel_content,
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        
+        # Generate filename
+        if len(classrooms) == 1:
+            filename = f"laporan_absensi_{classrooms[0]}_{start_date_str}_{end_date_str}.xlsx"
+        else:
+            filename = f"laporan_absensi_multi_kelas_{start_date_str}_{end_date_str}.xlsx"
+        
+        # Sanitize filename
+        filename = filename.replace(' ', '_').replace('/', '-')
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        
+        return response
+        
+    except Exception as e:
+        logger.error(f"Error exporting Excel: {str(e)}")
+        messages.error(request, f"Gagal mengekspor Excel: {str(e)}")
+        return redirect('jp_report')
+
+
+@login_required
+def export_excel_all(request):
+    """
+    Export attendance report for all active classrooms as Excel.
+    Creates one sheet per classroom.
+    
+    Query Parameters:
+        - start_date: Start date (YYYY-MM-DD)
+        - end_date: End date (YYYY-MM-DD)
+    
+    Requirements: 6.1, 6.2
+    """
+    try:
+        # Get parameters
+        start_date_str = request.GET.get('start_date')
+        end_date_str = request.GET.get('end_date')
+        
+        if not all([start_date_str, end_date_str]):
+            messages.error(request, 'Parameter tidak lengkap')
+            return redirect('jp_report')
+        
+        # Parse dates
+        try:
+            start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+            end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+        except ValueError:
+            messages.error(request, 'Format tanggal tidak valid')
+            return redirect('jp_report')
+        
+        # Get all active classrooms
+        classrooms = list(Classroom.objects.filter(
+            is_active=True
+        ).select_related('academic_level').order_by(
+            'academic_level__code', 'grade', 'section'
+        ))
+        
+        if not classrooms:
+            messages.error(request, 'Tidak ada kelas aktif')
+            return redirect('jp_report')
+        
+        # Generate Excel
+        excel_content = ReportService.export_jp_attendance_to_excel(
+            classrooms=classrooms,
+            start_date=start_date,
+            end_date=end_date
+        )
+        
+        # Create response
+        response = HttpResponse(
+            excel_content,
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        
+        filename = f"laporan_absensi_semua_kelas_{start_date_str}_{end_date_str}.xlsx"
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        
+        return response
+        
+    except Exception as e:
+        logger.error(f"Error exporting Excel (all classes): {str(e)}")
+        messages.error(request, f"Gagal mengekspor Excel: {str(e)}")
+        return redirect('jp_report')

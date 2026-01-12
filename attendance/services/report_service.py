@@ -7,7 +7,7 @@ from datetime import date, datetime, timedelta
 from django.db.models import Q, Count, Avg
 from django.core.paginator import Paginator
 import csv
-from io import StringIO
+from io import StringIO, BytesIO
 
 from ..models import (
     Student, AttendanceRecord, AttendanceStatus, Classroom,
@@ -684,3 +684,279 @@ class ReportService:
         performance_data.sort(key=lambda x: x['attendance_rate'], reverse=True)
         
         return performance_data
+    
+    # ============================================
+    # Excel Export Methods
+    # ============================================
+    
+    @staticmethod
+    def export_jp_attendance_to_excel(
+        classrooms: List[Classroom],
+        start_date: date,
+        end_date: date
+    ) -> bytes:
+        """
+        Export JP-based attendance data to Excel format with advanced features.
+        
+        Creates separate sheets per classroom with:
+        - Raw data suitable for pivot table analysis
+        - SUM and COUNTIF formulas for automatic totals
+        - Conditional formatting (red=Alpa, orange=Sakit, blue=Izin)
+        
+        Args:
+            classrooms: List of classrooms to export
+            start_date: Start of date range
+            end_date: End of date range
+            
+        Returns:
+            Excel file content as bytes
+            
+        Requirements: 6.2, 6.3, 6.4, 6.5
+        """
+        from openpyxl import Workbook
+        from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
+        from openpyxl.utils import get_column_letter
+        from openpyxl.formatting.rule import FormulaRule, CellIsRule
+        
+        wb = Workbook()
+        # Remove default sheet
+        wb.remove(wb.active)
+        
+        # Define styles
+        header_font = Font(bold=True, color='FFFFFF')
+        header_fill = PatternFill(start_color='8B7355', end_color='8B7355', fill_type='solid')
+        header_alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+        
+        # Status colors for conditional formatting
+        alpa_fill = PatternFill(start_color='FFCDD2', end_color='FFCDD2', fill_type='solid')  # Light red
+        sakit_fill = PatternFill(start_color='FFE0B2', end_color='FFE0B2', fill_type='solid')  # Light orange
+        izin_fill = PatternFill(start_color='BBDEFB', end_color='BBDEFB', fill_type='solid')  # Light blue
+        hadir_fill = PatternFill(start_color='C8E6C9', end_color='C8E6C9', fill_type='solid')  # Light green
+        
+        thin_border = Border(
+            left=Side(style='thin'),
+            right=Side(style='thin'),
+            top=Side(style='thin'),
+            bottom=Side(style='thin')
+        )
+        
+        summary_font = Font(bold=True)
+        summary_fill = PatternFill(start_color='F5F5F5', end_color='F5F5F5', fill_type='solid')
+        
+        for classroom in classrooms:
+            # Generate report data for this classroom
+            report = ReportService.generate_class_report(classroom, start_date, end_date)
+            
+            # Create sheet with classroom name (max 31 chars for Excel)
+            sheet_name = str(classroom)[:31]
+            ws = wb.create_sheet(title=sheet_name)
+            
+            # Get school dates and max JP count
+            school_dates = report['dates']
+            max_jp = max(
+                (ScheduleService.get_jp_count_for_date(d) for d in school_dates),
+                default=6
+            )
+            
+            # Build header row
+            # Columns: No, NIS, Nama, [Date1_JP1, Date1_JP2, ...], Total H, Total S, Total I, Total A, Total JP, %
+            headers = ['No', 'NIS', 'Nama Siswa']
+            
+            # Add date/JP columns
+            date_jp_columns = []
+            for school_date in school_dates:
+                jp_count = ScheduleService.get_jp_count_for_date(school_date)
+                for jp_num in range(1, jp_count + 1):
+                    col_header = f"{school_date.strftime('%d/%m')}\nJP{jp_num}"
+                    headers.append(col_header)
+                    date_jp_columns.append((school_date, jp_num))
+            
+            # Add summary columns
+            headers.extend(['Total H', 'Total S', 'Total I', 'Total A', 'Total JP', 'Persentase'])
+            
+            # Write header row
+            for col_idx, header in enumerate(headers, 1):
+                cell = ws.cell(row=1, column=col_idx, value=header)
+                cell.font = header_font
+                cell.fill = header_fill
+                cell.alignment = header_alignment
+                cell.border = thin_border
+            
+            # Set column widths
+            ws.column_dimensions['A'].width = 5   # No
+            ws.column_dimensions['B'].width = 12  # NIS
+            ws.column_dimensions['C'].width = 25  # Nama
+            
+            # Date/JP columns - narrow
+            for col_idx in range(4, 4 + len(date_jp_columns)):
+                ws.column_dimensions[get_column_letter(col_idx)].width = 6
+            
+            # Summary columns
+            summary_start_col = 4 + len(date_jp_columns)
+            for i in range(6):
+                ws.column_dimensions[get_column_letter(summary_start_col + i)].width = 10
+            
+            # Write data rows
+            data_start_row = 2
+            for row_idx, student_data in enumerate(report['students'], data_start_row):
+                student = student_data['student']
+                
+                # Basic info
+                ws.cell(row=row_idx, column=1, value=row_idx - 1).border = thin_border
+                ws.cell(row=row_idx, column=2, value=student.student_id).border = thin_border
+                ws.cell(row=row_idx, column=3, value=student.name).border = thin_border
+                
+                # Build attendance lookup for this student
+                attendance_lookup = {}
+                for daily in student_data['daily_data']:
+                    attendance_lookup[daily['date']] = daily
+                
+                # Get all attendance records for this student
+                student_attendances = DailyAttendance.objects.filter(
+                    student=student,
+                    date__range=[start_date, end_date]
+                )
+                jp_status_lookup = {}
+                for att in student_attendances:
+                    jp_status_lookup[att.date] = att.jp_statuses
+                
+                # Write JP status cells
+                col_idx = 4
+                for school_date, jp_num in date_jp_columns:
+                    jp_statuses = jp_status_lookup.get(school_date, {})
+                    status = jp_statuses.get(str(jp_num), '')
+                    cell = ws.cell(row=row_idx, column=col_idx, value=status)
+                    cell.border = thin_border
+                    cell.alignment = Alignment(horizontal='center')
+                    col_idx += 1
+                
+                # Summary columns with formulas
+                summary_col = col_idx
+                data_range_start = get_column_letter(4)
+                data_range_end = get_column_letter(col_idx - 1)
+                data_range = f"{data_range_start}{row_idx}:{data_range_end}{row_idx}"
+                
+                # Total H (COUNTIF formula)
+                cell = ws.cell(row=row_idx, column=summary_col, 
+                              value=f'=COUNTIF({data_range},"H")')
+                cell.border = thin_border
+                cell.alignment = Alignment(horizontal='center')
+                
+                # Total S
+                cell = ws.cell(row=row_idx, column=summary_col + 1,
+                              value=f'=COUNTIF({data_range},"S")')
+                cell.border = thin_border
+                cell.alignment = Alignment(horizontal='center')
+                
+                # Total I
+                cell = ws.cell(row=row_idx, column=summary_col + 2,
+                              value=f'=COUNTIF({data_range},"I")')
+                cell.border = thin_border
+                cell.alignment = Alignment(horizontal='center')
+                
+                # Total A
+                cell = ws.cell(row=row_idx, column=summary_col + 3,
+                              value=f'=COUNTIF({data_range},"A")')
+                cell.border = thin_border
+                cell.alignment = Alignment(horizontal='center')
+                
+                # Total JP (count non-empty cells)
+                cell = ws.cell(row=row_idx, column=summary_col + 4,
+                              value=f'=COUNTA({data_range})')
+                cell.border = thin_border
+                cell.alignment = Alignment(horizontal='center')
+                
+                # Percentage
+                h_col = get_column_letter(summary_col)
+                jp_col = get_column_letter(summary_col + 4)
+                cell = ws.cell(row=row_idx, column=summary_col + 5,
+                              value=f'=IF({jp_col}{row_idx}>0,ROUND({h_col}{row_idx}/{jp_col}{row_idx}*100,2),0)')
+                cell.border = thin_border
+                cell.alignment = Alignment(horizontal='center')
+                cell.number_format = '0.00"%"'
+            
+            # Add summary row
+            last_data_row = data_start_row + len(report['students']) - 1
+            summary_row = last_data_row + 2
+            
+            ws.cell(row=summary_row, column=1, value='').border = thin_border
+            ws.cell(row=summary_row, column=2, value='').border = thin_border
+            cell = ws.cell(row=summary_row, column=3, value='TOTAL')
+            cell.font = summary_font
+            cell.fill = summary_fill
+            cell.border = thin_border
+            
+            # Empty cells for date columns
+            for col_idx in range(4, 4 + len(date_jp_columns)):
+                cell = ws.cell(row=summary_row, column=col_idx, value='')
+                cell.fill = summary_fill
+                cell.border = thin_border
+            
+            # Summary totals with SUM formulas
+            summary_col = 4 + len(date_jp_columns)
+            for i in range(6):
+                col_letter = get_column_letter(summary_col + i)
+                cell = ws.cell(row=summary_row, column=summary_col + i,
+                              value=f'=SUM({col_letter}{data_start_row}:{col_letter}{last_data_row})')
+                cell.font = summary_font
+                cell.fill = summary_fill
+                cell.border = thin_border
+                cell.alignment = Alignment(horizontal='center')
+            
+            # Fix percentage formula for summary row
+            h_col = get_column_letter(summary_col)
+            jp_col = get_column_letter(summary_col + 4)
+            cell = ws.cell(row=summary_row, column=summary_col + 5,
+                          value=f'=IF({jp_col}{summary_row}>0,ROUND({h_col}{summary_row}/{jp_col}{summary_row}*100,2),0)')
+            cell.font = summary_font
+            cell.fill = summary_fill
+            cell.border = thin_border
+            cell.alignment = Alignment(horizontal='center')
+            cell.number_format = '0.00"%"'
+            
+            # Apply conditional formatting to status cells
+            if date_jp_columns:
+                status_range_start = f"D2"
+                status_range_end = f"{get_column_letter(3 + len(date_jp_columns))}{last_data_row}"
+                status_range = f"{status_range_start}:{status_range_end}"
+                
+                # Alpa - Red
+                ws.conditional_formatting.add(
+                    status_range,
+                    CellIsRule(operator='equal', formula=['"A"'], fill=alpa_fill)
+                )
+                
+                # Sakit - Orange
+                ws.conditional_formatting.add(
+                    status_range,
+                    CellIsRule(operator='equal', formula=['"S"'], fill=sakit_fill)
+                )
+                
+                # Izin - Blue
+                ws.conditional_formatting.add(
+                    status_range,
+                    CellIsRule(operator='equal', formula=['"I"'], fill=izin_fill)
+                )
+                
+                # Hadir - Green
+                ws.conditional_formatting.add(
+                    status_range,
+                    CellIsRule(operator='equal', formula=['"H"'], fill=hadir_fill)
+                )
+            
+            # Freeze panes (freeze first row and first 3 columns)
+            ws.freeze_panes = 'D2'
+            
+            # Add report info at the top (insert rows)
+            ws.insert_rows(1, 3)
+            ws.cell(row=1, column=1, value=f'Laporan Absensi JP - {classroom}')
+            ws.cell(row=1, column=1).font = Font(bold=True, size=14)
+            ws.cell(row=2, column=1, value=f'Periode: {start_date.strftime("%d/%m/%Y")} - {end_date.strftime("%d/%m/%Y")}')
+            ws.cell(row=3, column=1, value=f'Total Siswa: {report["class_summary"]["total_students"]} | Total Hari Sekolah: {report["total_school_days"]}')
+        
+        # Save to bytes
+        output = BytesIO()
+        wb.save(output)
+        output.seek(0)
+        
+        return output.getvalue()
