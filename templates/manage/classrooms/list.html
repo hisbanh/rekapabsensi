@@ -80,9 +80,9 @@
                                         <i class="fas fa-door-open"></i>
                                     </div>
                                     <div>
-                                        <span class="fw-medium">{{ classroom }}</span>
+                                        <span class="editable fw-medium" data-field="name" data-id="{{ classroom.pk }}" data-model="classroom">{{ classroom }}</span>
                                         {% if classroom.room_number %}
-                                        <div class="text-muted small">Ruang: {{ classroom.room_number }}</div>
+                                        <div class="text-muted small">Ruang: <span class="editable" data-field="room_number" data-id="{{ classroom.pk }}" data-model="classroom" data-allow-empty="true">{{ classroom.room_number }}</span></div>
                                         {% endif %}
                                     </div>
                                 </div>
@@ -218,6 +218,9 @@ document.addEventListener('DOMContentLoaded', function() {
     checkboxes.forEach(cb => {
         cb.addEventListener('change', updateBulkActions);
     });
+    
+    // Initialize inline edit for classrooms
+    initInlineEdit('.table', '{% url "api_inline_edit" %}', '{{ csrf_token }}');
 });
 </script>
 {% endblock %}

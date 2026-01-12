@@ -206,13 +206,13 @@ Implementasi sistem rekap absensi per Jam Pelajaran (JP) dengan Custom Admin Pan
     - **Property 15: Excel Sheet Count**
     - **Validates: Requirements 6.2**
 
-- [ ] 14. Implement Inline Edit Feature
-  - [ ] 14.1 Create AJAX endpoint for inline edit
+- [x] 14. Implement Inline Edit Feature
+  - [x] 14.1 Create AJAX endpoint for inline edit
     - Accept field name and new value
     - Validate and save
     - Return updated value
     - _Requirements: 7.7_
-  - [ ] 14.2 Add JavaScript for inline edit in DataTable
+  - [x] 14.2 Add JavaScript for inline edit in DataTable
     - Double-click to edit
     - Enter to save, Escape to cancel
     - _Requirements: 7.7_

@@ -48,6 +48,9 @@ urlpatterns = [
     # Bulk Actions
     path('manage/bulk-action/', views.bulk_action, name='bulk_action'),
     
+    # Generic Inline Edit API
+    path('api/inline-edit/', views.api_inline_edit, name='api_inline_edit'),
+    
     # JP-Based Report URLs
     path('jp-report/', views.jp_report, name='jp_report'),
     path('export/jp-csv/', views.export_jp_csv, name='export_jp_csv'),

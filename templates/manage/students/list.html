@@ -107,7 +107,7 @@
                             </td>
                             {% endif %}
                             <td data-label="NIS">
-                                <span class="editable" data-field="student_id" data-id="{{ student.pk }}">
+                                <span class="editable" data-field="student_id" data-id="{{ student.pk }}" data-model="student">
                                     {{ student.student_id }}
                                 </span>
                             </td>
@@ -117,7 +117,7 @@
                                         {{ student.name|slice:":1"|upper }}
                                     </div>
                                     <div>
-                                        <span class="editable fw-medium" data-field="name" data-id="{{ student.pk }}">
+                                        <span class="editable fw-medium" data-field="name" data-id="{{ student.pk }}" data-model="student">
                                             {{ student.name }}
                                         </span>
                                         {% if student.nisn %}
@@ -275,75 +275,9 @@ document.addEventListener('DOMContentLoaded', function() {
         cb.addEventListener('change', updateBulkActions);
     });
     
-    // Inline edit functionality
-    const editables = document.querySelectorAll('.editable');
-    
-    editables.forEach(el => {
-        el.addEventListener('dblclick', function() {
-            if (this.classList.contains('editing')) return;
-            
-            const field = this.dataset.field;
-            const id = this.dataset.id;
-            const currentValue = this.textContent.trim();
-            
-            this.classList.add('editing');
-            const input = document.createElement('input');
-            input.type = 'text';
-            input.value = currentValue;
-            this.textContent = '';
-            this.appendChild(input);
-            input.focus();
-            input.select();
-            
-            const saveEdit = async () => {
-                const newValue = input.value.trim();
-                
-                if (newValue !== currentValue && newValue !== '') {
-                    try {
-                        const response = await fetch('{% url "api_student_inline_edit" %}', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRFToken': '{{ csrf_token }}'
-                            },
-                            body: JSON.stringify({
-                                id: id,
-                                field: field,
-                                value: newValue
-                            })
-                        });
-                        
-                        const data = await response.json();
-                        
-                        if (data.success) {
-                            el.textContent = data.value;
-                        } else {
-                            alert(data.error || 'Gagal menyimpan');
-                            el.textContent = currentValue;
-                        }
-                    } catch (error) {
-                        console.error('Error:', error);
-                        el.textContent = currentValue;
-                    }
-                } else {
-                    el.textContent = currentValue;
-                }
-                
-                el.classList.remove('editing');
-            };
-            
-            input.addEventListener('blur', saveEdit);
-            input.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    saveEdit();
-                } else if (e.key === 'Escape') {
-                    el.textContent = currentValue;
-                    el.classList.remove('editing');
-                }
-            });
-        });
-    });
+    // Initialize inline edit using the generic function from _data_table.html
+    // Uses the generic API endpoint that supports multiple model types
+    initInlineEdit('#studentTable', '{% url "api_inline_edit" %}', '{{ csrf_token }}');
 });
 </script>
 {% endblock %}

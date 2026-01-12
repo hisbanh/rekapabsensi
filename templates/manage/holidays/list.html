@@ -85,10 +85,10 @@
                                 </div>
                             </td>
                             <td data-label="Nama">
-                                <span class="fw-medium">{{ holiday.name }}</span>
+                                <span class="editable fw-medium" data-field="name" data-id="{{ holiday.pk }}" data-model="holiday">{{ holiday.name }}</span>
                                 {% if holiday.description %}
                                 <div class="text-muted small text-truncate" style="max-width: 200px;">
-                                    {{ holiday.description }}
+                                    <span class="editable" data-field="description" data-id="{{ holiday.pk }}" data-model="holiday" data-allow-empty="true" data-input-type="textarea">{{ holiday.description }}</span>
                                 </div>
                                 {% endif %}
                             </td>
@@ -234,6 +234,9 @@ document.addEventListener('DOMContentLoaded', function() {
     checkboxes.forEach(cb => {
         cb.addEventListener('change', updateBulkActions);
     });
+    
+    // Initialize inline edit for holidays
+    initInlineEdit('.table', '{% url "api_inline_edit" %}', '{{ csrf_token }}');
 });
 </script>
 {% endblock %}

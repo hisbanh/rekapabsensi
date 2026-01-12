@@ -884,6 +884,157 @@ def api_student_inline_edit(request):
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
 
+@login_required
+@admin_required
+@require_http_methods(["POST"])
+def api_inline_edit(request):
+    """
+    Generic AJAX endpoint for inline editing fields across multiple models.
+    
+    Accepts JSON payload:
+    {
+        "model_type": "student|classroom|holiday|user",
+        "id": "<object_id>",
+        "field": "<field_name>",
+        "value": "<new_value>"
+    }
+    
+    Returns JSON:
+    {
+        "success": true|false,
+        "value": "<updated_value>",
+        "message": "<success_message>",
+        "error": "<error_message>"  // only on failure
+    }
+    
+    Requirements: 7.7
+    """
+    try:
+        data = json.loads(request.body)
+        model_type = data.get('model_type')
+        object_id = data.get('id')
+        field = data.get('field')
+        value = data.get('value')
+        
+        # Validate required fields
+        if not all([model_type, object_id, field]):
+            return JsonResponse({
+                'success': False, 
+                'error': 'Parameter tidak lengkap. Diperlukan: model_type, id, field'
+            }, status=400)
+        
+        # Define allowed fields per model type for security
+        allowed_fields = {
+            'student': ['name', 'student_id', 'nisn', 'is_active', 'parent_phone', 'address'],
+            'classroom': ['name', 'room_number', 'capacity', 'is_active'],
+            'holiday': ['name', 'description', 'holiday_type'],
+            'user': ['first_name', 'last_name', 'email', 'is_active'],
+        }
+        
+        # Map model types to model classes
+        model_map = {
+            'student': Student,
+            'classroom': Classroom,
+            'holiday': Holiday,
+            'user': User,
+        }
+        
+        # Validate model type
+        if model_type not in model_map:
+            return JsonResponse({
+                'success': False, 
+                'error': f'Tipe model tidak valid: {model_type}'
+            }, status=400)
+        
+        # Validate field is allowed for this model
+        if field not in allowed_fields.get(model_type, []):
+            return JsonResponse({
+                'success': False, 
+                'error': f'Field "{field}" tidak diizinkan untuk inline edit pada {model_type}'
+            }, status=400)
+        
+        # Get the model class and object
+        model_class = model_map[model_type]
+        
+        try:
+            obj = model_class.objects.get(pk=object_id)
+        except model_class.DoesNotExist:
+            return JsonResponse({
+                'success': False, 
+                'error': f'{model_type.capitalize()} tidak ditemukan'
+            }, status=404)
+        
+        # Handle boolean fields
+        boolean_fields = ['is_active']
+        if field in boolean_fields:
+            value = value in ['true', 'True', True, 1, '1']
+        
+        # Handle integer fields
+        integer_fields = ['capacity']
+        if field in integer_fields:
+            try:
+                value = int(value)
+            except (ValueError, TypeError):
+                return JsonResponse({
+                    'success': False, 
+                    'error': f'Nilai untuk {field} harus berupa angka'
+                }, status=400)
+        
+        # Validate value is not empty for required fields
+        required_fields = ['name', 'student_id']
+        if field in required_fields and not value:
+            return JsonResponse({
+                'success': False, 
+                'error': f'Field {field} tidak boleh kosong'
+            }, status=400)
+        
+        # Set the new value
+        old_value = getattr(obj, field)
+        setattr(obj, field, value)
+        
+        # Update audit fields if available
+        if hasattr(obj, 'updated_by'):
+            obj.updated_by = request.user
+        
+        # Save the object
+        try:
+            obj.save()
+        except ValidationError as e:
+            return JsonResponse({
+                'success': False, 
+                'error': str(e.message_dict if hasattr(e, 'message_dict') else e)
+            }, status=400)
+        
+        # Get the updated value (may be transformed by model)
+        updated_value = getattr(obj, field)
+        
+        # Format display value for boolean fields
+        display_value = updated_value
+        if field in boolean_fields:
+            display_value = 'Aktif' if updated_value else 'Nonaktif'
+        
+        logger.info(f"Inline edit: {model_type}.{field} changed from '{old_value}' to '{updated_value}' by {request.user}")
+        
+        return JsonResponse({
+            'success': True,
+            'value': updated_value,
+            'display_value': display_value,
+            'message': 'Data berhasil diperbarui'
+        })
+        
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'success': False, 
+            'error': 'Format JSON tidak valid'
+        }, status=400)
+    except Exception as e:
+        logger.error(f"Error in generic inline edit: {str(e)}")
+        return JsonResponse({
+            'success': False, 
+            'error': f'Terjadi kesalahan: {str(e)}'
+        }, status=500)
+
+
 # ============================================
 # Classroom Management Views
 # Read: All authenticated users (Guru + Admin)

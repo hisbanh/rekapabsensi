@@ -9476,3 +9476,35 @@ INFO 2026-01-12 18:19:27,037 autoreload 75144 8542499392 /Users/hisbanhamid/Docu
 INFO 2026-01-12 18:19:27,483 autoreload 75261 8542499392 Watching for file changes with StatReloader
 INFO 2026-01-12 18:19:37,877 autoreload 75261 8542499392 /Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/urls.py changed, reloading.
 INFO 2026-01-12 18:19:38,196 autoreload 75282 8542499392 Watching for file changes with StatReloader
+INFO 2026-01-12 18:24:57,897 autoreload 75282 8542499392 /Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/views.py changed, reloading.
+INFO 2026-01-12 18:24:58,376 autoreload 76742 8542499392 Watching for file changes with StatReloader
+INFO 2026-01-12 18:25:07,692 autoreload 76742 8542499392 /Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/urls.py changed, reloading.
+INFO 2026-01-12 18:25:08,005 autoreload 76768 8542499392 Watching for file changes with StatReloader
+INFO 2026-01-12 18:26:38,303 log 76768 6194360320 "GET /jp-report/ HTTP/1.1" 200 51116
+INFO 2026-01-12 18:26:38,338 log 76768 6194360320 "GET /static/css/responsive.css HTTP/1.1" 304 0
+INFO 2026-01-12 18:26:41,077 log 76768 6194360320 "GET /input/ HTTP/1.1" 200 27092
+INFO 2026-01-12 18:26:42,397 log 76768 6194360320 "GET /manage/students/ HTTP/1.1" 200 105452
+INFO 2026-01-12 18:26:44,004 log 76768 6194360320 "GET /manage/classrooms/ HTTP/1.1" 200 60906
+INFO 2026-01-12 18:26:45,528 log 76768 6194360320 "GET /manage/holidays/ HTTP/1.1" 200 37024
+INFO 2026-01-12 18:26:46,475 log 76768 6194360320 "GET /manage/settings/schedule/ HTTP/1.1" 200 53963
+INFO 2026-01-12 18:26:47,877 log 76768 6194360320 "GET /manage/users/ HTTP/1.1" 200 35476
+INFO 2026-01-12 18:26:51,389 log 76768 6194360320 "GET /admin/ HTTP/1.1" 200 52722
+INFO 2026-01-12 18:26:51,398 log 76768 6194360320 "GET /static/unfold/fonts/inter/styles.css HTTP/1.1" 304 0
+INFO 2026-01-12 18:26:51,399 log 76768 6211186688 "GET /static/unfold/fonts/material-symbols/styles.css HTTP/1.1" 304 0
+INFO 2026-01-12 18:26:51,400 log 76768 6228013056 "GET /static/admin/css/custom_unfold.css HTTP/1.1" 304 0
+INFO 2026-01-12 18:26:51,402 log 76768 6244839424 "GET /static/admin/css/dashboard.css HTTP/1.1" 304 0
+INFO 2026-01-12 18:26:51,402 log 76768 6228013056 "GET /static/admin/js/custom_unfold.js HTTP/1.1" 304 0
+INFO 2026-01-12 18:26:51,403 log 76768 6261665792 "GET /static/unfold/css/styles.css HTTP/1.1" 304 0
+INFO 2026-01-12 18:26:51,403 log 76768 6278492160 "GET /static/unfold/css/simplebar/simplebar.css HTTP/1.1" 304 0
+INFO 2026-01-12 18:26:51,403 log 76768 6194360320 "GET /static/unfold/js/htmx/htmx.js HTTP/1.1" 304 0
+INFO 2026-01-12 18:26:51,404 log 76768 6211186688 "GET /static/unfold/js/chart/chart.js HTTP/1.1" 304 0
+INFO 2026-01-12 18:26:51,404 log 76768 6244839424 "GET /static/unfold/js/app.js HTTP/1.1" 304 0
+INFO 2026-01-12 18:26:51,405 log 76768 6228013056 "GET /static/unfold/js/simplebar/simplebar.js HTTP/1.1" 304 0
+INFO 2026-01-12 18:26:51,415 log 76768 6244839424 "GET /static/unfold/js/alpine/alpine.persist.js HTTP/1.1" 304 0
+INFO 2026-01-12 18:26:51,416 log 76768 6228013056 "GET /static/unfold/js/alpine/alpine.anchor.js HTTP/1.1" 304 0
+INFO 2026-01-12 18:26:51,424 log 76768 6228013056 "GET /static/unfold/js/alpine/alpine.sort.js HTTP/1.1" 304 0
+INFO 2026-01-12 18:26:51,425 log 76768 6194360320 "GET /static/unfold/js/alpine/alpine.js HTTP/1.1" 304 0
+INFO 2026-01-12 18:26:51,425 log 76768 6244839424 "GET /static/unfold/js/alpine/alpine.resize.js HTTP/1.1" 304 0
+INFO 2026-01-12 18:26:51,494 log 76768 6228013056 "GET /static/unfold/fonts/inter/Inter-Regular.woff2 HTTP/1.1" 304 0
+INFO 2026-01-12 18:26:51,494 log 76768 6194360320 "GET /static/unfold/fonts/material-symbols/Material-Symbols-Outlined.woff2 HTTP/1.1" 304 0
+INFO 2026-01-12 18:26:51,494 log 76768 6244839424 "GET /static/unfold/fonts/inter/Inter-SemiBold.woff2 HTTP/1.1" 304 0
