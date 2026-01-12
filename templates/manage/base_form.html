@@ -1,0 +1,291 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% comment %}
+Base Form Template for Management Pages
+
+Usage:
+{% extends 'manage/base_form.html' %}
+
+Required blocks:
+- page_title: Title shown in navbar
+- breadcrumb_items: Breadcrumb items
+- form_content: Form fields
+
+Optional blocks:
+- form_title: Title above the form
+- form_subtitle: Subtitle/description
+- form_actions: Custom form action buttons
+- sidebar_content: Content for sidebar (if using two-column layout)
+- extra_css: Additional CSS
+- extra_js: Additional JavaScript
+{% endcomment %}
+
+{% block extra_css %}
+<style>
+    .form-container {
+        max-width: 800px;
+    }
+    
+    .form-container.full-width {
+        max-width: none;
+    }
+    
+    .form-card {
+        background: var(--bg-white);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        overflow: hidden;
+    }
+    
+    .form-card-header {
+        background: var(--bg-light);
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+    
+    .form-card-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin: 0;
+    }
+    
+    .form-card-subtitle {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        margin-top: 0.25rem;
+    }
+    
+    .form-card-body {
+        padding: 1.5rem;
+    }
+    
+    .form-card-footer {
+        background: var(--bg-light);
+        padding: 1rem 1.5rem;
+        border-top: 1px solid var(--border-color);
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.75rem;
+    }
+    
+    .form-section {
+        margin-bottom: 2rem;
+    }
+    
+    .form-section:last-child {
+        margin-bottom: 0;
+    }
+    
+    .form-section-title {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid var(--border-light);
+    }
+    
+    .form-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1rem;
+    }
+    
+    .form-row.single {
+        grid-template-columns: 1fr;
+    }
+    
+    .form-sidebar {
+        background: var(--bg-white);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 1.25rem;
+    }
+    
+    .form-sidebar-title {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        margin-bottom: 1rem;
+    }
+    
+    .form-help-card {
+        background: var(--status-izin-bg);
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .form-help-card i {
+        color: var(--status-izin);
+        margin-right: 0.5rem;
+    }
+    
+    .form-help-card p {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        margin: 0;
+    }
+    
+    .two-column-layout {
+        display: grid;
+        grid-template-columns: 1fr 300px;
+        gap: 1.5rem;
+        align-items: start;
+    }
+    
+    @media (max-width: 991.98px) {
+        .two-column-layout {
+            grid-template-columns: 1fr;
+        }
+        
+        .form-sidebar {
+            order: -1;
+        }
+    }
+    
+    /* Required field indicator */
+    .required-indicator {
+        color: var(--status-alpa);
+        margin-left: 2px;
+    }
+    
+    /* Form validation styles */
+    .was-validated .form-control:invalid,
+    .form-control.is-invalid {
+        border-color: var(--status-alpa);
+        background-image: none;
+    }
+    
+    .was-validated .form-control:valid,
+    .form-control.is-valid {
+        border-color: var(--status-hadir);
+        background-image: none;
+    }
+</style>
+{% block form_extra_css %}{% endblock %}
+{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+        {% block breadcrumb_items %}{% endblock %}
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="form-container {% block form_container_class %}{% endblock %}">
+    {% block form_wrapper %}
+    <form method="post" enctype="multipart/form-data" class="needs-validation" novalidate id="mainForm">
+        {% csrf_token %}
+        
+        <div class="form-card">
+            {% if form_title or block.form_title %}
+            <div class="form-card-header">
+                <h2 class="form-card-title">{% block form_title %}{{ form_title }}{% endblock %}</h2>
+                {% block form_subtitle %}
+                {% if form_subtitle %}
+                <p class="form-card-subtitle">{{ form_subtitle }}</p>
+                {% endif %}
+                {% endblock %}
+            </div>
+            {% endif %}
+            
+            <div class="form-card-body">
+                <!-- Display form errors -->
+                {% if form.non_field_errors %}
+                <div class="alert alert-danger mb-4">
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    {% for error in form.non_field_errors %}
+                    {{ error }}{% if not forloop.last %}<br>{% endif %}
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                {% block form_content %}{% endblock %}
+            </div>
+            
+            <div class="form-card-footer">
+                {% block form_actions %}
+                <a href="{% block cancel_url %}javascript:history.back(){% endblock %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-times me-1"></i> Batal
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save me-1"></i> {% block submit_text %}Simpan{% endblock %}
+                </button>
+                {% endblock %}
+            </div>
+        </div>
+    </form>
+    {% endblock %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Form validation
+    const forms = document.querySelectorAll('.needs-validation');
+    
+    Array.from(forms).forEach(form => {
+        form.addEventListener('submit', event => {
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            form.classList.add('was-validated');
+        }, false);
+    });
+    
+    // Auto-save draft (optional)
+    const mainForm = document.getElementById('mainForm');
+    if (mainForm && localStorage) {
+        const formKey = 'form_draft_' + window.location.pathname;
+        
+        // Restore draft
+        const draft = localStorage.getItem(formKey);
+        if (draft) {
+            try {
+                const data = JSON.parse(draft);
+                Object.keys(data).forEach(key => {
+                    const input = mainForm.querySelector(`[name="${key}"]`);
+                    if (input && input.type !== 'hidden' && input.type !== 'file') {
+                        if (input.type === 'checkbox') {
+                            input.checked = data[key];
+                        } else {
+                            input.value = data[key];
+                        }
+                    }
+                });
+            } catch (e) {
+                console.error('Error restoring draft:', e);
+            }
+        }
+        
+        // Save draft on input
+        mainForm.addEventListener('input', function() {
+            const formData = new FormData(mainForm);
+            const data = {};
+            formData.forEach((value, key) => {
+                if (key !== 'csrfmiddlewaretoken') {
+                    data[key] = value;
+                }
+            });
+            localStorage.setItem(formKey, JSON.stringify(data));
+        });
+        
+        // Clear draft on successful submit
+        mainForm.addEventListener('submit', function() {
+            localStorage.removeItem(formKey);
+        });
+    }
+});
+</script>
+{% block form_extra_js %}{% endblock %}
+{% endblock %}

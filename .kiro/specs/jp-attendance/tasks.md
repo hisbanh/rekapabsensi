@@ -107,12 +107,12 @@ Implementasi sistem rekap absensi per Jam Pelajaran (JP) dengan Custom Admin Pan
     - **Property 12: Missing Attendance Calculation**
     - **Validates: Requirements 4.1, 4.2, 4.3, 4.4**
 
-- [ ] 8. Implement Management CRUD Pages
-  - [ ] 8.1 Create base_list.html and base_form.html templates for management pages
+- [-] 8. Implement Management CRUD Pages
+  - [x] 8.1 Create base_list.html and base_form.html templates for management pages
     - Extend from base.html
     - Include breadcrumb navigation
     - _Requirements: 8.7_
-  - [ ] 8.2 Implement Student management (list, create, edit, delete)
+  - [-] 8.2 Implement Student management (list, create, edit, delete)
     - Search by name, NIS
     - Filter by classroom, status
     - Inline edit for quick updates
