@@ -1,6 +1,10 @@
 """
 Views for the attendance application
 Following enterprise architecture patterns with service layer separation
+
+Authorization:
+- Admin: Full access to all features including Settings and User management
+- Guru: Access to Dashboard, Input Absensi, Laporan, and read-only management views
 """
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
@@ -25,6 +29,7 @@ from .services.report_service import ReportService
 from .services.schedule_service import ScheduleService
 from .services.holiday_service import HolidayService
 from .exceptions import AttendanceServiceError, StudentServiceError, ReportServiceError
+from .decorators import admin_required, guru_or_admin_required, admin_required_for_write, AdminRequiredMixin
 
 logger = logging.getLogger(__name__)
 
@@ -697,23 +702,18 @@ from .forms import (
 )
 
 
-def admin_required(view_func):
-    """Decorator to require admin (superuser) access"""
-    def wrapper(request, *args, **kwargs):
-        if not request.user.is_superuser:
-            messages.error(request, "Anda tidak memiliki akses ke halaman ini")
-            return redirect('dashboard')
-        return view_func(request, *args, **kwargs)
-    return wrapper
+# Note: admin_required decorator is now imported from .decorators module
 
 
 # ============================================
 # Student Management Views
+# Read: All authenticated users (Guru + Admin)
+# Write: Admin only
 # ============================================
 
 @login_required
 def manage_student_list(request):
-    """Student list view with filtering, search, and pagination"""
+    """Student list view with filtering, search, and pagination (All users)"""
     try:
         # Get filter parameters
         filter_form = StudentFilterForm(request.GET)
@@ -771,8 +771,9 @@ def manage_student_list(request):
 
 
 @login_required
+@admin_required
 def manage_student_create(request):
-    """Create new student"""
+    """Create new student (Admin only)"""
     if request.method == 'POST':
         form = StudentForm(request.POST)
         if form.is_valid():
@@ -795,8 +796,9 @@ def manage_student_create(request):
 
 
 @login_required
+@admin_required
 def manage_student_edit(request, pk):
-    """Edit existing student"""
+    """Edit existing student (Admin only)"""
     student = get_object_or_404(Student, pk=pk)
     
     if request.method == 'POST':
@@ -822,9 +824,10 @@ def manage_student_edit(request, pk):
 
 
 @login_required
+@admin_required
 @require_http_methods(["POST"])
 def manage_student_delete(request, pk):
-    """Delete student"""
+    """Delete student (Admin only)"""
     student = get_object_or_404(Student, pk=pk)
     
     try:
@@ -839,9 +842,10 @@ def manage_student_delete(request, pk):
 
 
 @login_required
+@admin_required
 @require_http_methods(["POST"])
 def api_student_inline_edit(request):
-    """AJAX endpoint for inline editing student fields"""
+    """AJAX endpoint for inline editing student fields (Admin only)"""
     try:
         data = json.loads(request.body)
         student_id = data.get('id')
@@ -881,11 +885,13 @@ def api_student_inline_edit(request):
 
 # ============================================
 # Classroom Management Views
+# Read: All authenticated users (Guru + Admin)
+# Write: Admin only
 # ============================================
 
 @login_required
 def manage_classroom_list(request):
-    """Classroom list view"""
+    """Classroom list view (All users)"""
     try:
         classrooms = Classroom.objects.select_related(
             'academic_level', 'homeroom_teacher'
@@ -917,8 +923,9 @@ def manage_classroom_list(request):
 
 
 @login_required
+@admin_required
 def manage_classroom_create(request):
-    """Create new classroom"""
+    """Create new classroom (Admin only)"""
     if request.method == 'POST':
         form = ClassroomForm(request.POST)
         if form.is_valid():
@@ -941,8 +948,9 @@ def manage_classroom_create(request):
 
 
 @login_required
+@admin_required
 def manage_classroom_edit(request, pk):
-    """Edit existing classroom"""
+    """Edit existing classroom (Admin only)"""
     classroom = get_object_or_404(Classroom, pk=pk)
     
     if request.method == 'POST':
@@ -968,9 +976,10 @@ def manage_classroom_edit(request, pk):
 
 
 @login_required
+@admin_required
 @require_http_methods(["POST"])
 def manage_classroom_delete(request, pk):
-    """Delete classroom"""
+    """Delete classroom (Admin only)"""
     classroom = get_object_or_404(Classroom, pk=pk)
     
     try:
@@ -986,11 +995,13 @@ def manage_classroom_delete(request, pk):
 
 # ============================================
 # Holiday Management Views
+# Read: All authenticated users (Guru + Admin)
+# Write: Admin only
 # ============================================
 
 @login_required
 def manage_holiday_list(request):
-    """Holiday list view"""
+    """Holiday list view (All users)"""
     try:
         holidays = Holiday.objects.prefetch_related('classrooms').order_by('-date')
         
@@ -1018,8 +1029,9 @@ def manage_holiday_list(request):
 
 
 @login_required
+@admin_required
 def manage_holiday_create(request):
-    """Create new holiday"""
+    """Create new holiday (Admin only)"""
     if request.method == 'POST':
         form = HolidayForm(request.POST)
         if form.is_valid():
@@ -1043,8 +1055,9 @@ def manage_holiday_create(request):
 
 
 @login_required
+@admin_required
 def manage_holiday_edit(request, pk):
-    """Edit existing holiday"""
+    """Edit existing holiday (Admin only)"""
     holiday = get_object_or_404(Holiday, pk=pk)
     
     if request.method == 'POST':
@@ -1071,9 +1084,10 @@ def manage_holiday_edit(request, pk):
 
 
 @login_required
+@admin_required
 @require_http_methods(["POST"])
 def manage_holiday_delete(request, pk):
-    """Delete holiday"""
+    """Delete holiday (Admin only)"""
     holiday = get_object_or_404(Holiday, pk=pk)
     
     try:
@@ -1088,12 +1102,13 @@ def manage_holiday_delete(request, pk):
 
 
 # ============================================
-# Day Schedule Settings View
+# Day Schedule Settings View (Admin Only)
 # ============================================
 
 @login_required
+@admin_required
 def manage_day_schedule(request):
-    """Day schedule settings page"""
+    """Day schedule settings page (Admin only)"""
     try:
         schedules = DaySchedule.objects.all().order_by('day_of_week')
         
@@ -1239,13 +1254,14 @@ def manage_user_delete(request, pk):
 
 
 # ============================================
-# Bulk Actions
+# Bulk Actions (Admin Only)
 # ============================================
 
 @login_required
+@admin_required
 @require_http_methods(["POST"])
 def bulk_action(request):
-    """Handle bulk actions for management pages"""
+    """Handle bulk actions for management pages (Admin only)"""
     try:
         action = request.POST.get('action')
         model_type = request.POST.get('model_type')

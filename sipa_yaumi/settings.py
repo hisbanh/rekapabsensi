@@ -218,7 +218,7 @@ os.makedirs(BASE_DIR / 'logs', exist_ok=True)
 # Application-specific settings
 SIPA_YAUMI = {
     'SCHOOL_NAME': 'PESANTREN YAUMI YOGYAKARTA',
-    'APP_NAME': 'SIPA YAUMI',
+    'APP_NAME': 'SIPA Beta ',
     'APP_SUBTITLE': 'Sistem Informasi Presensi Pesantren Yaumi',
     'APP_INITIALS': 'SY',
     'VERSION': '2.0.0',
@@ -253,8 +253,8 @@ if not DEBUG:
 
 # Unfold settings - Fixed configuration
 UNFOLD = {
-    "SITE_TITLE": "SIPA YAUMI",
-    "SITE_HEADER": "SIPA YAUMI Administration", 
+    "SITE_TITLE": "SIPA Beta ",
+    "SITE_HEADER": "SIPA Beta  Administration", 
     "SITE_URL": "/admin/",
     "SITE_SYMBOL": "📚",
     "SHOW_HISTORY": True,

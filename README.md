@@ -1,8 +1,8 @@
-# SIPA YAUMI - Sistem Informasi Presensi Pesantren Yaumi
+# SIPA Beta  - Sistem Informasi Presensi Pesantren Yaumi
 
 ## Overview
 
-SIPA YAUMI adalah sistem informasi presensi berbasis web yang dirancang khusus untuk Pesantren Yaumi Yogyakarta. Sistem ini dibangun menggunakan arsitektur enterprise-grade dengan Django 6.0 dan mengikuti best practices dalam pengembangan software.
+SIPA Beta  adalah sistem informasi presensi berbasis web yang dirancang khusus untuk Pesantren Yaumi Yogyakarta. Sistem ini dibangun menggunakan arsitektur enterprise-grade dengan Django 6.0 dan mengikuti best practices dalam pengembangan software.
 
 ## Features
 
@@ -127,7 +127,7 @@ Configure application-specific settings in `settings.py`:
 ```python
 SIPA_YAUMI = {
     'SCHOOL_NAME': 'PESANTREN YAUMI YOGYAKARTA',
-    'APP_NAME': 'SIPA YAUMI',
+    'APP_NAME': 'SIPA Beta ',
     'VERSION': '2.0.0',
     'PAGINATION_SIZE': 20,
     'MAX_EXPORT_RECORDS': 10000,
@@ -328,5 +328,5 @@ This project is proprietary software developed for Pesantren Yaumi Yogyakarta.
 
 ---
 
-**SIPA YAUMI** - Sistem Informasi Presensi Pesantren Yaumi
+**SIPA Beta ** - Sistem Informasi Presensi Pesantren Yaumi
 Developed with ❤️ for Pesantren Yaumi Yogyakarta

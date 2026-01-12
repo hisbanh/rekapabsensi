@@ -8,9 +8,11 @@
 {% endblock %}
 
 {% block page_actions %}
+{% if user.is_superuser %}
 <a href="{% url 'manage_holiday_create' %}" class="btn btn-primary btn-sm">
     <i class="fas fa-plus me-1"></i> Tambah Hari Libur
 </a>
+{% endif %}
 {% endblock %}
 
 {% block stats_row %}
@@ -47,23 +49,29 @@
                 <table class="table table-hover mb-0">
                     <thead>
                         <tr>
+                            {% if user.is_superuser %}
                             <th style="width: 40px;">
                                 <input type="checkbox" class="form-check-input" id="selectAll">
                             </th>
+                            {% endif %}
                             <th>Tanggal</th>
                             <th>Nama</th>
                             <th>Tipe</th>
                             <th>Berlaku Untuk</th>
+                            {% if user.is_superuser %}
                             <th style="width: 120px;" class="text-center">Aksi</th>
+                            {% endif %}
                         </tr>
                     </thead>
                     <tbody>
                         {% for holiday in holidays %}
                         <tr>
+                            {% if user.is_superuser %}
                             <td>
                                 <input type="checkbox" class="form-check-input row-checkbox" 
                                        name="selected_ids" value="{{ holiday.pk }}">
                             </td>
+                            {% endif %}
                             <td data-label="Tanggal">
                                 <div class="d-flex align-items-center">
                                     <div class="date-badge me-2">
@@ -106,6 +114,7 @@
                                 {% endif %}
                             </td>
                             <td class="text-center">
+                                {% if user.is_superuser %}
                                 <div class="btn-group btn-group-sm">
                                     <a href="{% url 'manage_holiday_edit' holiday.pk %}" 
                                        class="btn btn-outline-primary" title="Edit">
@@ -120,11 +129,14 @@
                                         <i class="fas fa-trash"></i>
                                     </button>
                                 </div>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
                             </td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="6" class="text-center py-4 text-muted">
+                            <td colspan="{% if user.is_superuser %}6{% else %}4{% endif %}" class="text-center py-4 text-muted">
                                 <i class="fas fa-inbox fa-2x mb-2 d-block"></i>
                                 Tidak ada data hari libur
                             </td>
@@ -134,7 +146,8 @@
                 </table>
             </div>
             
-            <!-- Bulk Actions Bar -->
+            <!-- Bulk Actions Bar (Admin Only) -->
+            {% if user.is_superuser %}
             <div class="bulk-actions-bar" id="bulkActionsBar" style="display: none;">
                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
                     <span class="text-muted">
@@ -148,6 +161,7 @@
                     </div>
                 </div>
             </div>
+            {% endif %}
         </form>
         
         {% if holidays.has_other_pages %}

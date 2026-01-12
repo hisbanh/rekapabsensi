@@ -1,0 +1,35 @@
+{% extends "admin/base.html" %}
+{% load i18n static %}
+
+{% block title %}{{ title }} | SIPA Beta  Admin{% endblock %}
+
+{% block branding %}
+<div class="flex items-center space-x-3 p-4">
+    <span class="text-2xl">📚</span>
+    <div>
+        <h1 class="text-lg font-semibold text-primary-600">SIPA Beta </h1>
+        <p class="text-xs text-gray-600">Sistem Informasi Presensi</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block nav-global %}{% endblock %}
+
+{% block extrahead %}
+{{ block.super }}
+<style>
+/* Custom branding styles */
+#branding {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+#branding h1 {
+    color: white !important;
+    margin: 0;
+    line-height: 1.2;
+}
+#branding p {
+    color: rgba(255,255,255,0.8) !important;
+    margin: 0;
+}
+</style>
+{% endblock %}

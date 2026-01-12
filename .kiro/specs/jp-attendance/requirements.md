@@ -6,7 +6,7 @@ Sistem Rekap Absensi Per Jam Pelajaran (JP) untuk Pesantren Yaumi. Sistem ini me
 
 ## Glossary
 
-- **System**: Aplikasi SIPA YAUMI (Sistem Informasi Presensi Absensi Yaumi)
+- **System**: Aplikasi SIPA Beta  (Sistem Informasi Presensi Absensi Yaumi)
 - **Admin**: User dengan hak akses penuh untuk mengelola semua data dan pengaturan
 - **Guru**: User yang dapat menginput absensi dan melihat laporan
 - **JP**: Jam Pelajaran - slot waktu pembelajaran dalam sehari

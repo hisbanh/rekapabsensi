@@ -1,5 +1,5 @@
 """
-Utility functions for SIPA YAUMI
+Utility functions for SIPA Beta 
 """
 from django.utils.translation import gettext_lazy as _
 

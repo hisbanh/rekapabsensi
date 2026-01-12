@@ -1,4 +1,4 @@
-// Custom JavaScript for SIPA YAUMI Admin with Unfold
+// Custom JavaScript for SIPA Beta  Admin with Unfold
 
 document.addEventListener('DOMContentLoaded', function() {
     // Add fade-in animation to cards

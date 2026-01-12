@@ -8322,3 +8322,47 @@ INFO 2026-01-12 17:34:29,892 log 68100 6157430784 "GET /manage/students/ HTTP/1.
 INFO 2026-01-12 17:34:32,458 log 68100 6157430784 "GET /input/ HTTP/1.1" 200 27079
 WARNING 2026-01-12 17:34:36,796 log 68100 6157430784 Not Found: /attendance/input/8c57cb27-362c-4b49-b99c-920848a2e288/2026-01-12/
 WARNING 2026-01-12 17:34:36,796 log 68100 6157430784 "GET /attendance/input/8c57cb27-362c-4b49-b99c-920848a2e288/2026-01-12/ HTTP/1.1" 404 10847
+INFO 2026-01-12 17:35:32,588 log 68100 6157430784 "GET / HTTP/1.1" 200 42910
+INFO 2026-01-12 17:35:50,007 log 68100 6157430784 "GET /input/f0fe0688-b0a8-4328-b740-66069c1c16e3/2026-01-12/ HTTP/1.1" 200 128858
+INFO 2026-01-12 17:35:55,077 autoreload 68100 8542499392 /Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/views.py changed, reloading.
+INFO 2026-01-12 17:35:55,645 autoreload 68679 8542499392 Watching for file changes with StatReloader
+INFO 2026-01-12 17:36:04,888 autoreload 68679 8542499392 /Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/views.py changed, reloading.
+INFO 2026-01-12 17:36:05,944 autoreload 68720 8542499392 Watching for file changes with StatReloader
+INFO 2026-01-12 17:36:26,332 autoreload 68720 8542499392 /Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/views.py changed, reloading.
+INFO 2026-01-12 17:36:27,835 autoreload 68808 8542499392 Watching for file changes with StatReloader
+INFO 2026-01-12 17:36:36,097 autoreload 68808 8542499392 /Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/views.py changed, reloading.
+INFO 2026-01-12 17:36:36,506 autoreload 68846 8542499392 Watching for file changes with StatReloader
+INFO 2026-01-12 17:36:42,737 autoreload 68846 8542499392 /Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/views.py changed, reloading.
+INFO 2026-01-12 17:36:43,182 autoreload 68865 8542499392 Watching for file changes with StatReloader
+INFO 2026-01-12 17:36:53,464 autoreload 68865 8542499392 /Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/views.py changed, reloading.
+INFO 2026-01-12 17:36:53,875 autoreload 68884 8542499392 Watching for file changes with StatReloader
+INFO 2026-01-12 17:37:00,098 autoreload 68884 8542499392 /Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/views.py changed, reloading.
+INFO 2026-01-12 17:37:00,620 autoreload 68904 8542499392 Watching for file changes with StatReloader
+INFO 2026-01-12 17:37:07,862 autoreload 68904 8542499392 /Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/views.py changed, reloading.
+INFO 2026-01-12 17:37:08,269 autoreload 68926 8542499392 Watching for file changes with StatReloader
+INFO 2026-01-12 17:37:14,476 autoreload 68926 8542499392 /Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/views.py changed, reloading.
+INFO 2026-01-12 17:37:14,851 autoreload 68941 8542499392 Watching for file changes with StatReloader
+INFO 2026-01-12 17:37:21,060 autoreload 68941 8542499392 /Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/views.py changed, reloading.
+INFO 2026-01-12 17:37:21,469 autoreload 68960 8542499392 Watching for file changes with StatReloader
+INFO 2026-01-12 17:37:27,655 autoreload 68960 8542499392 /Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/views.py changed, reloading.
+INFO 2026-01-12 17:37:28,005 autoreload 68975 8542499392 Watching for file changes with StatReloader
+INFO 2026-01-12 17:37:33,208 autoreload 68975 8542499392 /Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/views.py changed, reloading.
+INFO 2026-01-12 17:37:33,682 autoreload 68988 8542499392 Watching for file changes with StatReloader
+INFO 2026-01-12 17:37:40,911 autoreload 68988 8542499392 /Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/views.py changed, reloading.
+INFO 2026-01-12 17:37:41,434 autoreload 69009 8542499392 Watching for file changes with StatReloader
+INFO 2026-01-12 17:37:47,686 autoreload 69009 8542499392 /Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/views.py changed, reloading.
+INFO 2026-01-12 17:37:48,127 autoreload 69032 8542499392 Watching for file changes with StatReloader
+INFO 2026-01-12 17:37:54,312 autoreload 69032 8542499392 /Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/views.py changed, reloading.
+INFO 2026-01-12 17:37:54,714 autoreload 69052 8542499392 Watching for file changes with StatReloader
+INFO 2026-01-12 17:38:00,932 autoreload 69052 8542499392 /Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/views.py changed, reloading.
+INFO 2026-01-12 17:38:01,375 autoreload 69073 8542499392 Watching for file changes with StatReloader
+INFO 2026-01-12 17:38:08,603 autoreload 69073 8542499392 /Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/views.py changed, reloading.
+INFO 2026-01-12 17:38:09,037 autoreload 69093 8542499392 Watching for file changes with StatReloader
+INFO 2026-01-12 17:38:19,449 log 69093 6202011648 "GET /input/f0fe0688-b0a8-4328-b740-66069c1c16e3/2026-01-12/ HTTP/1.1" 200 128858
+INFO 2026-01-12 17:38:19,494 log 69093 6202011648 "GET /static/css/responsive.css HTTP/1.1" 304 0
+INFO 2026-01-12 17:39:04,122 autoreload 69093 8542499392 /Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/admin.py changed, reloading.
+INFO 2026-01-12 17:39:05,446 autoreload 69235 8542499392 Watching for file changes with StatReloader
+INFO 2026-01-12 17:39:08,346 log 69235 6204796928 "GET /input/f0fe0688-b0a8-4328-b740-66069c1c16e3/2026-01-12/ HTTP/1.1" 200 128858
+INFO 2026-01-12 17:40:18,625 log 69235 6204796928 "GET /input/ HTTP/1.1" 200 27079
+WARNING 2026-01-12 17:40:30,849 log 69235 6204796928 Not Found: /attendance/input/c45050a9-721a-4ee3-99d9-9805890f3496/2026-01-12/
+WARNING 2026-01-12 17:40:30,849 log 69235 6204796928 "GET /attendance/input/c45050a9-721a-4ee3-99d9-9805890f3496/2026-01-12/ HTTP/1.1" 404 10847

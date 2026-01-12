@@ -143,16 +143,16 @@ Implementasi sistem rekap absensi per Jam Pelajaran (JP) dengan Custom Admin Pan
 - [x] 9. Checkpoint - Ensure management pages work correctly
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 10. Implement Authorization
-  - [ ] 10.1 Create custom permission decorators for Admin and Guru roles
+- [-] 10. Implement Authorization
+  - [x] 10.1 Create custom permission decorators for Admin and Guru roles
     - @admin_required decorator
     - @login_required decorator (existing Django)
     - _Requirements: 9.1_
-  - [ ] 10.2 Apply permission checks to all views
+  - [x] 10.2 Apply permission checks to all views
     - Guru: Dashboard, Input, Report, read-only management
     - Admin: Full access including Settings and Users
     - _Requirements: 9.2, 9.3_
-  - [ ] 10.3 Implement redirect with permission denied message
+  - [-] 10.3 Implement redirect with permission denied message
     - _Requirements: 9.4_
   - [ ]* 10.4 Write property tests for authorization
     - **Property 18: Role-Based Authorization**
