@@ -19,7 +19,7 @@ class AttendanceStatus(models.TextChoices):
 
 
 class BaseModel(models.Model):
-    """Abstract base model with common fields"""
+    """Abstract base model with common fields and auto-populated audit fields"""
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -40,6 +40,27 @@ class BaseModel(models.Model):
     
     class Meta:
         abstract = True
+    
+    def save(self, *args, **kwargs):
+        """
+        Override save to auto-populate created_by and updated_by fields.
+        Uses thread-local storage to get the current user from middleware.
+        """
+        # Import here to avoid circular import
+        from attendance.middleware import get_current_user
+        
+        current_user = get_current_user()
+        
+        # Set created_by only on creation (when pk doesn't exist yet or _state.adding is True)
+        if self._state.adding and current_user:
+            if not self.created_by_id:
+                self.created_by = current_user
+        
+        # Always update updated_by if we have a current user
+        if current_user:
+            self.updated_by = current_user
+        
+        super().save(*args, **kwargs)
 
 
 class AcademicLevel(models.Model):

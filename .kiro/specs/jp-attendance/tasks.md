@@ -217,8 +217,8 @@ Implementasi sistem rekap absensi per Jam Pelajaran (JP) dengan Custom Admin Pan
     - Enter to save, Escape to cancel
     - _Requirements: 7.7_
 
-- [ ] 15. Implement Audit Fields
-  - [ ] 15.1 Update BaseModel to auto-populate created_by, updated_by fields
+- [x] 15. Implement Audit Fields
+  - [x] 15.1 Update BaseModel to auto-populate created_by, updated_by fields
     - Use middleware or signal to get current user
     - _Requirements: 10.4_
   - [ ]* 15.2 Write property tests for audit fields

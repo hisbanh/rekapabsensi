@@ -2,11 +2,56 @@
 Custom middleware for the attendance application
 """
 import logging
+import threading
 from django.utils.deprecation import MiddlewareMixin
 from django.contrib.auth.models import AnonymousUser
 from .models import AuditLog
 
 logger = logging.getLogger(__name__)
+
+# Thread-local storage for current user
+_thread_locals = threading.local()
+
+
+def get_current_user():
+    """
+    Get the current user from thread-local storage.
+    Returns None if no user is set or user is anonymous.
+    """
+    user = getattr(_thread_locals, 'user', None)
+    if user and not isinstance(user, AnonymousUser):
+        return user
+    return None
+
+
+def set_current_user(user):
+    """
+    Set the current user in thread-local storage.
+    """
+    _thread_locals.user = user
+
+
+class CurrentUserMiddleware(MiddlewareMixin):
+    """
+    Middleware to store the current user in thread-local storage.
+    This allows models to access the current user without passing it explicitly.
+    """
+    
+    def process_request(self, request):
+        """Store the current user in thread-local storage"""
+        if hasattr(request, 'user'):
+            set_current_user(request.user)
+        return None
+    
+    def process_response(self, request, response):
+        """Clear the current user from thread-local storage"""
+        set_current_user(None)
+        return response
+    
+    def process_exception(self, request, exception):
+        """Clear the current user on exception"""
+        set_current_user(None)
+        return None
 
 
 class AuditMiddleware(MiddlewareMixin):

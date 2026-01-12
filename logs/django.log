@@ -9508,3 +9508,9 @@ INFO 2026-01-12 18:26:51,425 log 76768 6244839424 "GET /static/unfold/js/alpine/
 INFO 2026-01-12 18:26:51,494 log 76768 6228013056 "GET /static/unfold/fonts/inter/Inter-Regular.woff2 HTTP/1.1" 304 0
 INFO 2026-01-12 18:26:51,494 log 76768 6194360320 "GET /static/unfold/fonts/material-symbols/Material-Symbols-Outlined.woff2 HTTP/1.1" 304 0
 INFO 2026-01-12 18:26:51,494 log 76768 6244839424 "GET /static/unfold/fonts/inter/Inter-SemiBold.woff2 HTTP/1.1" 304 0
+INFO 2026-01-12 18:39:01,508 autoreload 76768 8542499392 /Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/middleware.py changed, reloading.
+INFO 2026-01-12 18:39:02,358 autoreload 79043 8542499392 Watching for file changes with StatReloader
+INFO 2026-01-12 18:39:14,713 autoreload 79043 8542499392 /Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/models.py changed, reloading.
+INFO 2026-01-12 18:39:15,116 autoreload 79067 8542499392 Watching for file changes with StatReloader
+INFO 2026-01-12 18:39:24,430 autoreload 79067 8542499392 /Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/sipa_yaumi/settings.py changed, reloading.
+INFO 2026-01-12 18:39:24,773 autoreload 79090 8542499392 Watching for file changes with StatReloader
