@@ -93,13 +93,13 @@ Implementasi sistem rekap absensi per Jam Pelajaran (JP) dengan Custom Admin Pan
 - [x] 6. Checkpoint - Ensure attendance input works correctly
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 7. Implement Dashboard with Missing Input Warning
-  - [ ] 7.1 Update dashboard view to calculate missing attendance per classroom
+- [x] 7. Implement Dashboard with Missing Input Warning
+  - [x] 7.1 Update dashboard view to calculate missing attendance per classroom
     - Get school days from DaySchedule
     - Exclude holidays
     - Compare against existing DailyAttendance records
     - _Requirements: 4.1, 4.2, 4.3_
-  - [ ] 7.2 Create dashboard template with warning section
+  - [x] 7.2 Create dashboard template with warning section
     - Display classes with missing dates
     - Show success message when all complete
     - _Requirements: 4.4, 4.5_

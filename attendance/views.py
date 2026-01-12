@@ -51,12 +51,19 @@ class DashboardView(LoginRequiredMixin, TemplateView):
             # Get attendance trends
             trends = AttendanceService.get_attendance_trends(days=7)
             
+            # Calculate missing attendance for current week
+            missing_attendance_data = self._get_missing_attendance_for_week()
+            
             context.update({
                 'today_stats': today_stats,
                 'classroom_stats': classroom_stats,
                 'recent_attendance': recent_attendance,
                 'trends': trends,
                 'today': timezone.now().date(),
+                'missing_attendance': missing_attendance_data['classrooms_with_missing'],
+                'all_attendance_complete': missing_attendance_data['all_complete'],
+                'week_start': missing_attendance_data['week_start'],
+                'week_end': missing_attendance_data['week_end'],
             })
             
         except Exception as e:
@@ -64,6 +71,67 @@ class DashboardView(LoginRequiredMixin, TemplateView):
             messages.error(self.request, "Terjadi kesalahan saat memuat data dashboard")
             
         return context
+    
+    def _get_missing_attendance_for_week(self):
+        """
+        Calculate missing attendance for all classrooms for the current week.
+        
+        Returns:
+            Dict with:
+            - classrooms_with_missing: List of dicts with classroom and missing dates
+            - all_complete: Boolean indicating if all classrooms have complete attendance
+            - week_start: Start date of the week
+            - week_end: End date of the week (today or last school day)
+        """
+        today = timezone.now().date()
+        
+        # Calculate week start (Monday of current week)
+        # Python weekday(): 0=Monday, 6=Sunday
+        days_since_monday = today.weekday()
+        week_start = today - timedelta(days=days_since_monday)
+        
+        # Week end is today (we only check up to today)
+        week_end = today
+        
+        # Get all active classrooms
+        classrooms = Classroom.objects.filter(is_active=True).select_related('academic_level')
+        
+        classrooms_with_missing = []
+        
+        for classroom in classrooms:
+            # Check if classroom has any active students
+            has_students = Student.objects.filter(
+                classroom=classroom,
+                is_active=True
+            ).exists()
+            
+            if not has_students:
+                continue
+            
+            # Get missing dates for this classroom
+            missing_dates = AttendanceService.get_missing_attendance(
+                classroom=classroom,
+                start_date=week_start,
+                end_date=week_end
+            )
+            
+            if missing_dates:
+                classrooms_with_missing.append({
+                    'classroom': classroom,
+                    'classroom_name': str(classroom),
+                    'missing_dates': missing_dates,
+                    'missing_count': len(missing_dates),
+                })
+        
+        # Sort by classroom name
+        classrooms_with_missing.sort(key=lambda x: x['classroom_name'])
+        
+        return {
+            'classrooms_with_missing': classrooms_with_missing,
+            'all_complete': len(classrooms_with_missing) == 0,
+            'week_start': week_start,
+            'week_end': week_end,
+        }
 
 
 dashboard = DashboardView.as_view()
