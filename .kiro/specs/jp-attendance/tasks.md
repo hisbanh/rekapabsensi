@@ -43,44 +43,44 @@ Implementasi sistem rekap absensi per Jam Pelajaran (JP) dengan Custom Admin Pan
 - [x] 3. Checkpoint - Ensure models and services work correctly
   - Ensure all tests pass, ask the user if questions arise.
 
-- [-] 4. Create Base Template Components
-  - [ ] 4.1 Create new base.html with sidebar layout and brown/white color theme
+- [x] 4. Create Base Template Components
+  - [x] 4.1 Create new base.html with sidebar layout and brown/white color theme
     - Include CSS variables for theme colors
     - Add Font Awesome CDN
     - _Requirements: 7.1, 7.2, 7.3_
-  - [ ] 4.2 Create _sidebar.html component with navigation menu
+  - [x] 4.2 Create _sidebar.html component with navigation menu
     - Dashboard, Input Absensi, Laporan sections
     - Management section (Students, Classrooms, Holidays, Settings, Users)
     - Role-based menu visibility
     - _Requirements: 7.1_
-  - [ ] 4.3 Create _data_table.html reusable component
+  - [x] 4.3 Create _data_table.html reusable component
     - Search input, column sorting, pagination
     - Bulk action checkboxes
     - Export buttons (CSV, Excel)
     - _Requirements: 7.6, 7.8_
-  - [ ] 4.4 Create _pagination.html, _modal.html, _form_field.html, _alert.html components
+  - [x] 4.4 Create _pagination.html, _modal.html, _form_field.html, _alert.html components
     - _Requirements: 7.5_
-  - [ ] 4.5 Create responsive CSS for mobile devices
+  - [x] 4.5 Create responsive CSS for mobile devices
     - Collapsible sidebar on mobile
     - Card layout for tables on small screens
     - _Requirements: 7.4_
 
-- [ ] 5. Implement Attendance Input Feature
-  - [ ] 5.1 Create attendance input select view (choose classroom and date)
+- [x] 5. Implement Attendance Input Feature
+  - [x] 5.1 Create attendance input select view (choose classroom and date)
     - Dropdown for classroom selection
     - Date picker for date selection
     - _Requirements: 2.1_
-  - [ ] 5.2 Create attendance input form view with dynamic JP columns
+  - [x] 5.2 Create attendance input form view with dynamic JP columns
     - Load students for selected classroom
     - Display JP columns based on DaySchedule
     - Show holiday warning if applicable
     - _Requirements: 2.1, 2.2, 2.9_
-  - [ ] 5.3 Implement status toggle JavaScript (click to cycle H→S→I→A→H)
+  - [x] 5.3 Implement status toggle JavaScript (click to cycle H→S→I→A→H)
     - Color coding for each status
     - _Requirements: 2.3_
-  - [ ] 5.4 Implement Quick Fill buttons (Semua H, Semua S, Semua I, Semua A)
+  - [x] 5.4 Implement Quick Fill buttons (Semua H, Semua S, Semua I, Semua A)
     - _Requirements: 2.4_
-  - [ ] 5.5 Create AJAX endpoint for saving attendance data
+  - [x] 5.5 Create AJAX endpoint for saving attendance data
     - Validate and save jp_statuses JSON
     - Handle existing record updates
     - _Requirements: 2.5, 2.6_

@@ -1,0 +1,142 @@
+{% comment %}
+Alert Component
+
+Usage:
+{% include 'components/_alert.html' with 
+    type="success"
+    message="Operation completed successfully"
+    dismissible=True
+    icon="fa-check-circle"
+%}
+
+Or with title:
+{% include 'components/_alert.html' with 
+    type="warning"
+    title="Warning"
+    message="Please review your input"
+%}
+
+Expected context variables:
+- type: Alert type (success, warning, danger, info) - default: info
+- message: Alert message content
+- title: Optional title for the alert
+- dismissible: Allow dismissing the alert (default: True)
+- icon: Custom icon class (auto-detected based on type if not provided)
+- class: Additional CSS classes
+{% endcomment %}
+
+{% with alert_type=type|default:'info' %}
+<div class="alert alert-{{ alert_type }} {% if dismissible|default:True %}alert-dismissible{% endif %} fade show {{ class }}" role="alert">
+    <div class="alert-content">
+        <div class="alert-icon">
+            {% if icon %}
+            <i class="fas {{ icon }}"></i>
+            {% elif alert_type == 'success' %}
+            <i class="fas fa-check-circle"></i>
+            {% elif alert_type == 'warning' %}
+            <i class="fas fa-exclamation-triangle"></i>
+            {% elif alert_type == 'danger' %}
+            <i class="fas fa-times-circle"></i>
+            {% else %}
+            <i class="fas fa-info-circle"></i>
+            {% endif %}
+        </div>
+        <div class="alert-text">
+            {% if title %}
+            <div class="alert-title">{{ title }}</div>
+            {% endif %}
+            <div class="alert-message">{{ message }}</div>
+        </div>
+    </div>
+    {% if dismissible|default:True %}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    {% endif %}
+</div>
+{% endwith %}
+
+<style>
+.alert {
+    border: none;
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1rem;
+}
+
+.alert-content {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+}
+
+.alert-icon {
+    font-size: 1.25rem;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.alert-text {
+    flex: 1;
+}
+
+.alert-title {
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.alert-message {
+    font-size: 0.9rem;
+}
+
+/* Success Alert */
+.alert-success {
+    background-color: var(--status-hadir-bg);
+    color: #1B5E20;
+}
+
+.alert-success .alert-icon {
+    color: var(--status-hadir);
+}
+
+/* Warning Alert */
+.alert-warning {
+    background-color: var(--status-sakit-bg);
+    color: #E65100;
+}
+
+.alert-warning .alert-icon {
+    color: var(--status-sakit);
+}
+
+/* Danger Alert */
+.alert-danger {
+    background-color: var(--status-alpa-bg);
+    color: #B71C1C;
+}
+
+.alert-danger .alert-icon {
+    color: var(--status-alpa);
+}
+
+/* Info Alert */
+.alert-info {
+    background-color: var(--status-izin-bg);
+    color: #0D47A1;
+}
+
+.alert-info .alert-icon {
+    color: var(--status-izin);
+}
+
+/* Dismissible button positioning */
+.alert-dismissible {
+    padding-right: 3rem;
+}
+
+.alert-dismissible .btn-close {
+    position: absolute;
+    top: 50%;
+    right: 1rem;
+    transform: translateY(-50%);
+    padding: 0.5rem;
+}
+</style>

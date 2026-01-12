@@ -8,6 +8,20 @@ def get_item(dictionary, key):
     return dictionary.get(key)
 
 @register.filter
+def get_attr(obj, attr):
+    """Get an attribute from an object using a string key.
+    Supports nested attributes using dot notation (e.g., 'student.name')
+    """
+    try:
+        for part in attr.split('.'):
+            obj = getattr(obj, part, None)
+            if obj is None:
+                return ''
+        return obj
+    except (AttributeError, TypeError):
+        return ''
+
+@register.filter
 def multiply(value, arg):
     """Multiply the value by the argument"""
     try:

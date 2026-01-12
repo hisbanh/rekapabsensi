@@ -10,4 +10,9 @@ urlpatterns = [
     path('export/', views.export_csv, name='export_csv'),
     path('api/stats/', views.api_attendance_stats, name='api_attendance_stats'),
     path('search/', views.search, name='search'),  # Add search URL for Unfold
+    
+    # JP-Based Attendance Input URLs
+    path('input/', views.attendance_input_select, name='attendance_input'),
+    path('input/<uuid:classroom_id>/<str:date_str>/', views.attendance_input_form, name='attendance_input_form'),
+    path('api/attendance/save/', views.api_save_attendance, name='api_save_attendance'),
 ]

@@ -17,11 +17,13 @@ from datetime import datetime, timedelta
 import json
 import logging
 
-from .models import Student, AttendanceRecord, AttendanceStatus
+from .models import Student, AttendanceRecord, AttendanceStatus, Classroom, DailyAttendance, DaySchedule, Holiday
 from .forms import AttendanceFilterForm
 from .services.attendance_service import AttendanceService
 from .services.student_service import StudentService
 from .services.report_service import ReportService
+from .services.schedule_service import ScheduleService
+from .services.holiday_service import HolidayService
 from .exceptions import AttendanceServiceError, StudentServiceError, ReportServiceError
 
 logger = logging.getLogger(__name__)
@@ -403,3 +405,212 @@ def search(request):
         'results': results,
         'query': query
     })
+
+
+
+# ============================================
+# JP-Based Attendance Input Views
+# ============================================
+
+@login_required
+def attendance_input_select(request):
+    """
+    Attendance input selection view - choose classroom and date.
+    This is the first step in the JP-based attendance input flow.
+    """
+    try:
+        # Get all active classrooms
+        classrooms = Classroom.objects.filter(
+            is_active=True
+        ).select_related('academic_level').order_by(
+            'academic_level__code', 'grade', 'section'
+        )
+        
+        # Default date is today
+        today = timezone.now().date()
+        
+        context = {
+            'classrooms': classrooms,
+            'today': today,
+        }
+        
+    except Exception as e:
+        logger.error(f"Error loading attendance input select: {str(e)}")
+        messages.error(request, "Terjadi kesalahan saat memuat halaman")
+        context = {'classrooms': [], 'today': timezone.now().date()}
+    
+    return render(request, 'attendance/input_select.html', context)
+
+
+@login_required
+def attendance_input_form(request, classroom_id, date_str):
+    """
+    Attendance input form view with dynamic JP columns.
+    Displays students for the selected classroom with JP status cells.
+    """
+    try:
+        # Parse date
+        target_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+        
+        # Get classroom
+        classroom = get_object_or_404(Classroom, id=classroom_id, is_active=True)
+        
+        # Get JP count for this day
+        jp_count = ScheduleService.get_jp_count_for_date(target_date)
+        day_schedule = ScheduleService.get_schedule_for_date(target_date)
+        
+        # Check if it's a holiday
+        is_holiday = HolidayService.is_holiday(target_date, classroom)
+        holiday_info = None
+        if is_holiday:
+            holiday_info = HolidayService.get_holiday_by_date(target_date)
+        
+        # Get active students in this classroom
+        students = Student.objects.filter(
+            classroom=classroom,
+            is_active=True
+        ).order_by('name')
+        
+        # Get existing attendance records for this date
+        existing_records = {}
+        daily_attendances = DailyAttendance.objects.filter(
+            student__classroom=classroom,
+            date=target_date
+        ).select_related('student')
+        
+        for attendance in daily_attendances:
+            existing_records[str(attendance.student.id)] = attendance.jp_statuses
+        
+        # Prepare students with their existing records
+        students_data = []
+        for student in students:
+            student_id_str = str(student.id)
+            existing_statuses = existing_records.get(student_id_str, {})
+            
+            # Build JP statuses list (default to 'H' if no existing record)
+            jp_statuses = []
+            for jp_num in range(1, jp_count + 1):
+                jp_key = str(jp_num)
+                status = existing_statuses.get(jp_key, 'H')
+                jp_statuses.append({
+                    'jp_num': jp_num,
+                    'status': status
+                })
+            
+            students_data.append({
+                'student': student,
+                'jp_statuses': jp_statuses,
+                'has_existing': student_id_str in existing_records
+            })
+        
+        # Generate JP range for template
+        jp_range = list(range(1, jp_count + 1))
+        
+        context = {
+            'classroom': classroom,
+            'date': target_date,
+            'date_str': date_str,
+            'jp_count': jp_count,
+            'jp_range': jp_range,
+            'day_schedule': day_schedule,
+            'is_holiday': is_holiday,
+            'holiday_info': holiday_info,
+            'students_data': students_data,
+            'total_students': len(students_data),
+        }
+        
+    except ValueError:
+        messages.error(request, "Format tanggal tidak valid")
+        return redirect('attendance_input')
+    except Exception as e:
+        logger.error(f"Error loading attendance input form: {str(e)}")
+        messages.error(request, f"Terjadi kesalahan saat memuat form absensi: {str(e)}")
+        return redirect('attendance_input')
+    
+    return render(request, 'attendance/input_form.html', context)
+
+
+@login_required
+@require_http_methods(["POST"])
+def api_save_attendance(request):
+    """
+    AJAX endpoint for saving JP-based attendance data.
+    Expects JSON payload with classroom_id, date, and attendance data.
+    """
+    try:
+        # Parse JSON body
+        data = json.loads(request.body)
+        
+        classroom_id = data.get('classroom_id')
+        date_str = data.get('date')
+        attendance_data = data.get('attendance', [])
+        
+        # Validate required fields
+        if not classroom_id:
+            return JsonResponse({
+                'success': False,
+                'error': 'classroom_id is required'
+            }, status=400)
+        
+        if not date_str:
+            return JsonResponse({
+                'success': False,
+                'error': 'date is required'
+            }, status=400)
+        
+        if not attendance_data:
+            return JsonResponse({
+                'success': False,
+                'error': 'attendance data is required'
+            }, status=400)
+        
+        # Parse date
+        try:
+            target_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+        except ValueError:
+            return JsonResponse({
+                'success': False,
+                'error': 'Invalid date format. Use YYYY-MM-DD'
+            }, status=400)
+        
+        # Get classroom
+        try:
+            classroom = Classroom.objects.get(id=classroom_id, is_active=True)
+        except Classroom.DoesNotExist:
+            return JsonResponse({
+                'success': False,
+                'error': 'Classroom not found'
+            }, status=404)
+        
+        # Validate and save attendance using service
+        created_count, updated_count = AttendanceService.save_bulk_attendance(
+            classroom=classroom,
+            target_date=target_date,
+            attendance_data=attendance_data,
+            user=request.user
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'Absensi berhasil disimpan! {created_count} data baru, {updated_count} data diperbarui',
+            'created': created_count,
+            'updated': updated_count
+        })
+        
+    except AttendanceServiceError as e:
+        logger.error(f"Attendance service error: {str(e)}")
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=400)
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'success': False,
+            'error': 'Invalid JSON payload'
+        }, status=400)
+    except Exception as e:
+        logger.error(f"Unexpected error saving attendance: {str(e)}")
+        return JsonResponse({
+            'success': False,
+            'error': 'Terjadi kesalahan tidak terduga'
+        }, status=500)

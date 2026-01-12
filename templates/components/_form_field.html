@@ -1,0 +1,214 @@
+{% comment %}
+Form Field Component
+
+Usage:
+{% include 'components/_form_field.html' with 
+    field=form.name
+    label="Nama"
+    placeholder="Masukkan nama"
+    help_text="Nama lengkap siswa"
+    required=True
+    icon="fa-user"
+%}
+
+Or for custom input:
+{% include 'components/_form_field.html' with 
+    name="custom_field"
+    type="text"
+    label="Custom Field"
+    value=initial_value
+%}
+
+Expected context variables:
+- field: Django form field (optional if using custom input)
+- name: Field name (for custom input)
+- type: Input type (text, email, password, number, date, etc.)
+- label: Field label
+- placeholder: Input placeholder
+- help_text: Help text below input
+- required: Mark as required
+- icon: Font Awesome icon class (without 'fa-' prefix)
+- disabled: Disable the input
+- readonly: Make input readonly
+- class: Additional CSS classes
+{% endcomment %}
+
+<div class="form-field-wrapper mb-3 {% if field.errors %}has-error{% endif %}">
+    {% if label or field.label %}
+    <label class="form-label" {% if field %}for="{{ field.id_for_label }}"{% elif name %}for="id_{{ name }}"{% endif %}>
+        {{ label|default:field.label }}
+        {% if required or field.field.required %}
+        <span class="text-danger">*</span>
+        {% endif %}
+    </label>
+    {% endif %}
+    
+    <div class="input-wrapper {% if icon %}has-icon{% endif %}">
+        {% if icon %}
+        <span class="input-icon">
+            <i class="fas {{ icon }}"></i>
+        </span>
+        {% endif %}
+        
+        {% if field %}
+            {# Render Django form field #}
+            {% if field.field.widget.input_type == 'select' or field.field.widget.template_name == 'django/forms/widgets/select.html' %}
+                {{ field }}
+            {% elif field.field.widget.input_type == 'checkbox' %}
+                <div class="form-check">
+                    {{ field }}
+                    <label class="form-check-label" for="{{ field.id_for_label }}">
+                        {{ field.label }}
+                    </label>
+                </div>
+            {% elif field.field.widget.input_type == 'textarea' or field.field.widget.template_name == 'django/forms/widgets/textarea.html' %}
+                {{ field }}
+            {% else %}
+                {{ field }}
+            {% endif %}
+        {% else %}
+            {# Render custom input #}
+            {% if type == 'textarea' %}
+            <textarea 
+                class="form-control {{ class }}" 
+                id="id_{{ name }}" 
+                name="{{ name }}"
+                placeholder="{{ placeholder }}"
+                {% if required %}required{% endif %}
+                {% if disabled %}disabled{% endif %}
+                {% if readonly %}readonly{% endif %}
+                rows="{{ rows|default:3 }}"
+            >{{ value }}</textarea>
+            {% elif type == 'select' %}
+            <select 
+                class="form-select {{ class }}" 
+                id="id_{{ name }}" 
+                name="{{ name }}"
+                {% if required %}required{% endif %}
+                {% if disabled %}disabled{% endif %}
+            >
+                {% if placeholder %}
+                <option value="">{{ placeholder }}</option>
+                {% endif %}
+                {% for opt in options %}
+                <option value="{{ opt.value }}" {% if opt.value == value %}selected{% endif %}>
+                    {{ opt.label }}
+                </option>
+                {% endfor %}
+            </select>
+            {% elif type == 'checkbox' %}
+            <div class="form-check">
+                <input 
+                    type="checkbox" 
+                    class="form-check-input {{ class }}" 
+                    id="id_{{ name }}" 
+                    name="{{ name }}"
+                    {% if value %}checked{% endif %}
+                    {% if disabled %}disabled{% endif %}
+                >
+                <label class="form-check-label" for="id_{{ name }}">
+                    {{ checkbox_label }}
+                </label>
+            </div>
+            {% else %}
+            <input 
+                type="{{ type|default:'text' }}" 
+                class="form-control {{ class }}" 
+                id="id_{{ name }}" 
+                name="{{ name }}"
+                value="{{ value }}"
+                placeholder="{{ placeholder }}"
+                {% if required %}required{% endif %}
+                {% if disabled %}disabled{% endif %}
+                {% if readonly %}readonly{% endif %}
+                {% if min %}min="{{ min }}"{% endif %}
+                {% if max %}max="{{ max }}"{% endif %}
+                {% if step %}step="{{ step }}"{% endif %}
+            >
+            {% endif %}
+        {% endif %}
+    </div>
+    
+    {% if field.errors %}
+    <div class="invalid-feedback d-block">
+        {% for error in field.errors %}
+        {{ error }}
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    {% if help_text or field.help_text %}
+    <div class="form-text">
+        {{ help_text|default:field.help_text }}
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.form-field-wrapper {
+    position: relative;
+}
+
+.form-field-wrapper .form-label {
+    font-weight: 500;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    margin-bottom: 0.5rem;
+}
+
+.input-wrapper {
+    position: relative;
+}
+
+.input-wrapper.has-icon .form-control,
+.input-wrapper.has-icon .form-select {
+    padding-left: 2.5rem;
+}
+
+.input-icon {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    z-index: 5;
+}
+
+.form-field-wrapper.has-error .form-control,
+.form-field-wrapper.has-error .form-select {
+    border-color: var(--status-alpa);
+}
+
+.form-field-wrapper.has-error .input-icon {
+    color: var(--status-alpa);
+}
+
+.invalid-feedback {
+    font-size: 0.8rem;
+    color: var(--status-alpa);
+    margin-top: 0.25rem;
+}
+
+.form-text {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 0.25rem;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(139, 115, 85, 0.15);
+}
+
+/* Checkbox styling */
+.form-check-input:checked {
+    background-color: var(--primary);
+    border-color: var(--primary);
+}
+
+.form-check-input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(139, 115, 85, 0.15);
+}
+</style>

@@ -1,0 +1,131 @@
+<!-- Sidebar Navigation Component -->
+<aside class="sidebar" id="sidebar">
+    <!-- Sidebar Header / Brand -->
+    <div class="sidebar-header">
+        <a href="{% url 'dashboard' %}" class="sidebar-brand">
+            <div class="sidebar-brand-icon">
+                <i class="fas fa-graduation-cap"></i>
+            </div>
+            <div>
+                <div class="sidebar-brand-text">SIPA YAUMI</div>
+                <div class="sidebar-brand-subtitle">Sistem Informasi Presensi</div>
+            </div>
+        </a>
+    </div>
+    
+    <!-- Navigation Menu -->
+    <nav class="sidebar-nav">
+        <!-- Main Menu Section -->
+        <div class="nav-section">
+            <div class="nav-section-title">Menu Utama</div>
+            
+            <div class="nav-item">
+                <a href="{% url 'dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>Dashboard</span>
+                </a>
+            </div>
+            
+            <div class="nav-item">
+                <a href="{% url 'attendance_input' %}" class="nav-link {% if request.resolver_match.url_name == 'attendance_input' or request.resolver_match.url_name == 'attendance_input_form' %}active{% endif %}">
+                    <i class="fas fa-clipboard-check"></i>
+                    <span>Input Absensi</span>
+                </a>
+            </div>
+            
+            <div class="nav-item">
+                <a href="{% url 'attendance_report' %}" class="nav-link {% if request.resolver_match.url_name == 'attendance_report' %}active{% endif %}">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>Laporan</span>
+                </a>
+            </div>
+        </div>
+        
+        <!-- Management Section -->
+        <div class="nav-section">
+            <div class="nav-section-title">Manajemen</div>
+            
+            <div class="nav-item">
+                <a href="{% url 'student_list' %}" class="nav-link {% if 'student' in request.resolver_match.url_name %}active{% endif %}">
+                    <i class="fas fa-users"></i>
+                    <span>Siswa</span>
+                </a>
+            </div>
+            
+            <div class="nav-item">
+                <a href="{% url 'admin:attendance_classroom_changelist' %}" class="nav-link {% if request.resolver_match.url_name == 'classroom_list' %}active{% endif %}">
+                    <i class="fas fa-school"></i>
+                    <span>Kelas</span>
+                </a>
+            </div>
+            
+            <div class="nav-item">
+                <a href="{% url 'admin:attendance_holiday_changelist' %}" class="nav-link {% if request.resolver_match.url_name == 'holiday_list' %}active{% endif %}">
+                    <i class="fas fa-calendar-times"></i>
+                    <span>Hari Libur</span>
+                </a>
+            </div>
+        </div>
+        
+        <!-- Settings Section (Admin Only) -->
+        {% if user.is_superuser or user.is_staff %}
+        <div class="nav-section">
+            <div class="nav-section-title">Pengaturan</div>
+            
+            <div class="nav-item">
+                <a href="{% url 'admin:attendance_dayschedule_changelist' %}" class="nav-link {% if request.resolver_match.url_name == 'settings' %}active{% endif %}">
+                    <i class="fas fa-cog"></i>
+                    <span>Jadwal JP</span>
+                </a>
+            </div>
+            
+            {% if user.is_superuser %}
+            <div class="nav-item">
+                <a href="{% url 'admin:auth_user_changelist' %}" class="nav-link {% if request.resolver_match.url_name == 'user_list' %}active{% endif %}">
+                    <i class="fas fa-user-shield"></i>
+                    <span>Pengguna</span>
+                </a>
+            </div>
+            {% endif %}
+            
+            <div class="nav-item">
+                <a href="{% url 'admin:index' %}" class="nav-link">
+                    <i class="fas fa-tools"></i>
+                    <span>Admin Panel</span>
+                </a>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Logout Section -->
+        <div class="nav-section">
+            <div class="nav-item">
+                <a href="{% url 'admin:logout' %}" class="nav-link">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </a>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- User Info at Bottom -->
+    <div class="sidebar-user">
+        <div class="sidebar-user-info">
+            <div class="sidebar-user-avatar">
+                {{ user.get_full_name|default:user.username|slice:":1"|upper }}
+            </div>
+            <div>
+                <div class="sidebar-user-name">{{ user.get_full_name|default:user.username }}</div>
+                <div class="sidebar-user-role">
+                    {% if user.is_superuser %}
+                        Administrator
+                    {% elif user.is_staff %}
+                        Staff
+                    {% else %}
+                        Guru
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</aside>

@@ -1,0 +1,83 @@
+{% comment %}
+Modal Component
+
+Usage:
+{% include 'components/_modal.html' with 
+    modal_id="myModal"
+    modal_title="Modal Title"
+    modal_size="md"
+    show_footer=True
+%}
+
+Expected context variables:
+- modal_id: Unique ID for the modal (required)
+- modal_title: Title displayed in modal header
+- modal_size: Size of modal (sm, md, lg, xl) - default: md
+- show_footer: Show footer with buttons (default: True)
+- confirm_text: Text for confirm button (default: 'Simpan')
+- cancel_text: Text for cancel button (default: 'Batal')
+- confirm_class: CSS class for confirm button (default: 'btn-primary')
+- danger_mode: If true, uses danger styling (default: False)
+{% endcomment %}
+
+<div class="modal fade" id="{{ modal_id }}" tabindex="-1" aria-labelledby="{{ modal_id }}Label" aria-hidden="true">
+    <div class="modal-dialog modal-{{ modal_size|default:'md' }} modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="{{ modal_id }}Label">
+                    {% if danger_mode %}
+                    <i class="fas fa-exclamation-triangle text-danger me-2"></i>
+                    {% endif %}
+                    {{ modal_title|default:'Modal' }}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                {% block modal_body %}
+                {{ modal_content|default:'' }}
+                {% endblock %}
+            </div>
+            {% if show_footer|default:True %}
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                    {{ cancel_text|default:'Batal' }}
+                </button>
+                <button type="button" class="btn {{ confirm_class|default:'btn-primary' }}" id="{{ modal_id }}Confirm">
+                    {{ confirm_text|default:'Simpan' }}
+                </button>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+.modal-content {
+    border: none;
+    border-radius: 12px;
+    box-shadow: var(--shadow-lg);
+}
+
+.modal-header {
+    border-bottom: 1px solid var(--border-color);
+    padding: 1rem 1.5rem;
+}
+
+.modal-title {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+
+.modal-footer {
+    border-top: 1px solid var(--border-color);
+    padding: 1rem 1.5rem;
+}
+
+.modal-footer .btn {
+    min-width: 100px;
+}
+</style>
