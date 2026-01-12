@@ -682,3 +682,613 @@ def api_save_attendance(request):
             'success': False,
             'error': 'Terjadi kesalahan tidak terduga'
         }, status=500)
+
+
+# ============================================
+# Management CRUD Views
+# ============================================
+
+from django.core.paginator import Paginator
+from django.db import transaction
+from django.contrib.auth.models import User
+from .forms import (
+    StudentForm, StudentFilterForm, ClassroomForm, 
+    HolidayForm, DayScheduleForm, UserForm
+)
+
+
+def admin_required(view_func):
+    """Decorator to require admin (superuser) access"""
+    def wrapper(request, *args, **kwargs):
+        if not request.user.is_superuser:
+            messages.error(request, "Anda tidak memiliki akses ke halaman ini")
+            return redirect('dashboard')
+        return view_func(request, *args, **kwargs)
+    return wrapper
+
+
+# ============================================
+# Student Management Views
+# ============================================
+
+@login_required
+def manage_student_list(request):
+    """Student list view with filtering, search, and pagination"""
+    try:
+        # Get filter parameters
+        filter_form = StudentFilterForm(request.GET)
+        
+        # Base queryset
+        students = Student.objects.select_related(
+            'classroom', 'classroom__academic_level'
+        ).order_by('name')
+        
+        # Apply filters
+        if filter_form.is_valid():
+            search = filter_form.cleaned_data.get('search')
+            classroom = filter_form.cleaned_data.get('classroom')
+            status = filter_form.cleaned_data.get('status')
+            
+            if search:
+                students = students.filter(
+                    models.Q(name__icontains=search) |
+                    models.Q(student_id__icontains=search) |
+                    models.Q(nisn__icontains=search)
+                )
+            
+            if classroom:
+                students = students.filter(classroom=classroom)
+            
+            if status == 'active':
+                students = students.filter(is_active=True)
+            elif status == 'inactive':
+                students = students.filter(is_active=False)
+        
+        # Pagination
+        paginator = Paginator(students, 20)
+        page_number = request.GET.get('page', 1)
+        page_obj = paginator.get_page(page_number)
+        
+        # Stats
+        total_students = Student.objects.count()
+        active_students = Student.objects.filter(is_active=True).count()
+        inactive_students = total_students - active_students
+        
+        context = {
+            'students': page_obj,
+            'filter_form': filter_form,
+            'total_students': total_students,
+            'active_students': active_students,
+            'inactive_students': inactive_students,
+        }
+        
+    except Exception as e:
+        logger.error(f"Error loading student list: {str(e)}")
+        messages.error(request, "Terjadi kesalahan saat memuat data siswa")
+        context = {'students': [], 'filter_form': StudentFilterForm()}
+    
+    return render(request, 'manage/students/list.html', context)
+
+
+@login_required
+def manage_student_create(request):
+    """Create new student"""
+    if request.method == 'POST':
+        form = StudentForm(request.POST)
+        if form.is_valid():
+            try:
+                student = form.save(commit=False)
+                student.created_by = request.user
+                student.save()
+                messages.success(request, f'Siswa "{student.name}" berhasil ditambahkan')
+                return redirect('manage_student_list')
+            except Exception as e:
+                logger.error(f"Error creating student: {str(e)}")
+                messages.error(request, f"Gagal menambahkan siswa: {str(e)}")
+    else:
+        form = StudentForm()
+    
+    return render(request, 'manage/students/form.html', {
+        'form': form,
+        'is_edit': False,
+    })
+
+
+@login_required
+def manage_student_edit(request, pk):
+    """Edit existing student"""
+    student = get_object_or_404(Student, pk=pk)
+    
+    if request.method == 'POST':
+        form = StudentForm(request.POST, instance=student)
+        if form.is_valid():
+            try:
+                student = form.save(commit=False)
+                student.updated_by = request.user
+                student.save()
+                messages.success(request, f'Siswa "{student.name}" berhasil diperbarui')
+                return redirect('manage_student_list')
+            except Exception as e:
+                logger.error(f"Error updating student: {str(e)}")
+                messages.error(request, f"Gagal memperbarui siswa: {str(e)}")
+    else:
+        form = StudentForm(instance=student)
+    
+    return render(request, 'manage/students/form.html', {
+        'form': form,
+        'student': student,
+        'is_edit': True,
+    })
+
+
+@login_required
+@require_http_methods(["POST"])
+def manage_student_delete(request, pk):
+    """Delete student"""
+    student = get_object_or_404(Student, pk=pk)
+    
+    try:
+        name = student.name
+        student.delete()
+        messages.success(request, f'Siswa "{name}" berhasil dihapus')
+    except Exception as e:
+        logger.error(f"Error deleting student: {str(e)}")
+        messages.error(request, f"Gagal menghapus siswa: {str(e)}")
+    
+    return redirect('manage_student_list')
+
+
+@login_required
+@require_http_methods(["POST"])
+def api_student_inline_edit(request):
+    """AJAX endpoint for inline editing student fields"""
+    try:
+        data = json.loads(request.body)
+        student_id = data.get('id')
+        field = data.get('field')
+        value = data.get('value')
+        
+        if not all([student_id, field]):
+            return JsonResponse({'success': False, 'error': 'Missing required fields'}, status=400)
+        
+        # Allowed fields for inline edit
+        allowed_fields = ['name', 'student_id', 'nisn', 'is_active']
+        if field not in allowed_fields:
+            return JsonResponse({'success': False, 'error': 'Field not allowed for inline edit'}, status=400)
+        
+        student = Student.objects.get(pk=student_id)
+        
+        # Handle boolean fields
+        if field == 'is_active':
+            value = value in ['true', 'True', True, 1, '1']
+        
+        setattr(student, field, value)
+        student.updated_by = request.user
+        student.save()
+        
+        return JsonResponse({
+            'success': True,
+            'value': getattr(student, field),
+            'message': 'Data berhasil diperbarui'
+        })
+        
+    except Student.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Siswa tidak ditemukan'}, status=404)
+    except Exception as e:
+        logger.error(f"Error in inline edit: {str(e)}")
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+# ============================================
+# Classroom Management Views
+# ============================================
+
+@login_required
+def manage_classroom_list(request):
+    """Classroom list view"""
+    try:
+        classrooms = Classroom.objects.select_related(
+            'academic_level', 'homeroom_teacher'
+        ).annotate(
+            student_count_val=models.Count('students', filter=models.Q(students__is_active=True))
+        ).order_by('academic_level__code', 'grade', 'section')
+        
+        # Pagination
+        paginator = Paginator(classrooms, 20)
+        page_number = request.GET.get('page', 1)
+        page_obj = paginator.get_page(page_number)
+        
+        # Stats
+        total_classrooms = Classroom.objects.count()
+        active_classrooms = Classroom.objects.filter(is_active=True).count()
+        
+        context = {
+            'classrooms': page_obj,
+            'total_classrooms': total_classrooms,
+            'active_classrooms': active_classrooms,
+        }
+        
+    except Exception as e:
+        logger.error(f"Error loading classroom list: {str(e)}")
+        messages.error(request, "Terjadi kesalahan saat memuat data kelas")
+        context = {'classrooms': []}
+    
+    return render(request, 'manage/classrooms/list.html', context)
+
+
+@login_required
+def manage_classroom_create(request):
+    """Create new classroom"""
+    if request.method == 'POST':
+        form = ClassroomForm(request.POST)
+        if form.is_valid():
+            try:
+                classroom = form.save(commit=False)
+                classroom.created_by = request.user
+                classroom.save()
+                messages.success(request, f'Kelas "{classroom}" berhasil ditambahkan')
+                return redirect('manage_classroom_list')
+            except Exception as e:
+                logger.error(f"Error creating classroom: {str(e)}")
+                messages.error(request, f"Gagal menambahkan kelas: {str(e)}")
+    else:
+        form = ClassroomForm()
+    
+    return render(request, 'manage/classrooms/form.html', {
+        'form': form,
+        'is_edit': False,
+    })
+
+
+@login_required
+def manage_classroom_edit(request, pk):
+    """Edit existing classroom"""
+    classroom = get_object_or_404(Classroom, pk=pk)
+    
+    if request.method == 'POST':
+        form = ClassroomForm(request.POST, instance=classroom)
+        if form.is_valid():
+            try:
+                classroom = form.save(commit=False)
+                classroom.updated_by = request.user
+                classroom.save()
+                messages.success(request, f'Kelas "{classroom}" berhasil diperbarui')
+                return redirect('manage_classroom_list')
+            except Exception as e:
+                logger.error(f"Error updating classroom: {str(e)}")
+                messages.error(request, f"Gagal memperbarui kelas: {str(e)}")
+    else:
+        form = ClassroomForm(instance=classroom)
+    
+    return render(request, 'manage/classrooms/form.html', {
+        'form': form,
+        'classroom': classroom,
+        'is_edit': True,
+    })
+
+
+@login_required
+@require_http_methods(["POST"])
+def manage_classroom_delete(request, pk):
+    """Delete classroom"""
+    classroom = get_object_or_404(Classroom, pk=pk)
+    
+    try:
+        name = str(classroom)
+        classroom.delete()
+        messages.success(request, f'Kelas "{name}" berhasil dihapus')
+    except Exception as e:
+        logger.error(f"Error deleting classroom: {str(e)}")
+        messages.error(request, f"Gagal menghapus kelas: {str(e)}")
+    
+    return redirect('manage_classroom_list')
+
+
+# ============================================
+# Holiday Management Views
+# ============================================
+
+@login_required
+def manage_holiday_list(request):
+    """Holiday list view"""
+    try:
+        holidays = Holiday.objects.prefetch_related('classrooms').order_by('-date')
+        
+        # Pagination
+        paginator = Paginator(holidays, 20)
+        page_number = request.GET.get('page', 1)
+        page_obj = paginator.get_page(page_number)
+        
+        # Stats
+        total_holidays = Holiday.objects.count()
+        upcoming_holidays = Holiday.objects.filter(date__gte=timezone.now().date()).count()
+        
+        context = {
+            'holidays': page_obj,
+            'total_holidays': total_holidays,
+            'upcoming_holidays': upcoming_holidays,
+        }
+        
+    except Exception as e:
+        logger.error(f"Error loading holiday list: {str(e)}")
+        messages.error(request, "Terjadi kesalahan saat memuat data hari libur")
+        context = {'holidays': []}
+    
+    return render(request, 'manage/holidays/list.html', context)
+
+
+@login_required
+def manage_holiday_create(request):
+    """Create new holiday"""
+    if request.method == 'POST':
+        form = HolidayForm(request.POST)
+        if form.is_valid():
+            try:
+                holiday = form.save(commit=False)
+                holiday.created_by = request.user
+                holiday.save()
+                form.save_m2m()  # Save M2M relationships
+                messages.success(request, f'Hari libur "{holiday.name}" berhasil ditambahkan')
+                return redirect('manage_holiday_list')
+            except Exception as e:
+                logger.error(f"Error creating holiday: {str(e)}")
+                messages.error(request, f"Gagal menambahkan hari libur: {str(e)}")
+    else:
+        form = HolidayForm()
+    
+    return render(request, 'manage/holidays/form.html', {
+        'form': form,
+        'is_edit': False,
+    })
+
+
+@login_required
+def manage_holiday_edit(request, pk):
+    """Edit existing holiday"""
+    holiday = get_object_or_404(Holiday, pk=pk)
+    
+    if request.method == 'POST':
+        form = HolidayForm(request.POST, instance=holiday)
+        if form.is_valid():
+            try:
+                holiday = form.save(commit=False)
+                holiday.updated_by = request.user
+                holiday.save()
+                form.save_m2m()
+                messages.success(request, f'Hari libur "{holiday.name}" berhasil diperbarui')
+                return redirect('manage_holiday_list')
+            except Exception as e:
+                logger.error(f"Error updating holiday: {str(e)}")
+                messages.error(request, f"Gagal memperbarui hari libur: {str(e)}")
+    else:
+        form = HolidayForm(instance=holiday)
+    
+    return render(request, 'manage/holidays/form.html', {
+        'form': form,
+        'holiday': holiday,
+        'is_edit': True,
+    })
+
+
+@login_required
+@require_http_methods(["POST"])
+def manage_holiday_delete(request, pk):
+    """Delete holiday"""
+    holiday = get_object_or_404(Holiday, pk=pk)
+    
+    try:
+        name = holiday.name
+        holiday.delete()
+        messages.success(request, f'Hari libur "{name}" berhasil dihapus')
+    except Exception as e:
+        logger.error(f"Error deleting holiday: {str(e)}")
+        messages.error(request, f"Gagal menghapus hari libur: {str(e)}")
+    
+    return redirect('manage_holiday_list')
+
+
+# ============================================
+# Day Schedule Settings View
+# ============================================
+
+@login_required
+def manage_day_schedule(request):
+    """Day schedule settings page"""
+    try:
+        schedules = DaySchedule.objects.all().order_by('day_of_week')
+        
+        if request.method == 'POST':
+            # Process form data for each day
+            with transaction.atomic():
+                for schedule in schedules:
+                    jp_count = request.POST.get(f'jp_count_{schedule.day_of_week}')
+                    is_school_day = request.POST.get(f'is_school_day_{schedule.day_of_week}') == 'on'
+                    
+                    if jp_count:
+                        try:
+                            jp_count = int(jp_count)
+                            if 1 <= jp_count <= 10:
+                                schedule.default_jp_count = jp_count
+                                schedule.is_school_day = is_school_day
+                                schedule.updated_by = request.user
+                                schedule.save()
+                        except ValueError:
+                            pass
+                
+                messages.success(request, 'Jadwal JP berhasil diperbarui')
+                return redirect('manage_day_schedule')
+        
+        context = {
+            'schedules': schedules,
+        }
+        
+    except Exception as e:
+        logger.error(f"Error loading day schedule: {str(e)}")
+        messages.error(request, "Terjadi kesalahan saat memuat jadwal JP")
+        context = {'schedules': []}
+    
+    return render(request, 'manage/settings/day_schedule.html', context)
+
+
+# ============================================
+# User Management Views (Admin Only)
+# ============================================
+
+@login_required
+@admin_required
+def manage_user_list(request):
+    """User list view (Admin only)"""
+    try:
+        users = User.objects.all().order_by('username')
+        
+        # Pagination
+        paginator = Paginator(users, 20)
+        page_number = request.GET.get('page', 1)
+        page_obj = paginator.get_page(page_number)
+        
+        # Stats
+        total_users = User.objects.count()
+        active_users = User.objects.filter(is_active=True).count()
+        admin_users = User.objects.filter(is_superuser=True).count()
+        
+        context = {
+            'users': page_obj,
+            'total_users': total_users,
+            'active_users': active_users,
+            'admin_users': admin_users,
+        }
+        
+    except Exception as e:
+        logger.error(f"Error loading user list: {str(e)}")
+        messages.error(request, "Terjadi kesalahan saat memuat data pengguna")
+        context = {'users': []}
+    
+    return render(request, 'manage/users/list.html', context)
+
+
+@login_required
+@admin_required
+def manage_user_create(request):
+    """Create new user (Admin only)"""
+    if request.method == 'POST':
+        form = UserForm(request.POST)
+        if form.is_valid():
+            try:
+                user = form.save()
+                messages.success(request, f'Pengguna "{user.username}" berhasil ditambahkan')
+                return redirect('manage_user_list')
+            except Exception as e:
+                logger.error(f"Error creating user: {str(e)}")
+                messages.error(request, f"Gagal menambahkan pengguna: {str(e)}")
+    else:
+        form = UserForm()
+    
+    return render(request, 'manage/users/form.html', {
+        'form': form,
+        'is_edit': False,
+    })
+
+
+@login_required
+@admin_required
+def manage_user_edit(request, pk):
+    """Edit existing user (Admin only)"""
+    user_obj = get_object_or_404(User, pk=pk)
+    
+    if request.method == 'POST':
+        form = UserForm(request.POST, instance=user_obj)
+        if form.is_valid():
+            try:
+                user_obj = form.save()
+                messages.success(request, f'Pengguna "{user_obj.username}" berhasil diperbarui')
+                return redirect('manage_user_list')
+            except Exception as e:
+                logger.error(f"Error updating user: {str(e)}")
+                messages.error(request, f"Gagal memperbarui pengguna: {str(e)}")
+    else:
+        form = UserForm(instance=user_obj)
+    
+    return render(request, 'manage/users/form.html', {
+        'form': form,
+        'user_obj': user_obj,
+        'is_edit': True,
+    })
+
+
+@login_required
+@admin_required
+@require_http_methods(["POST"])
+def manage_user_delete(request, pk):
+    """Delete user (Admin only)"""
+    user_obj = get_object_or_404(User, pk=pk)
+    
+    # Prevent self-deletion
+    if user_obj == request.user:
+        messages.error(request, "Anda tidak dapat menghapus akun Anda sendiri")
+        return redirect('manage_user_list')
+    
+    try:
+        username = user_obj.username
+        user_obj.delete()
+        messages.success(request, f'Pengguna "{username}" berhasil dihapus')
+    except Exception as e:
+        logger.error(f"Error deleting user: {str(e)}")
+        messages.error(request, f"Gagal menghapus pengguna: {str(e)}")
+    
+    return redirect('manage_user_list')
+
+
+# ============================================
+# Bulk Actions
+# ============================================
+
+@login_required
+@require_http_methods(["POST"])
+def bulk_action(request):
+    """Handle bulk actions for management pages"""
+    try:
+        action = request.POST.get('action')
+        model_type = request.POST.get('model_type')
+        selected_ids = request.POST.getlist('selected_ids')
+        
+        if not action or not model_type or not selected_ids:
+            messages.error(request, 'Parameter tidak lengkap')
+            return redirect(request.META.get('HTTP_REFERER', 'dashboard'))
+        
+        # Map model types to models
+        model_map = {
+            'student': Student,
+            'classroom': Classroom,
+            'holiday': Holiday,
+        }
+        
+        model_class = model_map.get(model_type)
+        if not model_class:
+            messages.error(request, 'Tipe model tidak valid')
+            return redirect(request.META.get('HTTP_REFERER', 'dashboard'))
+        
+        # Perform action within transaction
+        with transaction.atomic():
+            queryset = model_class.objects.filter(pk__in=selected_ids)
+            count = queryset.count()
+            
+            if action == 'delete':
+                queryset.delete()
+                messages.success(request, f'{count} item berhasil dihapus')
+            
+            elif action == 'activate':
+                queryset.update(is_active=True, updated_by=request.user)
+                messages.success(request, f'{count} item berhasil diaktifkan')
+            
+            elif action == 'deactivate':
+                queryset.update(is_active=False, updated_by=request.user)
+                messages.success(request, f'{count} item berhasil dinonaktifkan')
+            
+            else:
+                messages.error(request, 'Aksi tidak valid')
+        
+    except Exception as e:
+        logger.error(f"Error in bulk action: {str(e)}")
+        messages.error(request, f"Gagal melakukan aksi: {str(e)}")
+    
+    return redirect(request.META.get('HTTP_REFERER', 'dashboard'))

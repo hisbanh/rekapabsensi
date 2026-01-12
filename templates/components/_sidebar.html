@@ -46,21 +46,21 @@
             <div class="nav-section-title">Manajemen</div>
             
             <div class="nav-item">
-                <a href="{% url 'student_list' %}" class="nav-link {% if 'student' in request.resolver_match.url_name %}active{% endif %}">
+                <a href="{% url 'manage_student_list' %}" class="nav-link {% if 'manage_student' in request.resolver_match.url_name %}active{% endif %}">
                     <i class="fas fa-users"></i>
                     <span>Siswa</span>
                 </a>
             </div>
             
             <div class="nav-item">
-                <a href="{% url 'admin:attendance_classroom_changelist' %}" class="nav-link {% if request.resolver_match.url_name == 'classroom_list' %}active{% endif %}">
+                <a href="{% url 'manage_classroom_list' %}" class="nav-link {% if 'manage_classroom' in request.resolver_match.url_name %}active{% endif %}">
                     <i class="fas fa-school"></i>
                     <span>Kelas</span>
                 </a>
             </div>
             
             <div class="nav-item">
-                <a href="{% url 'admin:attendance_holiday_changelist' %}" class="nav-link {% if request.resolver_match.url_name == 'holiday_list' %}active{% endif %}">
+                <a href="{% url 'manage_holiday_list' %}" class="nav-link {% if 'manage_holiday' in request.resolver_match.url_name %}active{% endif %}">
                     <i class="fas fa-calendar-times"></i>
                     <span>Hari Libur</span>
                 </a>
@@ -73,7 +73,7 @@
             <div class="nav-section-title">Pengaturan</div>
             
             <div class="nav-item">
-                <a href="{% url 'admin:attendance_dayschedule_changelist' %}" class="nav-link {% if request.resolver_match.url_name == 'settings' %}active{% endif %}">
+                <a href="{% url 'manage_day_schedule' %}" class="nav-link {% if request.resolver_match.url_name == 'manage_day_schedule' %}active{% endif %}">
                     <i class="fas fa-cog"></i>
                     <span>Jadwal JP</span>
                 </a>
@@ -81,7 +81,7 @@
             
             {% if user.is_superuser %}
             <div class="nav-item">
-                <a href="{% url 'admin:auth_user_changelist' %}" class="nav-link {% if request.resolver_match.url_name == 'user_list' %}active{% endif %}">
+                <a href="{% url 'manage_user_list' %}" class="nav-link {% if 'manage_user' in request.resolver_match.url_name %}active{% endif %}">
                     <i class="fas fa-user-shield"></i>
                     <span>Pengguna</span>
                 </a>

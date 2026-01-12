@@ -107,31 +107,31 @@ Implementasi sistem rekap absensi per Jam Pelajaran (JP) dengan Custom Admin Pan
     - **Property 12: Missing Attendance Calculation**
     - **Validates: Requirements 4.1, 4.2, 4.3, 4.4**
 
-- [-] 8. Implement Management CRUD Pages
+- [x] 8. Implement Management CRUD Pages
   - [x] 8.1 Create base_list.html and base_form.html templates for management pages
     - Extend from base.html
     - Include breadcrumb navigation
     - _Requirements: 8.7_
-  - [-] 8.2 Implement Student management (list, create, edit, delete)
+  - [x] 8.2 Implement Student management (list, create, edit, delete)
     - Search by name, NIS
     - Filter by classroom, status
     - Inline edit for quick updates
     - _Requirements: 8.1, 8.2, 8.3, 8.4_
-  - [ ] 8.3 Implement Classroom management (list, create, edit, delete)
+  - [x] 8.3 Implement Classroom management (list, create, edit, delete)
     - _Requirements: 8.1_
-  - [ ] 8.4 Implement Holiday management (list, create, edit, delete)
+  - [x] 8.4 Implement Holiday management (list, create, edit, delete)
     - Dropdown for "Semua Kelas" / "Pilih Kelas Tertentu"
     - Multi-select for classrooms
     - _Requirements: 3.2, 3.4, 8.1_
-  - [ ] 8.5 Implement Day Schedule settings page
+  - [x] 8.5 Implement Day Schedule settings page
     - Display all 7 days with JP count inputs
     - Save button to update all schedules
     - _Requirements: 1.2, 1.4_
-  - [ ] 8.6 Implement User management (Admin only)
+  - [x] 8.6 Implement User management (Admin only)
     - List users with role display
     - Create/edit user with role assignment
     - _Requirements: 8.1, 8.6_
-  - [ ] 8.7 Implement bulk actions (delete, activate, deactivate)
+  - [x] 8.7 Implement bulk actions (delete, activate, deactivate)
     - Transaction-based processing
     - _Requirements: 8.5_
   - [ ]* 8.8 Write property tests for CRUD operations

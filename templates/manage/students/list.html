@@ -1,0 +1,335 @@
+{% extends 'manage/base_list.html' %}
+{% load static %}
+
+{% block page_title %}Manajemen Siswa{% endblock %}
+
+{% block breadcrumb_items %}
+<li class="breadcrumb-item active">Siswa</li>
+{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'manage_student_create' %}" class="btn btn-primary btn-sm">
+    <i class="fas fa-plus me-1"></i> Tambah Siswa
+</a>
+{% endblock %}
+
+{% block stats_row %}
+<div class="stats-row">
+    <div class="stat-card">
+        <div class="stat-icon primary">
+            <i class="fas fa-users"></i>
+        </div>
+        <div>
+            <div class="stat-value">{{ total_students }}</div>
+            <div class="stat-label">Total Siswa</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon success">
+            <i class="fas fa-user-check"></i>
+        </div>
+        <div>
+            <div class="stat-value">{{ active_students }}</div>
+            <div class="stat-label">Siswa Aktif</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon danger">
+            <i class="fas fa-user-times"></i>
+        </div>
+        <div>
+            <div class="stat-value">{{ inactive_students }}</div>
+            <div class="stat-label">Siswa Nonaktif</div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block filters %}
+<div class="filter-section">
+    <form method="get" class="filter-row">
+        <div class="filter-group" style="flex: 2;">
+            {{ filter_form.search }}
+        </div>
+        <div class="filter-group">
+            {{ filter_form.classroom }}
+        </div>
+        <div class="filter-group">
+            {{ filter_form.status }}
+        </div>
+        <div class="filter-actions">
+            <button type="submit" class="btn btn-primary btn-sm">
+                <i class="fas fa-search me-1"></i> Filter
+            </button>
+            <a href="{% url 'manage_student_list' %}" class="btn btn-outline-secondary btn-sm">
+                <i class="fas fa-times me-1"></i> Reset
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block list_content %}
+<div class="card">
+    <div class="card-body p-0">
+        <!-- Bulk Actions Form -->
+        <form method="post" action="{% url 'bulk_action' %}" id="bulkForm">
+            {% csrf_token %}
+            <input type="hidden" name="model_type" value="student">
+            
+            <div class="table-responsive">
+                <table class="table table-hover mb-0" id="studentTable">
+                    <thead>
+                        <tr>
+                            <th style="width: 40px;">
+                                <input type="checkbox" class="form-check-input" id="selectAll">
+                            </th>
+                            <th>NIS</th>
+                            <th>Nama</th>
+                            <th>Kelas</th>
+                            <th>Status</th>
+                            <th style="width: 120px;" class="text-center">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for student in students %}
+                        <tr data-id="{{ student.pk }}">
+                            <td>
+                                <input type="checkbox" class="form-check-input row-checkbox" 
+                                       name="selected_ids" value="{{ student.pk }}">
+                            </td>
+                            <td data-label="NIS">
+                                <span class="editable" data-field="student_id" data-id="{{ student.pk }}">
+                                    {{ student.student_id }}
+                                </span>
+                            </td>
+                            <td data-label="Nama">
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar-sm me-2">
+                                        {{ student.name|slice:":1"|upper }}
+                                    </div>
+                                    <div>
+                                        <span class="editable fw-medium" data-field="name" data-id="{{ student.pk }}">
+                                            {{ student.name }}
+                                        </span>
+                                        {% if student.nisn %}
+                                        <div class="text-muted small">NISN: {{ student.nisn }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </td>
+                            <td data-label="Kelas">{{ student.classroom }}</td>
+                            <td data-label="Status">
+                                {% if student.is_active %}
+                                <span class="status-badge status-hadir">Aktif</span>
+                                {% else %}
+                                <span class="status-badge status-alpa">Nonaktif</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{% url 'manage_student_edit' student.pk %}" 
+                                       class="btn btn-outline-primary" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-outline-danger" title="Hapus"
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#deleteModal"
+                                            data-delete-id="{{ student.pk }}"
+                                            data-delete-name="{{ student.name }}"
+                                            data-delete-url="{% url 'manage_student_delete' student.pk %}">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center py-4 text-muted">
+                                <i class="fas fa-inbox fa-2x mb-2 d-block"></i>
+                                Tidak ada data siswa
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Bulk Actions Bar -->
+            <div class="bulk-actions-bar" id="bulkActionsBar" style="display: none;">
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                    <span class="text-muted">
+                        <strong id="selectedCount">0</strong> item dipilih
+                    </span>
+                    <div class="d-flex gap-2">
+                        <button type="submit" name="action" value="activate" class="btn btn-success btn-sm">
+                            <i class="fas fa-check me-1"></i> Aktifkan
+                        </button>
+                        <button type="submit" name="action" value="deactivate" class="btn btn-warning btn-sm">
+                            <i class="fas fa-ban me-1"></i> Nonaktifkan
+                        </button>
+                        <button type="submit" name="action" value="delete" class="btn btn-danger btn-sm"
+                                onclick="return confirm('Apakah Anda yakin ingin menghapus item yang dipilih?')">
+                            <i class="fas fa-trash me-1"></i> Hapus
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
+        
+        <!-- Pagination -->
+        {% if students.has_other_pages %}
+        {% include 'components/_pagination.html' with page_obj=students %}
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block list_extra_css %}
+<style>
+    .avatar-sm {
+        width: 32px;
+        height: 32px;
+        background-color: var(--primary);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+    
+    .editable {
+        cursor: pointer;
+        padding: 2px 4px;
+        border-radius: 4px;
+        transition: background-color 0.2s;
+    }
+    
+    .editable:hover {
+        background-color: var(--bg-light);
+    }
+    
+    .editable.editing {
+        background-color: var(--bg-white);
+    }
+    
+    .editable input {
+        border: 1px solid var(--primary);
+        border-radius: 4px;
+        padding: 2px 6px;
+        font-size: inherit;
+        width: 100%;
+        max-width: 200px;
+    }
+    
+    .bulk-actions-bar {
+        background-color: var(--bg-light);
+        padding: 0.75rem 1rem;
+        border-top: 1px solid var(--border-color);
+    }
+</style>
+{% endblock %}
+
+{% block list_extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Select all functionality
+    const selectAll = document.getElementById('selectAll');
+    const checkboxes = document.querySelectorAll('.row-checkbox');
+    const bulkActionsBar = document.getElementById('bulkActionsBar');
+    const selectedCount = document.getElementById('selectedCount');
+    
+    function updateBulkActions() {
+        const checked = document.querySelectorAll('.row-checkbox:checked');
+        const count = checked.length;
+        
+        bulkActionsBar.style.display = count > 0 ? 'block' : 'none';
+        selectedCount.textContent = count;
+        
+        selectAll.checked = count === checkboxes.length && checkboxes.length > 0;
+        selectAll.indeterminate = count > 0 && count < checkboxes.length;
+    }
+    
+    selectAll.addEventListener('change', function() {
+        checkboxes.forEach(cb => cb.checked = this.checked);
+        updateBulkActions();
+    });
+    
+    checkboxes.forEach(cb => {
+        cb.addEventListener('change', updateBulkActions);
+    });
+    
+    // Inline edit functionality
+    const editables = document.querySelectorAll('.editable');
+    
+    editables.forEach(el => {
+        el.addEventListener('dblclick', function() {
+            if (this.classList.contains('editing')) return;
+            
+            const field = this.dataset.field;
+            const id = this.dataset.id;
+            const currentValue = this.textContent.trim();
+            
+            this.classList.add('editing');
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.value = currentValue;
+            this.textContent = '';
+            this.appendChild(input);
+            input.focus();
+            input.select();
+            
+            const saveEdit = async () => {
+                const newValue = input.value.trim();
+                
+                if (newValue !== currentValue && newValue !== '') {
+                    try {
+                        const response = await fetch('{% url "api_student_inline_edit" %}', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': '{{ csrf_token }}'
+                            },
+                            body: JSON.stringify({
+                                id: id,
+                                field: field,
+                                value: newValue
+                            })
+                        });
+                        
+                        const data = await response.json();
+                        
+                        if (data.success) {
+                            el.textContent = data.value;
+                        } else {
+                            alert(data.error || 'Gagal menyimpan');
+                            el.textContent = currentValue;
+                        }
+                    } catch (error) {
+                        console.error('Error:', error);
+                        el.textContent = currentValue;
+                    }
+                } else {
+                    el.textContent = currentValue;
+                }
+                
+                el.classList.remove('editing');
+            };
+            
+            input.addEventListener('blur', saveEdit);
+            input.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    saveEdit();
+                } else if (e.key === 'Escape') {
+                    el.textContent = currentValue;
+                    el.classList.remove('editing');
+                }
+            });
+        });
+    });
+});
+</script>
+{% endblock %}

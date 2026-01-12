@@ -1,0 +1,159 @@
+{% extends 'manage/base_list.html' %}
+{% load static %}
+
+{% block page_title %}Manajemen Pengguna{% endblock %}
+
+{% block breadcrumb_items %}
+<li class="breadcrumb-item active">Pengguna</li>
+{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'manage_user_create' %}" class="btn btn-primary btn-sm">
+    <i class="fas fa-plus me-1"></i> Tambah Pengguna
+</a>
+{% endblock %}
+
+{% block stats_row %}
+<div class="stats-row">
+    <div class="stat-card">
+        <div class="stat-icon primary">
+            <i class="fas fa-users"></i>
+        </div>
+        <div>
+            <div class="stat-value">{{ total_users }}</div>
+            <div class="stat-label">Total Pengguna</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon success">
+            <i class="fas fa-user-check"></i>
+        </div>
+        <div>
+            <div class="stat-value">{{ active_users }}</div>
+            <div class="stat-label">Pengguna Aktif</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon warning">
+            <i class="fas fa-user-shield"></i>
+        </div>
+        <div>
+            <div class="stat-value">{{ admin_users }}</div>
+            <div class="stat-label">Administrator</div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block list_content %}
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>Nama</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th>Login Terakhir</th>
+                        <th style="width: 120px;" class="text-center">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user_item in users %}
+                    <tr>
+                        <td data-label="Username">
+                            <div class="d-flex align-items-center">
+                                <div class="user-avatar me-2">
+                                    {{ user_item.username|slice:":1"|upper }}
+                                </div>
+                                <span class="fw-medium">{{ user_item.username }}</span>
+                            </div>
+                        </td>
+                        <td data-label="Nama">
+                            {{ user_item.get_full_name|default:"-" }}
+                        </td>
+                        <td data-label="Email">
+                            {{ user_item.email|default:"-" }}
+                        </td>
+                        <td data-label="Role">
+                            {% if user_item.is_superuser %}
+                            <span class="badge bg-danger">
+                                <i class="fas fa-shield-alt me-1"></i> Admin
+                            </span>
+                            {% else %}
+                            <span class="badge bg-primary">
+                                <i class="fas fa-chalkboard-teacher me-1"></i> Guru
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td data-label="Status">
+                            {% if user_item.is_active %}
+                            <span class="status-badge status-hadir">Aktif</span>
+                            {% else %}
+                            <span class="status-badge status-alpa">Nonaktif</span>
+                            {% endif %}
+                        </td>
+                        <td data-label="Login Terakhir">
+                            {% if user_item.last_login %}
+                            {{ user_item.last_login|date:"d M Y H:i" }}
+                            {% else %}
+                            <span class="text-muted">Belum pernah</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            <div class="btn-group btn-group-sm">
+                                <a href="{% url 'manage_user_edit' user_item.pk %}" 
+                                   class="btn btn-outline-primary" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                {% if user_item != request.user %}
+                                <button type="button" class="btn btn-outline-danger" title="Hapus"
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#deleteModal"
+                                        data-delete-id="{{ user_item.pk }}"
+                                        data-delete-name="{{ user_item.username }}"
+                                        data-delete-url="{% url 'manage_user_delete' user_item.pk %}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-4 text-muted">
+                            <i class="fas fa-inbox fa-2x mb-2 d-block"></i>
+                            Tidak ada data pengguna
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        {% if users.has_other_pages %}
+        {% include 'components/_pagination.html' with page_obj=users %}
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block list_extra_css %}
+<style>
+    .user-avatar {
+        width: 36px;
+        height: 36px;
+        background-color: var(--primary);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+</style>
+{% endblock %}

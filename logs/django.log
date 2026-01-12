@@ -7746,3 +7746,89 @@ Traceback (most recent call last):
     raise new from exc
 django.template.exceptions.TemplateDoesNotExist: unfold/helpers/site_branding.html
 ERROR 2026-01-12 17:08:51,447 log 64489 6151843840 "GET /admin/ HTTP/1.1" 500 337620
+INFO 2026-01-12 17:11:34,347 autoreload 64489 8542499392 /Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/forms.py changed, reloading.
+INFO 2026-01-12 17:11:34,754 autoreload 65720 8542499392 Watching for file changes with StatReloader
+INFO 2026-01-12 17:12:42,658 autoreload 65720 8542499392 /Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/views.py changed, reloading.
+INFO 2026-01-12 17:12:43,123 autoreload 65771 8542499392 Watching for file changes with StatReloader
+INFO 2026-01-12 17:12:58,407 autoreload 65771 8542499392 /Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/urls.py changed, reloading.
+INFO 2026-01-12 17:12:58,939 autoreload 65795 8542499392 Watching for file changes with StatReloader
+ERROR 2026-01-12 17:14:06,000 log 65795 6170423296 Internal Server Error: /admin/
+Traceback (most recent call last):
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/template/backends/django.py", line 107, in render
+    return self.template.render(context)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/template/base.py", line 174, in render
+    return self._render(context)
+           ~~~~~~~~~~~~^^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/template/base.py", line 166, in _render
+    return self.nodelist.render(context)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/template/base.py", line 1091, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/template/base.py", line 1052, in render_annotated
+    return self.render(context)
+           ~~~~~~~~~~~^^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/template/loader_tags.py", line 160, in render
+    return compiled_parent._render(context)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/template/base.py", line 166, in _render
+    return self.nodelist.render(context)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/template/base.py", line 1091, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/template/base.py", line 1052, in render_annotated
+    return self.render(context)
+           ~~~~~~~~~~~^^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/template/defaulttags.py", line 333, in render
+    return nodelist.render(context)
+           ~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/template/base.py", line 1091, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/template/base.py", line 1052, in render_annotated
+    return self.render(context)
+           ~~~~~~~~~~~^^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/template/loader_tags.py", line 66, in render
+    result = block.nodelist.render(context)
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/template/base.py", line 1091, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/template/base.py", line 1052, in render_annotated
+    return self.render(context)
+           ~~~~~~~~~~~^^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/template/loader_tags.py", line 66, in render
+    result = block.nodelist.render(context)
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/template/base.py", line 1091, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/template/base.py", line 1052, in render_annotated
+    return self.render(context)
+           ~~~~~~~~~~~^^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/template/loader_tags.py", line 200, in render
+    template = context.template.engine.select_template(template_name)
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/template/engine.py", line 234, in select_template
+    raise TemplateDoesNotExist(", ".join(not_found))
+django.template.exceptions.TemplateDoesNotExist: unfold/helpers/site_branding.html
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/core/handlers/base.py", line 221, in _get_response
+    response = response.render()
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/template/response.py", line 114, in render
+    self.content = self.rendered_content
+                   ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/template/response.py", line 92, in rendered_content
+    return template.render(context, self._request)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/template/backends/django.py", line 109, in render
+    reraise(exc, self.backend)
+    ~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "/Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/venv/lib/python3.13/site-packages/django/template/backends/django.py", line 130, in reraise
+    raise new from exc
+django.template.exceptions.TemplateDoesNotExist: unfold/helpers/site_branding.html
+ERROR 2026-01-12 17:14:06,009 log 65795 6170423296 "GET /admin/ HTTP/1.1" 500 337620

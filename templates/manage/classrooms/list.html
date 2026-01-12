@@ -1,0 +1,209 @@
+{% extends 'manage/base_list.html' %}
+{% load static %}
+
+{% block page_title %}Manajemen Kelas{% endblock %}
+
+{% block breadcrumb_items %}
+<li class="breadcrumb-item active">Kelas</li>
+{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'manage_classroom_create' %}" class="btn btn-primary btn-sm">
+    <i class="fas fa-plus me-1"></i> Tambah Kelas
+</a>
+{% endblock %}
+
+{% block stats_row %}
+<div class="stats-row">
+    <div class="stat-card">
+        <div class="stat-icon primary">
+            <i class="fas fa-school"></i>
+        </div>
+        <div>
+            <div class="stat-value">{{ total_classrooms }}</div>
+            <div class="stat-label">Total Kelas</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon success">
+            <i class="fas fa-check-circle"></i>
+        </div>
+        <div>
+            <div class="stat-value">{{ active_classrooms }}</div>
+            <div class="stat-label">Kelas Aktif</div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block list_content %}
+<div class="card">
+    <div class="card-body p-0">
+        <form method="post" action="{% url 'bulk_action' %}" id="bulkForm">
+            {% csrf_token %}
+            <input type="hidden" name="model_type" value="classroom">
+            
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th style="width: 40px;">
+                                <input type="checkbox" class="form-check-input" id="selectAll">
+                            </th>
+                            <th>Kelas</th>
+                            <th>Jenjang</th>
+                            <th>Wali Kelas</th>
+                            <th>Jumlah Siswa</th>
+                            <th>Tahun Ajaran</th>
+                            <th>Status</th>
+                            <th style="width: 120px;" class="text-center">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for classroom in classrooms %}
+                        <tr>
+                            <td>
+                                <input type="checkbox" class="form-check-input row-checkbox" 
+                                       name="selected_ids" value="{{ classroom.pk }}">
+                            </td>
+                            <td data-label="Kelas">
+                                <div class="d-flex align-items-center">
+                                    <div class="classroom-icon me-2">
+                                        <i class="fas fa-door-open"></i>
+                                    </div>
+                                    <div>
+                                        <span class="fw-medium">{{ classroom }}</span>
+                                        {% if classroom.room_number %}
+                                        <div class="text-muted small">Ruang: {{ classroom.room_number }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </td>
+                            <td data-label="Jenjang">{{ classroom.academic_level.code }}</td>
+                            <td data-label="Wali Kelas">
+                                {% if classroom.homeroom_teacher %}
+                                {{ classroom.homeroom_teacher.get_full_name|default:classroom.homeroom_teacher.username }}
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td data-label="Jumlah Siswa">
+                                <span class="badge bg-secondary">{{ classroom.student_count_val }} / {{ classroom.capacity }}</span>
+                            </td>
+                            <td data-label="Tahun Ajaran">{{ classroom.academic_year }}</td>
+                            <td data-label="Status">
+                                {% if classroom.is_active %}
+                                <span class="status-badge status-hadir">Aktif</span>
+                                {% else %}
+                                <span class="status-badge status-alpa">Nonaktif</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{% url 'manage_classroom_edit' classroom.pk %}" 
+                                       class="btn btn-outline-primary" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-outline-danger" title="Hapus"
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#deleteModal"
+                                            data-delete-id="{{ classroom.pk }}"
+                                            data-delete-name="{{ classroom }}"
+                                            data-delete-url="{% url 'manage_classroom_delete' classroom.pk %}">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-center py-4 text-muted">
+                                <i class="fas fa-inbox fa-2x mb-2 d-block"></i>
+                                Tidak ada data kelas
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Bulk Actions Bar -->
+            <div class="bulk-actions-bar" id="bulkActionsBar" style="display: none;">
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                    <span class="text-muted">
+                        <strong id="selectedCount">0</strong> item dipilih
+                    </span>
+                    <div class="d-flex gap-2">
+                        <button type="submit" name="action" value="activate" class="btn btn-success btn-sm">
+                            <i class="fas fa-check me-1"></i> Aktifkan
+                        </button>
+                        <button type="submit" name="action" value="deactivate" class="btn btn-warning btn-sm">
+                            <i class="fas fa-ban me-1"></i> Nonaktifkan
+                        </button>
+                        <button type="submit" name="action" value="delete" class="btn btn-danger btn-sm"
+                                onclick="return confirm('Apakah Anda yakin ingin menghapus item yang dipilih?')">
+                            <i class="fas fa-trash me-1"></i> Hapus
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
+        
+        {% if classrooms.has_other_pages %}
+        {% include 'components/_pagination.html' with page_obj=classrooms %}
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block list_extra_css %}
+<style>
+    .classroom-icon {
+        width: 36px;
+        height: 36px;
+        background-color: var(--primary-light);
+        color: white;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .bulk-actions-bar {
+        background-color: var(--bg-light);
+        padding: 0.75rem 1rem;
+        border-top: 1px solid var(--border-color);
+    }
+</style>
+{% endblock %}
+
+{% block list_extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const selectAll = document.getElementById('selectAll');
+    const checkboxes = document.querySelectorAll('.row-checkbox');
+    const bulkActionsBar = document.getElementById('bulkActionsBar');
+    const selectedCount = document.getElementById('selectedCount');
+    
+    function updateBulkActions() {
+        const checked = document.querySelectorAll('.row-checkbox:checked');
+        const count = checked.length;
+        
+        bulkActionsBar.style.display = count > 0 ? 'block' : 'none';
+        selectedCount.textContent = count;
+        
+        selectAll.checked = count === checkboxes.length && checkboxes.length > 0;
+        selectAll.indeterminate = count > 0 && count < checkboxes.length;
+    }
+    
+    selectAll.addEventListener('change', function() {
+        checkboxes.forEach(cb => cb.checked = this.checked);
+        updateBulkActions();
+    });
+    
+    checkboxes.forEach(cb => {
+        cb.addEventListener('change', updateBulkActions);
+    });
+});
+</script>
+{% endblock %}

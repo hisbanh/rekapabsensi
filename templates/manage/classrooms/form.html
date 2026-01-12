@@ -1,0 +1,135 @@
+{% extends 'manage/base_form.html' %}
+{% load static %}
+
+{% block page_title %}{% if is_edit %}Edit Kelas{% else %}Tambah Kelas{% endif %}{% endblock %}
+
+{% block breadcrumb_items %}
+<li class="breadcrumb-item"><a href="{% url 'manage_classroom_list' %}">Kelas</a></li>
+<li class="breadcrumb-item active">{% if is_edit %}Edit{% else %}Tambah{% endif %}</li>
+{% endblock %}
+
+{% block form_title %}{% if is_edit %}Edit Kelas{% else %}Tambah Kelas Baru{% endif %}{% endblock %}
+
+{% block form_subtitle %}
+{% if is_edit %}
+Perbarui informasi kelas {{ classroom }}
+{% else %}
+Isi form berikut untuk menambahkan kelas baru
+{% endif %}
+{% endblock %}
+
+{% block cancel_url %}{% url 'manage_classroom_list' %}{% endblock %}
+
+{% block submit_text %}{% if is_edit %}Perbarui{% else %}Simpan{% endif %}{% endblock %}
+
+{% block form_content %}
+<!-- Basic Information Section -->
+<div class="form-section">
+    <h6 class="form-section-title">
+        <i class="fas fa-school me-2"></i>Informasi Kelas
+    </h6>
+    <div class="form-row">
+        <div class="mb-3">
+            <label for="id_academic_level" class="form-label">
+                Jenjang <span class="text-danger">*</span>
+            </label>
+            {{ form.academic_level }}
+            {% if form.academic_level.errors %}
+            <div class="invalid-feedback d-block">{{ form.academic_level.errors.0 }}</div>
+            {% endif %}
+        </div>
+        <div class="mb-3">
+            <label for="id_grade" class="form-label">
+                Tingkat <span class="text-danger">*</span>
+            </label>
+            {{ form.grade }}
+            {% if form.grade.errors %}
+            <div class="invalid-feedback d-block">{{ form.grade.errors.0 }}</div>
+            {% endif %}
+            <div class="form-text">Contoh: 7, 8, 9 untuk SMP</div>
+        </div>
+    </div>
+    <div class="form-row">
+        <div class="mb-3">
+            <label for="id_section" class="form-label">Rombel/Seksi</label>
+            {{ form.section }}
+            {% if form.section.errors %}
+            <div class="invalid-feedback d-block">{{ form.section.errors.0 }}</div>
+            {% endif %}
+            <div class="form-text">Contoh: A, B, C</div>
+        </div>
+        <div class="mb-3">
+            <label for="id_name" class="form-label">Nama Kelas</label>
+            {{ form.name }}
+            {% if form.name.errors %}
+            <div class="invalid-feedback d-block">{{ form.name.errors.0 }}</div>
+            {% endif %}
+            <div class="form-text">Opsional, akan dibuat otomatis jika kosong</div>
+        </div>
+    </div>
+</div>
+
+<!-- Details Section -->
+<div class="form-section">
+    <h6 class="form-section-title">
+        <i class="fas fa-info-circle me-2"></i>Detail Kelas
+    </h6>
+    <div class="form-row">
+        <div class="mb-3">
+            <label for="id_capacity" class="form-label">Kapasitas</label>
+            {{ form.capacity }}
+            {% if form.capacity.errors %}
+            <div class="invalid-feedback d-block">{{ form.capacity.errors.0 }}</div>
+            {% endif %}
+            <div class="form-text">Jumlah maksimal siswa</div>
+        </div>
+        <div class="mb-3">
+            <label for="id_room_number" class="form-label">Nomor Ruangan</label>
+            {{ form.room_number }}
+            {% if form.room_number.errors %}
+            <div class="invalid-feedback d-block">{{ form.room_number.errors.0 }}</div>
+            {% endif %}
+        </div>
+    </div>
+    <div class="form-row">
+        <div class="mb-3">
+            <label for="id_homeroom_teacher" class="form-label">Wali Kelas</label>
+            {{ form.homeroom_teacher }}
+            {% if form.homeroom_teacher.errors %}
+            <div class="invalid-feedback d-block">{{ form.homeroom_teacher.errors.0 }}</div>
+            {% endif %}
+        </div>
+        <div class="mb-3">
+            <label for="id_academic_year" class="form-label">
+                Tahun Ajaran <span class="text-danger">*</span>
+            </label>
+            {{ form.academic_year }}
+            {% if form.academic_year.errors %}
+            <div class="invalid-feedback d-block">{{ form.academic_year.errors.0 }}</div>
+            {% endif %}
+            <div class="form-text">Format: 2024/2025</div>
+        </div>
+    </div>
+</div>
+
+<!-- Status Section -->
+<div class="form-section">
+    <h6 class="form-section-title">
+        <i class="fas fa-toggle-on me-2"></i>Status
+    </h6>
+    <div class="form-row">
+        <div class="mb-3">
+            <div class="form-check form-switch">
+                {{ form.is_active }}
+                <label class="form-check-label" for="id_is_active">
+                    Kelas Aktif
+                </label>
+            </div>
+            {% if form.is_active.errors %}
+            <div class="invalid-feedback d-block">{{ form.is_active.errors.0 }}</div>
+            {% endif %}
+            <div class="form-text">Kelas nonaktif tidak akan muncul di pilihan input absensi</div>
+        </div>
+    </div>
+</div>
+{% endblock %}

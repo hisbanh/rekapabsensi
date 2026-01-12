@@ -1,0 +1,141 @@
+{% extends 'manage/base_form.html' %}
+{% load static %}
+
+{% block page_title %}{% if is_edit %}Edit Siswa{% else %}Tambah Siswa{% endif %}{% endblock %}
+
+{% block breadcrumb_items %}
+<li class="breadcrumb-item"><a href="{% url 'manage_student_list' %}">Siswa</a></li>
+<li class="breadcrumb-item active">{% if is_edit %}Edit{% else %}Tambah{% endif %}</li>
+{% endblock %}
+
+{% block form_title %}{% if is_edit %}Edit Siswa{% else %}Tambah Siswa Baru{% endif %}{% endblock %}
+
+{% block form_subtitle %}
+{% if is_edit %}
+Perbarui informasi siswa {{ student.name }}
+{% else %}
+Isi form berikut untuk menambahkan siswa baru
+{% endif %}
+{% endblock %}
+
+{% block cancel_url %}{% url 'manage_student_list' %}{% endblock %}
+
+{% block submit_text %}{% if is_edit %}Perbarui{% else %}Simpan{% endif %}{% endblock %}
+
+{% block form_content %}
+<!-- Basic Information Section -->
+<div class="form-section">
+    <h6 class="form-section-title">
+        <i class="fas fa-user me-2"></i>Informasi Dasar
+    </h6>
+    <div class="form-row">
+        <div class="mb-3">
+            <label for="id_student_id" class="form-label">
+                NIS <span class="text-danger">*</span>
+            </label>
+            {{ form.student_id }}
+            {% if form.student_id.errors %}
+            <div class="invalid-feedback d-block">{{ form.student_id.errors.0 }}</div>
+            {% endif %}
+            <div class="form-text">Nomor Induk Siswa (unik)</div>
+        </div>
+        <div class="mb-3">
+            <label for="id_nisn" class="form-label">NISN</label>
+            {{ form.nisn }}
+            {% if form.nisn.errors %}
+            <div class="invalid-feedback d-block">{{ form.nisn.errors.0 }}</div>
+            {% endif %}
+            <div class="form-text">Nomor Induk Siswa Nasional (10 digit)</div>
+        </div>
+    </div>
+    <div class="form-row single">
+        <div class="mb-3">
+            <label for="id_name" class="form-label">
+                Nama Lengkap <span class="text-danger">*</span>
+            </label>
+            {{ form.name }}
+            {% if form.name.errors %}
+            <div class="invalid-feedback d-block">{{ form.name.errors.0 }}</div>
+            {% endif %}
+        </div>
+    </div>
+    <div class="form-row">
+        <div class="mb-3">
+            <label for="id_classroom" class="form-label">
+                Kelas <span class="text-danger">*</span>
+            </label>
+            {{ form.classroom }}
+            {% if form.classroom.errors %}
+            <div class="invalid-feedback d-block">{{ form.classroom.errors.0 }}</div>
+            {% endif %}
+        </div>
+        <div class="mb-3">
+            <label for="id_gender" class="form-label">Jenis Kelamin</label>
+            {{ form.gender }}
+            {% if form.gender.errors %}
+            <div class="invalid-feedback d-block">{{ form.gender.errors.0 }}</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Personal Information Section -->
+<div class="form-section">
+    <h6 class="form-section-title">
+        <i class="fas fa-id-card me-2"></i>Informasi Pribadi
+    </h6>
+    <div class="form-row">
+        <div class="mb-3">
+            <label for="id_date_of_birth" class="form-label">Tanggal Lahir</label>
+            {{ form.date_of_birth }}
+            {% if form.date_of_birth.errors %}
+            <div class="invalid-feedback d-block">{{ form.date_of_birth.errors.0 }}</div>
+            {% endif %}
+        </div>
+        <div class="mb-3">
+            <label for="id_parent_phone" class="form-label">No. Telepon Orang Tua</label>
+            {{ form.parent_phone }}
+            {% if form.parent_phone.errors %}
+            <div class="invalid-feedback d-block">{{ form.parent_phone.errors.0 }}</div>
+            {% endif %}
+        </div>
+    </div>
+    <div class="form-row single">
+        <div class="mb-3">
+            <label for="id_address" class="form-label">Alamat</label>
+            {{ form.address }}
+            {% if form.address.errors %}
+            <div class="invalid-feedback d-block">{{ form.address.errors.0 }}</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Academic Information Section -->
+<div class="form-section">
+    <h6 class="form-section-title">
+        <i class="fas fa-graduation-cap me-2"></i>Informasi Akademik
+    </h6>
+    <div class="form-row">
+        <div class="mb-3">
+            <label for="id_enrollment_date" class="form-label">Tanggal Masuk</label>
+            {{ form.enrollment_date }}
+            {% if form.enrollment_date.errors %}
+            <div class="invalid-feedback d-block">{{ form.enrollment_date.errors.0 }}</div>
+            {% endif %}
+        </div>
+        <div class="mb-3">
+            <label for="id_is_active" class="form-label">Status</label>
+            <div class="form-check form-switch mt-2">
+                {{ form.is_active }}
+                <label class="form-check-label" for="id_is_active">
+                    Siswa Aktif
+                </label>
+            </div>
+            {% if form.is_active.errors %}
+            <div class="invalid-feedback d-block">{{ form.is_active.errors.0 }}</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

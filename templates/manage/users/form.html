@@ -1,0 +1,154 @@
+{% extends 'manage/base_form.html' %}
+{% load static %}
+
+{% block page_title %}{% if is_edit %}Edit Pengguna{% else %}Tambah Pengguna{% endif %}{% endblock %}
+
+{% block breadcrumb_items %}
+<li class="breadcrumb-item"><a href="{% url 'manage_user_list' %}">Pengguna</a></li>
+<li class="breadcrumb-item active">{% if is_edit %}Edit{% else %}Tambah{% endif %}</li>
+{% endblock %}
+
+{% block form_title %}{% if is_edit %}Edit Pengguna{% else %}Tambah Pengguna Baru{% endif %}{% endblock %}
+
+{% block form_subtitle %}
+{% if is_edit %}
+Perbarui informasi pengguna {{ user_obj.username }}
+{% else %}
+Isi form berikut untuk menambahkan pengguna baru
+{% endif %}
+{% endblock %}
+
+{% block cancel_url %}{% url 'manage_user_list' %}{% endblock %}
+
+{% block submit_text %}{% if is_edit %}Perbarui{% else %}Simpan{% endif %}{% endblock %}
+
+{% block form_content %}
+<!-- Account Information Section -->
+<div class="form-section">
+    <h6 class="form-section-title">
+        <i class="fas fa-user me-2"></i>Informasi Akun
+    </h6>
+    <div class="form-row">
+        <div class="mb-3">
+            <label for="id_username" class="form-label">
+                Username <span class="text-danger">*</span>
+            </label>
+            {{ form.username }}
+            {% if form.username.errors %}
+            <div class="invalid-feedback d-block">{{ form.username.errors.0 }}</div>
+            {% endif %}
+            <div class="form-text">Username untuk login ke sistem</div>
+        </div>
+        <div class="mb-3">
+            <label for="id_email" class="form-label">Email</label>
+            {{ form.email }}
+            {% if form.email.errors %}
+            <div class="invalid-feedback d-block">{{ form.email.errors.0 }}</div>
+            {% endif %}
+        </div>
+    </div>
+    <div class="form-row">
+        <div class="mb-3">
+            <label for="id_first_name" class="form-label">Nama Depan</label>
+            {{ form.first_name }}
+            {% if form.first_name.errors %}
+            <div class="invalid-feedback d-block">{{ form.first_name.errors.0 }}</div>
+            {% endif %}
+        </div>
+        <div class="mb-3">
+            <label for="id_last_name" class="form-label">Nama Belakang</label>
+            {{ form.last_name }}
+            {% if form.last_name.errors %}
+            <div class="invalid-feedback d-block">{{ form.last_name.errors.0 }}</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Password Section -->
+<div class="form-section">
+    <h6 class="form-section-title">
+        <i class="fas fa-lock me-2"></i>Password
+    </h6>
+    {% if is_edit %}
+    <div class="alert alert-info mb-3">
+        <i class="fas fa-info-circle me-2"></i>
+        Kosongkan field password jika tidak ingin mengubah password
+    </div>
+    {% endif %}
+    <div class="form-row">
+        <div class="mb-3">
+            <label for="id_password1" class="form-label">
+                Password {% if not is_edit %}<span class="text-danger">*</span>{% endif %}
+            </label>
+            {{ form.password1 }}
+            {% if form.password1.errors %}
+            <div class="invalid-feedback d-block">{{ form.password1.errors.0 }}</div>
+            {% endif %}
+            <div class="form-text">Minimal 8 karakter</div>
+        </div>
+        <div class="mb-3">
+            <label for="id_password2" class="form-label">
+                Konfirmasi Password {% if not is_edit %}<span class="text-danger">*</span>{% endif %}
+            </label>
+            {{ form.password2 }}
+            {% if form.password2.errors %}
+            <div class="invalid-feedback d-block">{{ form.password2.errors.0 }}</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Role & Status Section -->
+<div class="form-section">
+    <h6 class="form-section-title">
+        <i class="fas fa-user-tag me-2"></i>Role & Status
+    </h6>
+    <div class="form-row">
+        <div class="mb-3">
+            <label for="id_role" class="form-label">
+                Role <span class="text-danger">*</span>
+            </label>
+            {{ form.role }}
+            {% if form.role.errors %}
+            <div class="invalid-feedback d-block">{{ form.role.errors.0 }}</div>
+            {% endif %}
+            <div class="form-text">
+                <strong>Guru:</strong> Dapat input absensi dan melihat laporan<br>
+                <strong>Admin:</strong> Akses penuh termasuk pengaturan dan manajemen pengguna
+            </div>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Status</label>
+            <div class="form-check form-switch mt-2">
+                {{ form.is_active }}
+                <label class="form-check-label" for="id_is_active">
+                    Pengguna Aktif
+                </label>
+            </div>
+            {% if form.is_active.errors %}
+            <div class="invalid-feedback d-block">{{ form.is_active.errors.0 }}</div>
+            {% endif %}
+            <div class="form-text">Pengguna nonaktif tidak dapat login ke sistem</div>
+        </div>
+    </div>
+</div>
+
+{% if is_edit and user_obj.last_login %}
+<div class="form-section">
+    <h6 class="form-section-title">
+        <i class="fas fa-history me-2"></i>Informasi Login
+    </h6>
+    <div class="row">
+        <div class="col-md-6">
+            <p class="mb-1 text-muted small">Login Terakhir</p>
+            <p class="mb-0">{{ user_obj.last_login|date:"d M Y H:i" }}</p>
+        </div>
+        <div class="col-md-6">
+            <p class="mb-1 text-muted small">Tanggal Bergabung</p>
+            <p class="mb-0">{{ user_obj.date_joined|date:"d M Y H:i" }}</p>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
