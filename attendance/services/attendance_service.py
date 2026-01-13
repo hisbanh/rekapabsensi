@@ -69,7 +69,7 @@ class AttendanceService:
             present = records.filter(status=AttendanceStatus.HADIR).count()
             
             classroom_stats.append({
-                'classroom': classroom,
+                'classroom_id': str(classroom.id),
                 'classroom_name': str(classroom),
                 'academic_level': classroom.academic_level.code,
                 'grade': classroom.grade,
@@ -177,7 +177,7 @@ class AttendanceService:
         while current_date <= end_date:
             stats = AttendanceService.get_attendance_statistics(current_date)
             trends.append({
-                'date': current_date,
+                'date': current_date.isoformat(),
                 'present': stats['present'],
                 'absent': stats['sick'] + stats['permission'] + stats['absent'],
                 'attendance_rate': stats['attendance_rate']

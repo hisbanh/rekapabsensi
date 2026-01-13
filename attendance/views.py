@@ -667,21 +667,22 @@ def attendance_input_form(request, classroom_id, date_str):
         # Get all classrooms for filter dropdown
         classrooms = Classroom.objects.filter(is_active=True).order_by('name')
         
-        # Prepare students with their existing records for current JP
+        # Prepare students with their existing records for ALL JP
         students_data = []
         for student in students:
             student_id_str = str(student.id)
             existing_statuses = existing_records.get(student_id_str, {})
             
-            # Get status for current JP (default to 'H' if no existing record)
-            current_jp_key = str(current_jp)
-            current_status = existing_statuses.get(current_jp_key, 'H')
-            
-            # Build JP statuses list for current JP only
-            jp_statuses = [{
-                'jp_num': current_jp,
-                'status': current_status
-            }]
+            # Build JP statuses list for ALL JP (1 to jp_count)
+            jp_statuses = []
+            for jp_num in range(1, jp_count + 1):
+                jp_key = str(jp_num)
+                status = existing_statuses.get(jp_key, 'H')  # Default to 'H' if no existing record
+                
+                jp_statuses.append({
+                    'jp_num': jp_num,
+                    'status': status
+                })
             
             students_data.append({
                 'student': student,
@@ -715,8 +716,8 @@ def attendance_input_form(request, classroom_id, date_str):
         messages.error(request, f"Terjadi kesalahan saat memuat form absensi: {str(e)}")
         return redirect('attendance_input')
     
-    # Use new template
-    return render(request, 'attendance/input_form_new.html', context)
+    # Use original template
+    return render(request, 'attendance/input_form.html', context)
 
 
 @login_required
