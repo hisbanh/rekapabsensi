@@ -1,0 +1,11 @@
+{% load attendance_extras %}
+{# Avatar component with initials and colored background #}
+{# Usage: {% include 'components/_avatar.html' with name=student.name size='sm'|'md'|'lg' %} #}
+
+{% with initials=name|avatar_initials color=name|avatar_color %}
+<div class="avatar{% if size %} avatar-{{ size }}{% endif %}" 
+     style="background-color: {{ color }}"
+     title="{{ name }}">
+  {{ initials }}
+</div>
+{% endwith %}

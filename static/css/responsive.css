@@ -1,16 +1,17 @@
 /**
- * Responsive CSS for SIPA Beta 
- * Mobile-first responsive styles for the attendance system
+ * Responsive CSS for SIPA Yaumi - New Design System
+ * Mobile-first responsive styles with blue/indigo theme
  */
 
 /* ============================================
    MOBILE STYLES (Default - Mobile First)
+   Requirements 8.1-8.6
    ============================================ */
 
-/* Sidebar - Hidden by default on mobile */
+/* Sidebar - Hidden by default on mobile (Requirements 8.2) */
 .sidebar {
     transform: translateX(-100%);
-    width: 280px;
+    width: var(--sidebar-width);
 }
 
 .sidebar.show {
@@ -42,70 +43,117 @@
     width: 100%;
 }
 
-/* Show sidebar toggle on mobile */
-.sidebar-toggle {
+/* Mobile Toggle Button (Requirements 8.3) */
+.mobile-toggle {
+    display: block;
+    position: fixed;
+    top: var(--spacing-4);
+    left: var(--spacing-4);
+    z-index: 1001;
+    background-color: var(--bg-white);
+    border: 1px solid var(--slate-200);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-2);
+    color: var(--text-secondary);
+    cursor: pointer;
+    box-shadow: var(--shadow-sm);
+    width: 40px;
+    height: 40px;
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 40px;
-    height: 40px;
-    background: none;
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    color: var(--text-secondary);
-    cursor: pointer;
-    transition: all 0.2s ease;
 }
 
-.sidebar-toggle:hover {
-    background-color: var(--bg-light);
-    color: var(--primary);
+.mobile-toggle:hover {
+    background-color: var(--slate-50);
+    color: var(--primary-600);
 }
 
 /* Content Area - Reduced padding on mobile */
 .content-area {
-    padding: 1rem;
+    padding: var(--spacing-4);
+    padding-top: calc(var(--spacing-4) + 48px); /* Account for mobile toggle */
 }
 
 /* Page Title - Smaller on mobile */
 .page-title {
-    font-size: 1.1rem;
+    font-size: 1.5rem;
+    margin-bottom: var(--spacing-4);
 }
 
-/* Cards - Full width, reduced padding */
+.page-subtitle {
+    font-size: 0.875rem;
+}
+
+/* Cards - Full width, single column (Requirements 8.6) */
 .card {
-    margin-bottom: 1rem;
+    margin-bottom: var(--spacing-4);
 }
 
 .card-body {
-    padding: 1rem;
+    padding: var(--spacing-4);
 }
 
 /* Stats Cards - Stack vertically */
-.stats-card .card-body {
-    padding: 1rem;
+.stats-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--spacing-4);
 }
 
-.stats-card-value {
-    font-size: 1.5rem;
+/* Filter Bar - Stack inputs vertically (Requirements 8.4) */
+.filter-bar {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-3);
+    margin-bottom: var(--spacing-4);
+    padding: var(--spacing-4);
+    background-color: var(--bg-white);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--slate-200);
 }
 
-/* Tables - Card layout on mobile */
+.filter-row {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-3);
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-2);
+}
+
+.filter-actions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-2);
+}
+
+/* Tables - Horizontal scroll (Requirements 8.5) */
 .table-responsive {
     border: none;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
 }
 
+.table-responsive .table {
+    min-width: 600px;
+}
+
+/* Data Table - Card layout on mobile */
 .data-table-wrapper .table thead {
     display: none;
 }
 
 .data-table-wrapper .table tbody tr {
     display: block;
-    margin-bottom: 0.75rem;
+    margin-bottom: var(--spacing-3);
     background: var(--bg-white);
-    border: 1px solid var(--border-color);
-    border-radius: 10px;
-    padding: 0.5rem;
+    border: 1px solid var(--slate-200);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-3);
     box-shadow: var(--shadow-sm);
 }
 
@@ -113,8 +161,8 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0.625rem 0.75rem;
-    border-bottom: 1px solid var(--border-light);
+    padding: var(--spacing-2) 0;
+    border-bottom: 1px solid var(--slate-100);
     text-align: right;
 }
 
@@ -124,12 +172,14 @@
 
 .data-table-wrapper .table tbody td::before {
     content: attr(data-label);
-    font-weight: 600;
+    font-weight: 500;
     color: var(--text-secondary);
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     text-align: left;
     flex-shrink: 0;
-    margin-right: 1rem;
+    margin-right: var(--spacing-4);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
 }
 
 .data-table-wrapper .table tbody td.checkbox-column {
@@ -158,7 +208,8 @@
 .data-table-header {
     flex-direction: column;
     align-items: stretch;
-    gap: 0.75rem;
+    gap: var(--spacing-3);
+    margin-bottom: var(--spacing-4);
 }
 
 .data-table-search {
@@ -169,87 +220,52 @@
 .data-table-actions {
     justify-content: space-between;
     width: 100%;
-}
-
-/* Bulk Actions Bar */
-.bulk-actions-bar {
-    padding: 0.75rem;
-}
-
-.bulk-actions-bar .d-flex {
+    display: flex;
     flex-wrap: wrap;
-    gap: 0.5rem;
+    gap: var(--spacing-2);
 }
 
-/* Pagination - Simplified on mobile */
-.pagination-wrapper {
-    flex-direction: column;
-    text-align: center;
-    gap: 0.75rem;
-}
-
-.pagination-info {
-    order: 2;
-}
-
-.pagination {
-    order: 1;
-}
-
-.per-page-selector {
-    order: 3;
-}
-
-/* Forms - Full width inputs */
-.form-control,
-.form-select {
-    font-size: 16px; /* Prevents zoom on iOS */
-}
-
-/* Buttons - Full width on mobile */
+/* Buttons - Stack on mobile */
 .btn-group-mobile-stack {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: var(--spacing-2);
 }
 
 .btn-group-mobile-stack .btn {
     width: 100%;
 }
 
-/* Modals - Full screen on mobile */
-.modal-dialog {
-    margin: 0.5rem;
-    max-width: calc(100% - 1rem);
-}
-
-/* Alerts - Reduced padding */
-.alert {
-    padding: 0.875rem 1rem;
-}
-
-.alert-content {
-    gap: 0.5rem;
-}
-
-.alert-icon {
-    font-size: 1.1rem;
-}
-
-/* Attendance Input Grid - Horizontal scroll */
-.attendance-grid-wrapper {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-}
-
-.attendance-grid {
-    min-width: 600px;
+/* Forms - Full width inputs */
+.form-control,
+.form-select {
+    font-size: 16px; /* Prevents zoom on iOS */
+    width: 100%;
 }
 
 /* Status Badges - Smaller on mobile */
 .status-badge {
-    font-size: 0.7rem;
-    padding: 0.2rem 0.5rem;
+    font-size: 0.75rem;
+    padding: var(--spacing-1) var(--spacing-2);
+}
+
+/* Avatar - Smaller on mobile */
+.avatar {
+    width: 28px;
+    height: 28px;
+    font-size: 0.75rem;
+}
+
+/* Modals - Full screen on mobile */
+.modal-dialog {
+    margin: var(--spacing-2);
+    max-width: calc(100% - var(--spacing-4));
+}
+
+/* Alerts - Reduced padding */
+.alert {
+    padding: var(--spacing-3) var(--spacing-4);
+    margin-bottom: var(--spacing-3);
 }
 
 /* ============================================
@@ -257,11 +273,21 @@
    ============================================ */
 @media (min-width: 576px) {
     .content-area {
-        padding: 1.25rem;
+        padding: var(--spacing-5);
+        padding-top: calc(var(--spacing-5) + 48px);
     }
     
     .page-title {
-        font-size: 1.15rem;
+        font-size: 1.75rem;
+    }
+    
+    .filter-row {
+        flex-direction: row;
+        align-items: end;
+    }
+    
+    .filter-group {
+        flex: 1;
     }
     
     .data-table-header {
@@ -278,8 +304,12 @@
     }
     
     .modal-dialog {
-        margin: 1rem auto;
+        margin: var(--spacing-4) auto;
         max-width: 500px;
+    }
+    
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
     }
 }
 
@@ -287,12 +317,26 @@
    TABLETS (768px and up)
    ============================================ */
 @media (min-width: 768px) {
+    .mobile-toggle {
+        display: none;
+    }
+    
     .content-area {
-        padding: 1.5rem;
+        padding: var(--spacing-6);
+        padding-top: var(--spacing-6);
     }
     
     .page-title {
-        font-size: 1.2rem;
+        font-size: 1.875rem;
+    }
+    
+    .filter-bar {
+        padding: var(--spacing-5);
+    }
+    
+    .filter-actions {
+        flex-direction: row;
+        justify-content: flex-end;
     }
     
     /* Tables - Show as regular table */
@@ -307,12 +351,14 @@
         border-radius: 0;
         padding: 0;
         box-shadow: none;
+        background: transparent;
     }
     
     .data-table-wrapper .table tbody td {
         display: table-cell;
         text-align: left;
-        border-bottom: 1px solid var(--border-light);
+        border-bottom: 1px solid var(--slate-100);
+        padding: var(--spacing-3) var(--spacing-4);
     }
     
     .data-table-wrapper .table tbody td::before {
@@ -323,21 +369,22 @@
         max-width: 300px;
     }
     
-    .pagination-wrapper {
+    .btn-group-mobile-stack {
         flex-direction: row;
-        text-align: left;
     }
     
-    .pagination-info {
-        order: 1;
+    .btn-group-mobile-stack .btn {
+        width: auto;
     }
     
-    .pagination {
-        order: 2;
+    .stats-grid {
+        grid-template-columns: repeat(3, 1fr);
     }
     
-    .per-page-selector {
-        order: 3;
+    .avatar {
+        width: 32px;
+        height: 32px;
+        font-size: 0.875rem;
     }
 }
 
@@ -360,25 +407,20 @@
         margin-left: var(--sidebar-width);
     }
     
-    /* Hide sidebar toggle */
-    .sidebar-toggle {
-        display: none;
-    }
-    
     .content-area {
-        padding: 1.5rem;
+        padding: var(--spacing-6);
     }
     
     .page-title {
-        font-size: 1.25rem;
+        font-size: 1.875rem;
     }
     
     .card-body {
-        padding: 1.25rem;
+        padding: var(--spacing-5);
     }
     
-    .stats-card-value {
-        font-size: 1.75rem;
+    .table-responsive .table {
+        min-width: auto;
     }
 }
 
@@ -387,7 +429,11 @@
    ============================================ */
 @media (min-width: 1200px) {
     .content-area {
-        padding: 2rem;
+        padding: var(--spacing-8);
+    }
+    
+    .filter-bar {
+        padding: var(--spacing-6);
     }
 }
 
@@ -397,11 +443,9 @@
 @media print {
     .sidebar,
     .sidebar-overlay,
-    .sidebar-toggle,
-    .top-navbar,
+    .mobile-toggle,
+    .filter-actions,
     .data-table-header,
-    .pagination-wrapper,
-    .bulk-actions-bar,
     .btn,
     .alert-dismissible .btn-close {
         display: none !important;
@@ -416,8 +460,9 @@
     }
     
     .card {
-        border: 1px solid #ddd !important;
+        border: 1px solid var(--slate-300) !important;
         box-shadow: none !important;
+        break-inside: avoid;
     }
     
     .data-table-wrapper .table thead {
@@ -426,6 +471,7 @@
     
     .data-table-wrapper .table tbody tr {
         display: table-row !important;
+        break-inside: avoid;
     }
     
     .data-table-wrapper .table tbody td {
@@ -485,8 +531,8 @@
 /* Safe area padding for notched devices */
 @supports (padding: max(0px)) {
     .safe-area-padding {
-        padding-left: max(1rem, env(safe-area-inset-left));
-        padding-right: max(1rem, env(safe-area-inset-right));
-        padding-bottom: max(1rem, env(safe-area-inset-bottom));
+        padding-left: max(var(--spacing-4), env(safe-area-inset-left));
+        padding-right: max(var(--spacing-4), env(safe-area-inset-right));
+        padding-bottom: max(var(--spacing-4), env(safe-area-inset-bottom));
     }
 }

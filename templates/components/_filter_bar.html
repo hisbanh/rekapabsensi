@@ -1,0 +1,132 @@
+{# Filter Bar component with date pickers, dropdowns, and action buttons #}
+{# Usage: {% include 'components/_filter_bar.html' with show_date_range=True show_class_filter=True show_jp_selector=True show_actions=True %} #}
+
+<div class="filter-bar">
+  <div class="filter-bar-content">
+    
+    {# Date Range Filters #}
+    {% if show_date_range %}
+      <div class="filter-group">
+        <div class="form-group">
+          <label for="dari_tanggal" class="form-label">Dari Tanggal</label>
+          <input type="date" 
+                 id="dari_tanggal" 
+                 name="dari_tanggal" 
+                 class="form-control"
+                 value="{{ dari_tanggal|default:'' }}">
+        </div>
+        <div class="form-group">
+          <label for="sampai_tanggal" class="form-label">Sampai Tanggal</label>
+          <input type="date" 
+                 id="sampai_tanggal" 
+                 name="sampai_tanggal" 
+                 class="form-control"
+                 value="{{ sampai_tanggal|default:'' }}">
+        </div>
+      </div>
+    {% endif %}
+
+    {# Single Date Filter #}
+    {% if show_single_date %}
+      <div class="filter-group">
+        <div class="form-group">
+          <label for="tanggal" class="form-label">Tanggal</label>
+          <input type="date" 
+                 id="tanggal" 
+                 name="tanggal" 
+                 class="form-control"
+                 value="{{ tanggal|default:'' }}">
+        </div>
+      </div>
+    {% endif %}
+
+    {# Class Filter #}
+    {% if show_class_filter %}
+      <div class="filter-group">
+        <div class="form-group">
+          <label for="kelas" class="form-label">Kelas</label>
+          <select id="kelas" name="kelas" class="form-select">
+            <option value="">Semua Kelas</option>
+            {% for classroom in classrooms %}
+              <option value="{{ classroom.id }}"{% if classroom.id|stringformat:"s" == selected_class %} selected{% endif %}>
+                {{ classroom.name }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+    {% endif %}
+
+    {# JP Selector (for attendance input) #}
+    {% if show_jp_selector %}
+      <div class="filter-group">
+        <div class="form-group">
+          <label class="form-label">Jam Pelajaran (JP)</label>
+          <div class="jp-selector">
+            {% for jp in "123456"|make_list %}
+              <button type="button" 
+                      class="btn btn-outline-primary jp-btn{% if jp|stringformat:"s" == selected_jp %} active{% endif %}" 
+                      data-jp="{{ jp }}">
+                {{ jp }}
+              </button>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    {% endif %}
+
+    {# Search Input #}
+    {% if show_search %}
+      <div class="filter-group">
+        <div class="form-group">
+          <label for="search" class="form-label">Cari</label>
+          <input type="text" 
+                 id="search" 
+                 name="search" 
+                 class="form-control"
+                 placeholder="{{ search_placeholder|default:'Cari nama santri atau NISN...' }}"
+                 value="{{ search_query|default:'' }}">
+        </div>
+      </div>
+    {% endif %}
+
+  </div>
+
+  {# Action Buttons #}
+  {% if show_actions %}
+    <div class="filter-bar-actions">
+      {% if show_save_button %}
+        <button type="submit" class="btn btn-primary">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 3.75V16.5L12 14.25 7.5 16.5V3.75a.75.75 0 0 1 .75-.75h7.5a.75.75 0 0 1 .75.75Z" />
+          </svg>
+          Simpan{% if selected_jp %} JP {{ selected_jp }}{% endif %}
+        </button>
+      {% endif %}
+
+      {% if show_export_buttons %}
+        <button type="button" class="btn btn-danger" onclick="exportPDF()">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m.75 12 3 3m0 0 3-3m-3 3v-6m-1.5-9H5.25a2.25 2.25 0 0 0-2.25 2.25v10.5a2.25 2.25 0 0 0 2.25 2.25h13.5a2.25 2.25 0 0 0 2.25-2.25V6.75a2.25 2.25 0 0 0-2.25-2.25H10.5Z" />
+          </svg>
+          PDF
+        </button>
+        <button type="button" class="btn btn-success" onclick="exportExcel()">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+          </svg>
+          Excel
+        </button>
+      {% endif %}
+
+      {% if show_add_button %}
+        <a href="{{ add_url }}" class="btn btn-primary">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+          </svg>
+          {{ add_button_text|default:'Tambah' }}
+        </a>
+      {% endif %}
+    </div>
+  {% endif %}
+</div>

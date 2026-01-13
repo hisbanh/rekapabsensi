@@ -1,0 +1,608 @@
+{% extends 'base_new.html' %}
+{% load attendance_extras %}
+
+{% block page_title %}Analisis Kehadiran{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-content">
+    <h1 class="page-title">Analisis Kehadiran</h1>
+    <p class="page-subtitle">Visualisasi performa berdasarkan rentang tanggal</p>
+  </div>
+  
+  <!-- Date Range Picker -->
+  <div class="page-actions">
+    <div class="date-range-picker">
+      <div class="date-input-group">
+        <label for="start-date">Dari Tanggal</label>
+        <input type="date" id="start-date" name="start_date" class="form-input" 
+               value="{{ start_date|date:'Y-m-d'|default:'' }}">
+      </div>
+      <div class="date-input-group">
+        <label for="end-date">Sampai Tanggal</label>
+        <input type="date" id="end-date" name="end_date" class="form-input" 
+               value="{{ end_date|date:'Y-m-d'|default:'' }}">
+      </div>
+      <button type="button" id="apply-filter" class="btn btn-primary">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="btn-icon">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 3c2.755 0 5.268.613 7.542 1.726a.75.75 0 0 1 .434.695 28.916 28.916 0 0 1-.546 5.124A28.916 28.916 0 0 1 18.546 16.5a.75.75 0 0 1-.434.695A11.976 11.976 0 0 1 12 19.5c-2.755 0-5.268-.613-7.542-1.726a.75.75 0 0 1-.434-.695 28.916 28.916 0 0 1 .546-5.124A28.916 28.916 0 0 1 5.454 6.5a.75.75 0 0 1 .434-.695A11.976 11.976 0 0 1 12 3Z" />
+        </svg>
+        Terapkan
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Statistics Cards Row -->
+<div class="stats-grid">
+  <!-- Santri Aktif Card -->
+  {% include 'components/_stat_card.html' with icon_svg='<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z" /></svg>' icon_bg='#6366F1' label='SANTRI AKTIF' value=total_students %}
+
+  <!-- Rata-rata Kehadiran Card -->
+  {% include 'components/_stat_card.html' with icon_svg='<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18L9 11.25l4.306 4.306a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.94" /></svg>' icon_bg='#22C55E' label='RATA-RATA KEHADIRAN' value=average_attendance|floatformat:0|add:'%' %}
+
+  <!-- Alasan Utama Absen Card -->
+  {% include 'components/_stat_card.html' with icon_svg='<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>' icon_bg='#EAB308' label='ALASAN UTAMA ABSEN' value=main_absence_reason %}
+</div>
+
+<!-- Charts Section -->
+<div class="charts-grid">
+  <!-- Proporsi Kehadiran Chart -->
+  <div class="chart-card">
+    <div class="chart-header">
+      <h3 class="chart-title">Proporsi Kehadiran</h3>
+    </div>
+    <div class="chart-container">
+      <div id="attendance-donut-chart"></div>
+    </div>
+  </div>
+
+  <!-- Persentase Per Kelas Chart -->
+  <div class="chart-card">
+    <div class="chart-header">
+      <h3 class="chart-title">Persentase Per Kelas</h3>
+    </div>
+    <div class="chart-container">
+      <div id="class-percentage-chart"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Student Search Section -->
+<div class="student-search-section">
+  <div class="section-header">
+    <h3 class="section-title">Profil Kehadiran Personal</h3>
+  </div>
+  
+  <div class="student-search-container">
+    <div class="search-input-wrapper">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="search-icon">
+        <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+      </svg>
+      <input type="text" id="student-search" class="form-input" placeholder="Cari nama santri...">
+    </div>
+    
+    <div id="student-search-results" class="search-results" style="display: none;">
+      <!-- Search results will be populated here -->
+    </div>
+  </div>
+  
+  <!-- Selected Student Stats -->
+  <div id="student-stats" class="student-stats-container" style="display: none;">
+    <div class="student-info">
+      <div class="student-avatar-container">
+        <!-- Avatar will be populated here -->
+      </div>
+      <div class="student-details">
+        <h4 class="student-name"></h4>
+        <p class="student-class"></p>
+      </div>
+    </div>
+    
+    <div class="student-attendance-stats">
+      <div class="stat-item stat-hadir">
+        <span class="stat-label">HADIR</span>
+        <span class="stat-value" id="student-hadir">0%</span>
+      </div>
+      <div class="stat-item stat-sakit">
+        <span class="stat-label">SAKIT</span>
+        <span class="stat-value" id="student-sakit">0%</span>
+      </div>
+      <div class="stat-item stat-izin">
+        <span class="stat-label">IZIN</span>
+        <span class="stat-value" id="student-izin">0%</span>
+      </div>
+      <div class="stat-item stat-alpa">
+        <span class="stat-label">ALPA</span>
+        <span class="stat-value" id="student-alpa">0%</span>
+      </div>
+      <div class="stat-item stat-indeks">
+        <span class="stat-label">INDEKS</span>
+        <span class="stat-value" id="student-indeks">0%</span>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Initialize charts and interactions
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize date inputs with default values if not set
+    const today = new Date();
+    const startDateInput = document.getElementById('start-date');
+    const endDateInput = document.getElementById('end-date');
+    
+    if (!startDateInput.value) {
+        // Default to 30 days ago
+        const thirtyDaysAgo = new Date(today);
+        thirtyDaysAgo.setDate(today.getDate() - 30);
+        startDateInput.value = thirtyDaysAgo.toISOString().split('T')[0];
+    }
+    
+    if (!endDateInput.value) {
+        endDateInput.value = today.toISOString().split('T')[0];
+    }
+    
+    // Apply filter button handler
+    document.getElementById('apply-filter').addEventListener('click', function() {
+        const startDate = startDateInput.value;
+        const endDate = endDateInput.value;
+        
+        if (startDate && endDate) {
+            // Reload page with date parameters
+            const url = new URL(window.location);
+            url.searchParams.set('start_date', startDate);
+            url.searchParams.set('end_date', endDate);
+            window.location.href = url.toString();
+        }
+    });
+    
+    // Student search functionality
+    const searchInput = document.getElementById('student-search');
+    const searchResults = document.getElementById('student-search-results');
+    let searchTimeout;
+    
+    searchInput.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        const query = this.value.trim();
+        
+        if (query.length < 2) {
+            searchResults.style.display = 'none';
+            return;
+        }
+        
+        searchTimeout = setTimeout(() => {
+            searchStudents(query);
+        }, 300);
+    });
+    
+    // Initialize charts
+    initializeDonutChart();
+    initializeBarChart();
+});
+
+// Initialize Donut Chart for Attendance Proportion
+function initializeDonutChart() {
+    const chartData = {
+        hadir: {{ attendance_stats.hadir|default:0 }},
+        sakit: {{ attendance_stats.sakit|default:0 }},
+        izin: {{ attendance_stats.izin|default:0 }},
+        alpa: {{ attendance_stats.alpa|default:0 }}
+    };
+    
+    const total = chartData.hadir + chartData.sakit + chartData.izin + chartData.alpa;
+    
+    if (total === 0) {
+        document.getElementById('attendance-donut-chart').innerHTML = 
+            '<div class="empty-state"><p class="text-muted">Tidak ada data kehadiran</p></div>';
+        return;
+    }
+    
+    const options = {
+        series: [chartData.hadir, chartData.sakit, chartData.izin, chartData.alpa],
+        chart: {
+            type: 'donut',
+            height: 300,
+            animations: {
+                enabled: true,
+                easing: 'easeinout',
+                speed: 800,
+                animateGradually: {
+                    enabled: true,
+                    delay: 150
+                },
+                dynamicAnimation: {
+                    enabled: true,
+                    speed: 350
+                }
+            }
+        },
+        labels: ['Hadir', 'Sakit', 'Izin', 'Alpa'],
+        colors: ['#22C55E', '#EAB308', '#3B82F6', '#EF4444'],
+        dataLabels: {
+            enabled: true,
+            formatter: function (val, opts) {
+                const value = opts.w.config.series[opts.seriesIndex];
+                const percentage = ((value / total) * 100).toFixed(1);
+                return percentage + '%';
+            },
+            style: {
+                fontSize: '12px',
+                fontWeight: '600',
+                colors: ['#fff']
+            },
+            dropShadow: {
+                enabled: true,
+                top: 1,
+                left: 1,
+                blur: 1,
+                color: '#000',
+                opacity: 0.45
+            }
+        },
+        plotOptions: {
+            pie: {
+                donut: {
+                    size: '60%',
+                    labels: {
+                        show: true,
+                        name: {
+                            show: true,
+                            fontSize: '16px',
+                            fontWeight: '600',
+                            color: '#334155',
+                            offsetY: -10
+                        },
+                        value: {
+                            show: true,
+                            fontSize: '24px',
+                            fontWeight: '700',
+                            color: '#0F172A',
+                            offsetY: 10,
+                            formatter: function (val) {
+                                return val;
+                            }
+                        },
+                        total: {
+                            show: true,
+                            showAlways: true,
+                            label: 'Total',
+                            fontSize: '14px',
+                            fontWeight: '600',
+                            color: '#64748B',
+                            formatter: function (w) {
+                                return w.globals.seriesTotals.reduce((a, b) => {
+                                    return a + b;
+                                }, 0);
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        legend: {
+            position: 'bottom',
+            horizontalAlign: 'center',
+            fontSize: '14px',
+            fontWeight: '500',
+            markers: {
+                width: 12,
+                height: 12,
+                radius: 6
+            },
+            itemMargin: {
+                horizontal: 15,
+                vertical: 8
+            }
+        },
+        tooltip: {
+            enabled: true,
+            y: {
+                formatter: function (val, opts) {
+                    const percentage = ((val / total) * 100).toFixed(1);
+                    return val + ' siswa (' + percentage + '%)';
+                }
+            },
+            style: {
+                fontSize: '12px'
+            }
+        },
+        responsive: [{
+            breakpoint: 480,
+            options: {
+                chart: {
+                    height: 250
+                },
+                legend: {
+                    position: 'bottom',
+                    fontSize: '12px'
+                }
+            }
+        }]
+    };
+
+    const chart = new ApexCharts(document.querySelector("#attendance-donut-chart"), options);
+    chart.render();
+}
+
+// Initialize Bar Chart for Per-Class Percentage
+function initializeBarChart() {
+    const classData = [
+        {% for stat in class_stats %}
+        {
+            name: '{{ stat.classroom_name }}',
+            percentage: {{ stat.attendance_rate|default:0 }}
+        }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ];
+    
+    if (classData.length === 0) {
+        document.getElementById('class-percentage-chart').innerHTML = 
+            '<div class="empty-state"><p class="text-muted">Tidak ada data kelas</p></div>';
+        return;
+    }
+    
+    const options = {
+        series: [{
+            name: 'Persentase Kehadiran',
+            data: classData.map(item => item.percentage)
+        }],
+        chart: {
+            type: 'bar',
+            height: 300,
+            animations: {
+                enabled: true,
+                easing: 'easeinout',
+                speed: 800,
+                animateGradually: {
+                    enabled: true,
+                    delay: 150
+                }
+            },
+            toolbar: {
+                show: false
+            }
+        },
+        plotOptions: {
+            bar: {
+                horizontal: false,
+                columnWidth: '60%',
+                borderRadius: 4,
+                dataLabels: {
+                    position: 'top'
+                }
+            }
+        },
+        dataLabels: {
+            enabled: true,
+            formatter: function (val) {
+                return val.toFixed(1) + '%';
+            },
+            offsetY: -20,
+            style: {
+                fontSize: '12px',
+                fontWeight: '600',
+                colors: ['#334155']
+            }
+        },
+        xaxis: {
+            categories: classData.map(item => item.name),
+            labels: {
+                style: {
+                    fontSize: '12px',
+                    fontWeight: '500',
+                    colors: '#64748B'
+                },
+                rotate: -45,
+                rotateAlways: true
+            },
+            axisBorder: {
+                show: false
+            },
+            axisTicks: {
+                show: false
+            }
+        },
+        yaxis: {
+            min: 0,
+            max: 100,
+            labels: {
+                formatter: function (val) {
+                    return val.toFixed(0) + '%';
+                },
+                style: {
+                    fontSize: '12px',
+                    fontWeight: '500',
+                    colors: '#64748B'
+                }
+            }
+        },
+        colors: ['#6366F1'],
+        grid: {
+            borderColor: '#E2E8F0',
+            strokeDashArray: 3,
+            xaxis: {
+                lines: {
+                    show: false
+                }
+            },
+            yaxis: {
+                lines: {
+                    show: true
+                }
+            }
+        },
+        tooltip: {
+            enabled: true,
+            y: {
+                formatter: function (val) {
+                    return val.toFixed(1) + '%';
+                }
+            },
+            style: {
+                fontSize: '12px'
+            }
+        },
+        responsive: [{
+            breakpoint: 768,
+            options: {
+                chart: {
+                    height: 250
+                },
+                plotOptions: {
+                    bar: {
+                        columnWidth: '80%'
+                    }
+                },
+                xaxis: {
+                    labels: {
+                        rotate: -90
+                    }
+                }
+            }
+        }]
+    };
+
+    const chart = new ApexCharts(document.querySelector("#class-percentage-chart"), options);
+    chart.render();
+}
+
+// Student Search Functions
+function searchStudents(query) {
+    const searchResults = document.getElementById('student-search-results');
+    
+    // Show loading state
+    searchResults.innerHTML = '<div class="search-result-item"><div class="spinner"></div><span>Mencari...</span></div>';
+    searchResults.style.display = 'block';
+    
+    // Make API call to search students
+    fetch(`/api/students/search/?q=${encodeURIComponent(query)}`)
+        .then(response => response.json())
+        .then(data => {
+            displaySearchResults(data.students || []);
+        })
+        .catch(error => {
+            console.error('Error searching students:', error);
+            searchResults.innerHTML = '<div class="search-result-item"><span class="text-danger">Terjadi kesalahan saat mencari</span></div>';
+        });
+}
+
+function displaySearchResults(students) {
+    const searchResults = document.getElementById('student-search-results');
+    
+    if (students.length === 0) {
+        searchResults.innerHTML = '<div class="search-result-item"><span class="text-muted">Tidak ada siswa ditemukan</span></div>';
+        return;
+    }
+    
+    const resultsHtml = students.map(student => `
+        <div class="search-result-item" onclick="selectStudent(${student.id}, '${student.name}', '${student.classroom_name}')">
+            <div class="avatar" style="background-color: ${getAvatarColor(student.name)}">
+                ${getAvatarInitials(student.name)}
+            </div>
+            <div class="search-result-info">
+                <div class="search-result-name">${student.name}</div>
+                <div class="search-result-class">${student.classroom_name}</div>
+            </div>
+        </div>
+    `).join('');
+    
+    searchResults.innerHTML = resultsHtml;
+}
+
+function selectStudent(studentId, studentName, className) {
+    // Hide search results
+    document.getElementById('student-search-results').style.display = 'none';
+    
+    // Clear search input
+    document.getElementById('student-search').value = studentName;
+    
+    // Show student stats container
+    const statsContainer = document.getElementById('student-stats');
+    statsContainer.style.display = 'block';
+    
+    // Update student info
+    const avatarContainer = statsContainer.querySelector('.student-avatar-container');
+    avatarContainer.innerHTML = `
+        <div class="avatar avatar-xl" style="background-color: ${getAvatarColor(studentName)}">
+            ${getAvatarInitials(studentName)}
+        </div>
+    `;
+    
+    statsContainer.querySelector('.student-name').textContent = studentName;
+    statsContainer.querySelector('.student-class').textContent = className;
+    
+    // Load student attendance stats
+    loadStudentStats(studentId);
+}
+
+function loadStudentStats(studentId) {
+    const startDate = document.getElementById('start-date').value;
+    const endDate = document.getElementById('end-date').value;
+    
+    // Show loading state
+    const statElements = ['student-hadir', 'student-sakit', 'student-izin', 'student-alpa', 'student-indeks'];
+    statElements.forEach(id => {
+        document.getElementById(id).textContent = '...';
+    });
+    
+    // Build API URL with date filters
+    let apiUrl = `/api/students/${studentId}/stats/`;
+    const params = new URLSearchParams();
+    if (startDate) params.append('start_date', startDate);
+    if (endDate) params.append('end_date', endDate);
+    if (params.toString()) apiUrl += '?' + params.toString();
+    
+    fetch(apiUrl)
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('student-hadir').textContent = data.hadir_percentage + '%';
+            document.getElementById('student-sakit').textContent = data.sakit_percentage + '%';
+            document.getElementById('student-izin').textContent = data.izin_percentage + '%';
+            document.getElementById('student-alpa').textContent = data.alpa_percentage + '%';
+            document.getElementById('student-indeks').textContent = data.attendance_index + '%';
+        })
+        .catch(error => {
+            console.error('Error loading student stats:', error);
+            statElements.forEach(id => {
+                document.getElementById(id).textContent = 'Error';
+            });
+        });
+}
+
+// Helper functions for avatar
+function getAvatarInitials(name) {
+    const words = name.split(' ');
+    if (words.length >= 2) {
+        return (words[0][0] + words[1][0]).toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
+}
+
+function getAvatarColor(name) {
+    const colors = [
+        '#6366F1', '#8B5CF6', '#EC4899', '#EF4444',
+        '#F97316', '#EAB308', '#22C55E', '#14B8A6',
+        '#06B6D4', '#3B82F6'
+    ];
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) {
+        hash += name.charCodeAt(i);
+    }
+    return colors[hash % colors.length];
+}
+
+// Hide search results when clicking outside
+document.addEventListener('click', function(event) {
+    const searchContainer = document.querySelector('.student-search-container');
+    const searchResults = document.getElementById('student-search-results');
+    
+    if (!searchContainer.contains(event.target)) {
+        searchResults.style.display = 'none';
+    }
+});
+});
+</script>
+{% endblock %}

@@ -33,87 +33,87 @@ Implementasi redesign UI/UX aplikasi SIPA Yaumi dengan design modern menggunakan
     - **Property 2: Avatar Color Consistency**
     - **Validates: Requirements 7.1, 7.2**
 
-- [-] 3. Create New Base Template
+- [x] 3. Create New Base Template
   - [x] 3.1 Create base_new.html with new layout structure
     - Include Inter font
     - Include ApexCharts CDN
     - Sidebar + main content layout
     - _Requirements: 2.1, 2.2_
-  - [-] 3.2 Create _sidebar_new.html component
+  - [x] 3.2 Create _sidebar_new.html component
     - Logo section with "SY" badge
     - Navigation menu with icons
     - Active state highlighting
     - User profile section
     - _Requirements: 2.1-2.7_
-  - [ ] 3.3 Update responsive.css for new layout
+  - [x] 3.3 Update responsive.css for new layout
     - Sidebar collapse on mobile
     - Hamburger menu toggle
     - _Requirements: 8.1-8.6_
 
-- [ ] 4. Checkpoint - Verify base layout works
+- [x] 4. Checkpoint - Verify base layout works
   - Ensure base template renders correctly
   - Test sidebar navigation
   - Test responsive behavior
 
-- [ ] 5. Create Reusable Components
-  - [ ] 5.1 Create _avatar.html component
+- [x] 5. Create Reusable Components
+  - [x] 5.1 Create _avatar.html component
     - Circle with initials
     - Colored background
     - _Requirements: 7.1-7.5_
-  - [ ] 5.2 Create _stat_card.html component
+  - [x] 5.2 Create _stat_card.html component
     - Icon with colored background
     - Label and value
     - _Requirements: 3.3, 3.4_
-  - [ ] 5.3 Create _status_badge.html component
+  - [x] 5.3 Create _status_badge.html component
     - H/S/I/A buttons with colors
     - Click to select functionality
     - _Requirements: 4.5, 4.6, 4.7_
-  - [ ] 5.4 Create _filter_bar.html component
+  - [x] 5.4 Create _filter_bar.html component
     - Date pickers
     - Dropdown filters
     - Action buttons
     - _Requirements: 3.2, 4.1, 5.1, 5.2_
 
-- [ ] 6. Redesign Dashboard/Analisis Page
-  - [ ] 6.1 Create dashboard_new.html template
+- [x] 6. Redesign Dashboard/Analisis Page
+  - [x] 6.1 Create dashboard_new.html template
     - Page title and date range picker
     - 3 stat cards row
     - _Requirements: 3.1-3.4_
-  - [ ] 6.2 Implement ApexCharts donut chart for attendance proportion
+  - [x] 6.2 Implement ApexCharts donut chart for attendance proportion
     - H/S/I/A breakdown
     - Animated on load
     - _Requirements: 3.5, 9.1-9.5_
-  - [ ] 6.3 Implement ApexCharts bar chart for per-class percentage
+  - [x] 6.3 Implement ApexCharts bar chart for per-class percentage
     - Class names on x-axis
     - Percentage on y-axis
     - _Requirements: 3.6, 9.1-9.5_
-  - [ ] 6.4 Implement student search with personal stats
+  - [x] 6.4 Implement student search with personal stats
     - Search dropdown
     - Individual attendance display
     - _Requirements: 3.7, 3.8_
-  - [ ] 6.5 Update dashboard view to provide chart data as JSON
+  - [x] 6.5 Update dashboard view to provide chart data as JSON
     - _Requirements: 3.5, 3.6_
 
-- [ ] 7. Checkpoint - Verify dashboard works
+- [x] 7. Checkpoint - Verify dashboard works
   - Test stat cards display
   - Test charts render correctly
   - Test student search functionality
 
-- [ ] 8. Redesign Input Absensi Page
-  - [ ] 8.1 Create input_form_new.html template
+- [x] 8. Redesign Input Absensi Page
+  - [x] 8.1 Create input_form_new.html template
     - Filter bar with date, class, JP selector
     - Simpan button
     - _Requirements: 4.1, 4.2_
-  - [ ] 8.2 Implement attendance table with avatars
+  - [x] 8.2 Implement attendance table with avatars
     - Student rows with avatar initials
     - Status badge buttons
     - Notes input field
     - _Requirements: 4.3-4.8_
-  - [ ] 8.3 Implement JavaScript for status toggle
+  - [x] 8.3 Implement JavaScript for status toggle
     - Click to select status
     - Visual feedback on selection
     - _Requirements: 4.6, 4.7_
-  - [ ] 8.4 Update input view to use new template
+  - [x] 8.4 Update input view to use new template
     - _Requirements: 4.1-4.8_
 
 - [ ] 9. Redesign Laporan Page

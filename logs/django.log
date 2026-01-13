@@ -9688,3 +9688,180 @@ INFO 2026-01-13 16:25:30,786 log 5568 6131200000 "GET /static/css/components.css
 INFO 2026-01-13 16:25:35,369 log 5568 6131200000 "GET /admin/ HTTP/1.1" 200 52722
 INFO 2026-01-13 16:25:37,281 log 5568 6131200000 "GET /admin/ HTTP/1.1" 200 52722
 INFO 2026-01-13 16:25:39,807 log 5568 6131200000 "GET /attendance/ HTTP/1.1" 200 588607
+INFO 2026-01-13 16:31:28,702 log 5568 6131200000 "GET /attendance/ HTTP/1.1" 200 588607
+INFO 2026-01-13 16:31:28,747 log 5568 6131200000 "GET /static/css/main.css HTTP/1.1" 304 0
+INFO 2026-01-13 16:31:28,748 log 5568 6148026368 "GET /static/css/components.css HTTP/1.1" 304 0
+INFO 2026-01-13 16:31:47,342 log 5568 6131200000 "GET / HTTP/1.1" 200 45676
+INFO 2026-01-13 16:31:51,819 log 5568 6131200000 "GET /input/ HTTP/1.1" 200 27803
+INFO 2026-01-13 16:31:55,928 log 5568 6131200000 "GET /input/ff36b4b8-41b4-44bc-8784-6c246d433d19/2026-01-13/ HTTP/1.1" 200 122906
+INFO 2026-01-13 16:32:04,577 autoreload 5568 8542499392 /Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/views.py changed, reloading.
+INFO 2026-01-13 16:32:04,760 autoreload 5569 8542499392 /Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/views.py changed, reloading.
+INFO 2026-01-13 16:32:05,182 autoreload 9901 8542499392 Watching for file changes with StatReloader
+INFO 2026-01-13 16:32:05,182 autoreload 9900 8542499392 Watching for file changes with StatReloader
+INFO 2026-01-13 16:32:11,506 log 9900 6171439104 "GET /report/ HTTP/1.1" 200 69517
+INFO 2026-01-13 16:32:13,675 autoreload 9901 8542499392 /Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/urls.py changed, reloading.
+INFO 2026-01-13 16:32:13,677 autoreload 9900 8542499392 /Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/urls.py changed, reloading.
+INFO 2026-01-13 16:32:14,123 autoreload 9919 8542499392 Watching for file changes with StatReloader
+INFO 2026-01-13 16:32:14,123 autoreload 9918 8542499392 Watching for file changes with StatReloader
+INFO 2026-01-13 16:32:14,920 log 9918 6159052800 "GET /students/10B01/ HTTP/1.1" 200 28013
+INFO 2026-01-13 16:33:31,660 autoreload 10656 8542499392 Watching for file changes with StatReloader
+INFO 2026-01-13 16:33:56,729 log 9919 6201536512 "GET /test-new-layout/ HTTP/1.1" 302 0
+INFO 2026-01-13 16:34:04,661 autoreload 9918 8542499392 /Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/views.py changed, reloading.
+INFO 2026-01-13 16:34:04,707 autoreload 9919 8542499392 /Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/views.py changed, reloading.
+INFO 2026-01-13 16:34:05,261 autoreload 11014 8542499392 Watching for file changes with StatReloader
+INFO 2026-01-13 16:34:05,262 autoreload 11013 8542499392 Watching for file changes with StatReloader
+INFO 2026-01-13 16:34:05,548 autoreload 10656 8542499392 /Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/views.py changed, reloading.
+INFO 2026-01-13 16:34:05,907 autoreload 11017 8542499392 Watching for file changes with StatReloader
+INFO 2026-01-13 16:34:15,018 log 11014 6197456896 "GET /test-new-layout/ HTTP/1.1" 200 22883
+INFO 2026-01-13 16:34:25,286 log 11014 6197456896 "GET /test-new-layout/ HTTP/1.1" 200 22883
+INFO 2026-01-13 16:34:33,846 log 11014 6197456896 "GET /test-new-layout/ HTTP/1.1" 200 22883
+INFO 2026-01-13 16:34:43,036 log 11014 6197456896 "GET /test-new-layout/ HTTP/1.1" 200 22883
+INFO 2026-01-13 16:34:55,453 log 11014 6197456896 "GET /test-new-layout/ HTTP/1.1" 200 22883
+INFO 2026-01-13 16:35:03,973 log 11014 6197456896 "GET /input/ HTTP/1.1" 302 0
+INFO 2026-01-13 16:35:14,142 log 11014 6197456896 "GET /test-new-layout/ HTTP/1.1" 200 22883
+INFO 2026-01-13 16:35:23,776 log 11014 6197456896 "GET /test-new-layout/ HTTP/1.1" 200 22883
+INFO 2026-01-13 16:35:32,387 log 11014 6197456896 "GET /test-new-layout/ HTTP/1.1" 200 22883
+INFO 2026-01-13 16:35:41,272 log 11014 6197456896 "GET /static/css/main.css HTTP/1.1" 200 10468
+INFO 2026-01-13 16:35:49,710 log 11014 6197456896 "GET /static/css/components.css HTTP/1.1" 200 21372
+INFO 2026-01-13 16:35:57,490 log 11014 6197456896 "GET /static/css/responsive.css HTTP/1.1" 200 11142
+INFO 2026-01-13 16:36:06,812 log 11014 6197456896 "GET /static/css/responsive.css HTTP/1.1" 200 11142
+INFO 2026-01-13 16:36:15,990 log 11014 6197456896 "GET /static/css/responsive.css HTTP/1.1" 200 11142
+INFO 2026-01-13 16:36:35,929 autoreload 11014 8542499392 /Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/views.py changed, reloading.
+INFO 2026-01-13 16:36:36,359 autoreload 13280 8542499392 Watching for file changes with StatReloader
+INFO 2026-01-13 16:36:36,417 autoreload 11013 8542499392 /Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/views.py changed, reloading.
+INFO 2026-01-13 16:36:36,763 autoreload 13281 8542499392 Watching for file changes with StatReloader
+INFO 2026-01-13 16:36:44,769 autoreload 13280 8542499392 /Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/urls.py changed, reloading.
+INFO 2026-01-13 16:36:45,027 autoreload 13311 8542499392 Watching for file changes with StatReloader
+INFO 2026-01-13 16:36:45,053 autoreload 13281 8542499392 /Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/urls.py changed, reloading.
+INFO 2026-01-13 16:36:45,277 autoreload 13312 8542499392 Watching for file changes with StatReloader
+INFO 2026-01-13 16:37:10,922 log 13312 6191968256 "GET /students/10B01/ HTTP/1.1" 200 28013
+INFO 2026-01-13 16:37:10,989 log 13312 6208794624 "GET /static/css/components.css HTTP/1.1" 304 0
+INFO 2026-01-13 16:37:10,990 log 13312 6191968256 "GET /static/css/main.css HTTP/1.1" 304 0
+INFO 2026-01-13 16:37:12,180 log 13312 6191968256 "GET /students/10B01/ HTTP/1.1" 200 28013
+INFO 2026-01-13 16:37:18,050 log 13312 6191968256 "GET / HTTP/1.1" 200 45676
+INFO 2026-01-13 16:37:21,321 log 13312 6191968256 "GET /manage/students/ HTTP/1.1" 200 104421
+INFO 2026-01-13 16:37:23,964 log 13312 6191968256 "GET /jp-report/ HTTP/1.1" 200 54230
+INFO 2026-01-13 16:37:25,034 log 13312 6191968256 "GET /report/ HTTP/1.1" 200 69517
+INFO 2026-01-13 16:37:26,686 log 13312 6191968256 "GET /input/ HTTP/1.1" 200 27803
+INFO 2026-01-13 16:37:27,930 log 13312 6191968256 "GET / HTTP/1.1" 200 45676
+INFO 2026-01-13 16:37:29,560 log 13312 6191968256 "GET /manage/students/ HTTP/1.1" 200 104421
+INFO 2026-01-13 16:38:12,896 log 13312 6191968256 "GET /manage/students/ HTTP/1.1" 200 104421
+INFO 2026-01-13 16:38:14,003 log 13312 6191968256 "GET / HTTP/1.1" 200 45676
+INFO 2026-01-13 16:45:17,735 autoreload 13312 8542499392 /Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/urls.py changed, reloading.
+INFO 2026-01-13 16:45:17,975 autoreload 13311 8542499392 /Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/urls.py changed, reloading.
+INFO 2026-01-13 16:45:18,267 autoreload 14222 8542499392 Watching for file changes with StatReloader
+INFO 2026-01-13 16:45:18,277 autoreload 14223 8542499392 Watching for file changes with StatReloader
+INFO 2026-01-13 16:46:04,517 autoreload 14222 8542499392 /Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/views.py changed, reloading.
+INFO 2026-01-13 16:46:04,840 autoreload 14223 8542499392 /Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/views.py changed, reloading.
+INFO 2026-01-13 16:46:04,986 autoreload 14305 8542499392 Watching for file changes with StatReloader
+INFO 2026-01-13 16:46:05,164 autoreload 14307 8542499392 Watching for file changes with StatReloader
+INFO 2026-01-13 16:46:29,739 autoreload 14305 8542499392 /Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/views.py changed, reloading.
+INFO 2026-01-13 16:46:30,064 autoreload 14307 8542499392 /Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/views.py changed, reloading.
+INFO 2026-01-13 16:46:30,418 autoreload 14356 8542499392 Watching for file changes with StatReloader
+INFO 2026-01-13 16:46:30,418 autoreload 14354 8542499392 Watching for file changes with StatReloader
+INFO 2026-01-13 16:49:44,658 log 14354 6170587136 "GET / HTTP/1.1" 200 50981
+INFO 2026-01-13 16:49:44,713 log 14354 6170587136 "GET /static/css/main.css HTTP/1.1" 304 0
+INFO 2026-01-13 16:49:44,719 log 14354 6187413504 "GET /static/css/components.css HTTP/1.1" 200 30427
+INFO 2026-01-13 16:49:47,419 log 14354 6170587136 "GET / HTTP/1.1" 200 50981
+INFO 2026-01-13 16:49:47,759 log 14354 6170587136 "GET / HTTP/1.1" 200 50981
+INFO 2026-01-13 16:49:47,982 log 14354 6170587136 "GET / HTTP/1.1" 200 50981
+INFO 2026-01-13 16:49:48,178 log 14354 6170587136 "GET / HTTP/1.1" 200 50981
+INFO 2026-01-13 16:49:48,418 log 14354 6170587136 "GET / HTTP/1.1" 200 50981
+INFO 2026-01-13 16:49:48,862 log 14354 6170587136 "GET / HTTP/1.1" 200 50981
+INFO 2026-01-13 16:49:49,076 log 14354 6170587136 "GET / HTTP/1.1" 200 50981
+INFO 2026-01-13 16:49:50,893 log 14354 6170587136 "GET / HTTP/1.1" 200 50981
+INFO 2026-01-13 16:49:56,811 log 14354 6170587136 "GET /input/ HTTP/1.1" 200 27803
+INFO 2026-01-13 16:50:00,714 log 14354 6170587136 "GET /input/ff36b4b8-41b4-44bc-8784-6c246d433d19/2026-01-13/ HTTP/1.1" 200 122906
+INFO 2026-01-13 16:50:03,270 log 14354 6170587136 "GET / HTTP/1.1" 200 50981
+INFO 2026-01-13 16:50:25,150 log 14354 6170587136 "GET /input/ HTTP/1.1" 200 27803
+INFO 2026-01-13 16:50:25,178 log 14354 6170587136 "GET /static/css/components.css HTTP/1.1" 304 0
+INFO 2026-01-13 16:50:26,241 log 14354 6170587136 "GET /report/ HTTP/1.1" 200 69517
+INFO 2026-01-13 16:50:27,852 log 14354 6170587136 "GET /jp-report/ HTTP/1.1" 200 54230
+INFO 2026-01-13 16:50:29,525 log 14354 6170587136 "GET /manage/students/ HTTP/1.1" 200 104421
+INFO 2026-01-13 16:50:30,789 log 14354 6170587136 "GET /manage/classrooms/ HTTP/1.1" 200 65532
+INFO 2026-01-13 16:50:31,669 log 14354 6170587136 "GET /manage/holidays/ HTTP/1.1" 200 37780
+INFO 2026-01-13 16:51:46,944 log 14354 6170587136 "GET /manage/students/ HTTP/1.1" 200 104421
+INFO 2026-01-13 16:51:46,974 log 14354 6170587136 "GET /static/css/components.css HTTP/1.1" 304 0
+INFO 2026-01-13 16:52:00,566 log 14354 6170587136 "GET /manage/classrooms/ HTTP/1.1" 200 65532
+INFO 2026-01-13 16:52:05,575 log 14354 6170587136 "GET /manage/holidays/ HTTP/1.1" 200 37780
+INFO 2026-01-13 16:52:08,595 log 14354 6170587136 "GET /manage/students/ HTTP/1.1" 200 104421
+INFO 2026-01-13 16:52:22,027 log 14354 6170587136 "GET /manage/students/?search=akhtar&classroom=&status= HTTP/1.1" 200 43683
+INFO 2026-01-13 16:52:47,928 autoreload 15409 8542499392 Watching for file changes with StatReloader
+INFO 2026-01-13 16:53:23,978 autoreload 14356 8542499392 /Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/views.py changed, reloading.
+INFO 2026-01-13 16:53:24,059 autoreload 14354 8542499392 /Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/views.py changed, reloading.
+INFO 2026-01-13 16:53:24,785 autoreload 15409 8542499392 /Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/views.py changed, reloading.
+INFO 2026-01-13 16:53:24,926 autoreload 15477 8542499392 Watching for file changes with StatReloader
+INFO 2026-01-13 16:53:24,927 autoreload 15478 8542499392 Watching for file changes with StatReloader
+INFO 2026-01-13 16:53:25,138 autoreload 15479 8542499392 Watching for file changes with StatReloader
+INFO 2026-01-13 16:58:47,196 log 15477 6191542272 "GET / HTTP/1.1" 302 0
+INFO 2026-01-13 16:58:47,221 log 15477 6191542272 "GET /admin/login/?next=/ HTTP/1.1" 200 11891
+INFO 2026-01-13 16:58:47,224 log 15477 6191542272 "GET / HTTP/1.1" 302 0
+INFO 2026-01-13 16:58:47,231 log 15477 6191542272 "GET /admin/login/?next=/ HTTP/1.1" 200 11891
+INFO 2026-01-13 16:58:47,232 log 15477 6191542272 "GET / HTTP/1.1" 302 0
+INFO 2026-01-13 16:58:47,235 log 15477 6191542272 "GET /admin/login/?next=/ HTTP/1.1" 200 11891
+INFO 2026-01-13 16:58:47,237 log 15477 6191542272 "GET / HTTP/1.1" 302 0
+INFO 2026-01-13 16:58:47,240 log 15477 6191542272 "GET /admin/login/?next=/ HTTP/1.1" 200 11891
+INFO 2026-01-13 16:58:47,242 log 15477 6191542272 "GET /?start_date=2026-01-06&end_date=2026-01-13 HTTP/1.1" 302 0
+INFO 2026-01-13 16:58:47,245 log 15477 6191542272 "GET /admin/login/?next=/%3Fstart_date%3D2026-01-06%26end_date%3D2026-01-13 HTTP/1.1" 200 11941
+INFO 2026-01-13 16:59:08,218 log 15477 6191542272 "GET / HTTP/1.1" 302 0
+INFO 2026-01-13 16:59:08,229 log 15477 6191542272 "GET /admin/login/?next=/ HTTP/1.1" 200 11891
+INFO 2026-01-13 16:59:58,445 log 15477 6191542272 "GET /admin/login/ HTTP/1.1" 200 11884
+INFO 2026-01-13 16:59:58,732 log 15477 6191542272 "POST /admin/login/ HTTP/1.1" 200 12736
+INFO 2026-01-13 16:59:58,993 log 15477 6191542272 "POST /admin/login/ HTTP/1.1" 200 12736
+INFO 2026-01-13 16:59:59,253 log 15477 6191542272 "POST /admin/login/ HTTP/1.1" 200 12736
+INFO 2026-01-13 16:59:59,510 log 15477 6191542272 "POST /admin/login/ HTTP/1.1" 302 0
+INFO 2026-01-13 16:59:59,551 log 15477 6191542272 "GET / HTTP/1.1" 200 41568
+WARNING 2026-01-13 16:59:59,555 log 15477 6191542272 Forbidden (CSRF token from POST incorrect.): /admin/login/
+WARNING 2026-01-13 16:59:59,556 log 15477 6191542272 "POST /admin/login/ HTTP/1.1" 403 2506
+WARNING 2026-01-13 16:59:59,559 log 15477 6191542272 Forbidden (CSRF token from POST incorrect.): /admin/login/
+WARNING 2026-01-13 16:59:59,560 log 15477 6191542272 "POST /admin/login/ HTTP/1.1" 403 2506
+INFO 2026-01-13 17:00:49,759 log 15477 6208368640 "GET /admin/login/ HTTP/1.1" 200 11884
+INFO 2026-01-13 17:00:50,092 log 15477 6208368640 "POST /admin/login/ HTTP/1.1" 302 0
+INFO 2026-01-13 17:00:50,139 log 15477 6208368640 "GET / HTTP/1.1" 200 41571
+INFO 2026-01-13 17:00:50,185 log 15477 6208368640 "GET / HTTP/1.1" 200 41571
+INFO 2026-01-13 17:00:50,234 log 15477 6208368640 "GET / HTTP/1.1" 200 41571
+INFO 2026-01-13 17:00:50,297 log 15477 6208368640 "GET / HTTP/1.1" 200 41571
+INFO 2026-01-13 17:00:50,328 log 15477 6208368640 "GET / HTTP/1.1" 200 41571
+INFO 2026-01-13 17:01:54,467 log 15477 6208368640 "GET /admin/login/ HTTP/1.1" 200 11884
+INFO 2026-01-13 17:01:54,819 log 15477 6208368640 "POST /admin/login/ HTTP/1.1" 302 0
+INFO 2026-01-13 17:01:54,854 log 15477 6208368640 "GET / HTTP/1.1" 200 41571
+INFO 2026-01-13 17:01:54,857 log 15477 6208368640 "GET /api/students/search/?q= HTTP/1.1" 200 16
+INFO 2026-01-13 17:01:54,865 log 15477 6208368640 "GET /api/students/search/?q=a HTTP/1.1" 200 16
+INFO 2026-01-13 17:01:54,874 log 15477 6208368640 "GET /api/students/search/?q=ab HTTP/1.1" 200 1328
+INFO 2026-01-13 17:01:54,881 log 15477 6208368640 "GET /api/students/search/?q=ab HTTP/1.1" 200 1328
+INFO 2026-01-13 17:01:54,886 log 15477 6208368640 "GET /api/students/5606a420-de0d-4b33-b014-2ca0c36762a4/stats/ HTTP/1.1" 200 287
+INFO 2026-01-13 17:01:54,890 log 15477 6208368640 "GET /api/students/search/?q=ab HTTP/1.1" 200 1328
+INFO 2026-01-13 17:01:54,899 log 15477 6208368640 "GET /api/students/5606a420-de0d-4b33-b014-2ca0c36762a4/stats/?start_date=2026-01-06&end_date=2026-01-13 HTTP/1.1" 200 287
+INFO 2026-01-13 17:02:34,951 log 15477 6208368640 "GET /admin/login/ HTTP/1.1" 200 11884
+INFO 2026-01-13 17:02:35,244 log 15477 6208368640 "POST /admin/login/ HTTP/1.1" 302 0
+INFO 2026-01-13 17:02:35,276 log 15477 6208368640 "GET / HTTP/1.1" 200 41571
+INFO 2026-01-13 17:02:35,317 log 15477 6208368640 "GET / HTTP/1.1" 200 41571
+INFO 2026-01-13 17:02:35,350 log 15477 6208368640 "GET / HTTP/1.1" 200 41571
+INFO 2026-01-13 17:04:03,760 log 15477 6208368640 "GET /admin/login/ HTTP/1.1" 200 11884
+INFO 2026-01-13 17:04:04,040 log 15477 6208368640 "POST /admin/login/ HTTP/1.1" 302 0
+INFO 2026-01-13 17:04:04,074 log 15477 6208368640 "GET / HTTP/1.1" 200 41571
+INFO 2026-01-13 17:04:04,109 log 15477 6208368640 "GET / HTTP/1.1" 200 41571
+INFO 2026-01-13 17:04:04,146 log 15477 6208368640 "GET /?start_date=2026-01-06&end_date=2026-01-13 HTTP/1.1" 200 41571
+INFO 2026-01-13 17:04:04,150 log 15477 6208368640 "GET /api/students/search/?q=ab HTTP/1.1" 200 1328
+INFO 2026-01-13 17:04:04,159 log 15477 6208368640 "GET /api/students/5606a420-de0d-4b33-b014-2ca0c36762a4/stats/ HTTP/1.1" 200 287
+INFO 2026-01-13 17:04:04,202 log 15477 6208368640 "GET / HTTP/1.1" 200 41571
+INFO 2026-01-13 17:04:12,540 autoreload 15477 8542499392 /Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/views.py changed, reloading.
+INFO 2026-01-13 17:04:13,006 autoreload 18242 8542499392 Watching for file changes with StatReloader
+INFO 2026-01-13 17:04:13,304 autoreload 15478 8542499392 /Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/views.py changed, reloading.
+INFO 2026-01-13 17:04:13,306 autoreload 15479 8542499392 /Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/views.py changed, reloading.
+INFO 2026-01-13 17:04:13,573 autoreload 18243 8542499392 Watching for file changes with StatReloader
+INFO 2026-01-13 17:04:13,573 autoreload 18244 8542499392 Watching for file changes with StatReloader
+INFO 2026-01-13 17:05:41,725 log 18243 6135115776 "GET /manage/students/?search=akhtar&classroom=&status= HTTP/1.1" 200 43683
+INFO 2026-01-13 17:05:41,768 log 18243 6135115776 "GET /static/css/main.css HTTP/1.1" 304 0
+INFO 2026-01-13 17:05:41,768 log 18243 6151942144 "GET /static/css/components.css HTTP/1.1" 304 0
+INFO 2026-01-13 17:05:44,228 log 18243 6151942144 "GET /manage/students/?search=akhtar&classroom=&status= HTTP/1.1" 200 43683
+INFO 2026-01-13 17:05:45,381 log 18243 6151942144 "GET /manage/students/?search=akhtar&classroom=&status= HTTP/1.1" 200 43683
+INFO 2026-01-13 17:05:46,381 log 18243 6151942144 "GET / HTTP/1.1" 200 50981
+INFO 2026-01-13 17:05:47,547 log 18243 6135115776 "GET /input/ HTTP/1.1" 200 27803
+INFO 2026-01-13 17:05:48,689 log 18243 6135115776 "GET /report/ HTTP/1.1" 200 69517
+INFO 2026-01-13 17:05:49,912 log 18243 6135115776 "GET /input/ HTTP/1.1" 200 27803
+INFO 2026-01-13 17:05:52,945 log 18243 6135115776 "GET /input/ff36b4b8-41b4-44bc-8784-6c246d433d19/2026-01-13/ HTTP/1.1" 200 122906
+INFO 2026-01-13 17:09:10,566 autoreload 18243 8542499392 /Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/views.py changed, reloading.
+INFO 2026-01-13 17:09:10,951 autoreload 18242 8542499392 /Users/hisbanhamid/Documents/bljar-coding/rekap-absensi/attendance/views.py changed, reloading.
+INFO 2026-01-13 17:09:11,170 autoreload 18801 8542499392 Watching for file changes with StatReloader
+INFO 2026-01-13 17:09:11,305 autoreload 18802 8542499392 Watching for file changes with StatReloader

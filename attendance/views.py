@@ -43,28 +43,90 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         
         try:
-            # Get today's statistics
+            # Get date range from request parameters
+            start_date_str = self.request.GET.get('start_date')
+            end_date_str = self.request.GET.get('end_date')
+            
+            # Default date range (last 30 days)
+            end_date = timezone.now().date()
+            start_date = end_date - timedelta(days=30)
+            
+            if start_date_str:
+                try:
+                    start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+                except ValueError:
+                    pass
+            
+            if end_date_str:
+                try:
+                    end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+                except ValueError:
+                    pass
+            
+            # Get today's statistics for stat cards
             today_stats = AttendanceService.get_attendance_statistics()
             
-            # Get classroom statistics
+            # Get classroom statistics for bar chart
             classroom_stats = AttendanceService.get_classroom_statistics()
+            
+            # Calculate attendance statistics for the date range (for donut chart)
+            attendance_records = AttendanceRecord.objects.filter(
+                date__gte=start_date,
+                date__lte=end_date
+            )
+            
+            attendance_stats = {
+                'hadir': attendance_records.filter(status=AttendanceStatus.HADIR).count(),
+                'sakit': attendance_records.filter(status=AttendanceStatus.SAKIT).count(),
+                'izin': attendance_records.filter(status=AttendanceStatus.IZIN).count(),
+                'alpa': attendance_records.filter(status=AttendanceStatus.ALPA).count(),
+            }
+            
+            total_attendance = sum(attendance_stats.values())
+            
+            # Calculate total students and average attendance
+            total_students = Student.objects.filter(is_active=True).count()
+            average_attendance = 0
+            main_absence_reason = 'Tidak ada data'
+            
+            if total_attendance > 0:
+                average_attendance = round((attendance_stats['hadir'] / total_attendance) * 100, 1)
+                
+                # Determine main absence reason
+                absence_counts = {
+                    'Sakit': attendance_stats['sakit'],
+                    'Izin': attendance_stats['izin'],
+                    'Alpa': attendance_stats['alpa']
+                }
+                if any(absence_counts.values()):
+                    main_absence_reason = max(absence_counts, key=absence_counts.get)
             
             # Get recent attendance records
             recent_attendance = AttendanceRecord.objects.select_related(
                 'student', 'student__classroom', 'student__classroom__academic_level'
             ).order_by('-created_at')[:10]
             
-            # Get attendance trends
-            trends = AttendanceService.get_attendance_trends(days=7)
-            
             # Calculate missing attendance for current week
             missing_attendance_data = self._get_missing_attendance_for_week()
             
             context.update({
+                # Date range
+                'start_date': start_date,
+                'end_date': end_date,
+                
+                # Stat cards data
+                'total_students': total_students,
+                'average_attendance': average_attendance,
+                'main_absence_reason': main_absence_reason,
+                
+                # Chart data
+                'attendance_stats': attendance_stats,
+                'class_stats': classroom_stats,
+                
+                # Legacy data (for backward compatibility)
                 'today_stats': today_stats,
                 'classroom_stats': classroom_stats,
                 'recent_attendance': recent_attendance,
-                'trends': trends,
                 'today': timezone.now().date(),
                 'missing_attendance': missing_attendance_data['classrooms_with_missing'],
                 'all_attendance_complete': missing_attendance_data['all_complete'],
@@ -529,9 +591,16 @@ def attendance_input_form(request, classroom_id, date_str):
         # Get classroom
         classroom = get_object_or_404(Classroom, id=classroom_id, is_active=True)
         
+        # Get current JP from query parameter (default to 1)
+        current_jp = int(request.GET.get('jp', 1))
+        
         # Get JP count for this day
         jp_count = ScheduleService.get_jp_count_for_date(target_date)
         day_schedule = ScheduleService.get_schedule_for_date(target_date)
+        
+        # Validate current JP
+        if current_jp < 1 or current_jp > jp_count:
+            current_jp = 1
         
         # Check if it's a holiday
         is_holiday = HolidayService.is_holiday(target_date, classroom)
@@ -555,21 +624,24 @@ def attendance_input_form(request, classroom_id, date_str):
         for attendance in daily_attendances:
             existing_records[str(attendance.student.id)] = attendance.jp_statuses
         
-        # Prepare students with their existing records
+        # Get all classrooms for filter dropdown
+        classrooms = Classroom.objects.filter(is_active=True).order_by('name')
+        
+        # Prepare students with their existing records for current JP
         students_data = []
         for student in students:
             student_id_str = str(student.id)
             existing_statuses = existing_records.get(student_id_str, {})
             
-            # Build JP statuses list (default to 'H' if no existing record)
-            jp_statuses = []
-            for jp_num in range(1, jp_count + 1):
-                jp_key = str(jp_num)
-                status = existing_statuses.get(jp_key, 'H')
-                jp_statuses.append({
-                    'jp_num': jp_num,
-                    'status': status
-                })
+            # Get status for current JP (default to 'H' if no existing record)
+            current_jp_key = str(current_jp)
+            current_status = existing_statuses.get(current_jp_key, 'H')
+            
+            # Build JP statuses list for current JP only
+            jp_statuses = [{
+                'jp_num': current_jp,
+                'status': current_status
+            }]
             
             students_data.append({
                 'student': student,
@@ -582,8 +654,10 @@ def attendance_input_form(request, classroom_id, date_str):
         
         context = {
             'classroom': classroom,
+            'classrooms': classrooms,
             'date': target_date,
             'date_str': date_str,
+            'current_jp': current_jp,
             'jp_count': jp_count,
             'jp_range': jp_range,
             'day_schedule': day_schedule,
@@ -601,7 +675,8 @@ def attendance_input_form(request, classroom_id, date_str):
         messages.error(request, f"Terjadi kesalahan saat memuat form absensi: {str(e)}")
         return redirect('attendance_input')
     
-    return render(request, 'attendance/input_form.html', context)
+    # Use new template
+    return render(request, 'attendance/input_form_new.html', context)
 
 
 @login_required
@@ -1892,3 +1967,162 @@ def export_excel_all(request):
         logger.error(f"Error exporting Excel (all classes): {str(e)}")
         messages.error(request, f"Gagal mengekspor Excel: {str(e)}")
         return redirect('jp_report')
+
+
+# ============================================
+# Dashboard API Endpoints
+# ============================================
+
+@login_required
+def api_student_search(request):
+    """
+    API endpoint for student search functionality in dashboard.
+    
+    Query Parameters:
+        - q: Search query (name or student ID)
+    
+    Returns:
+        JSON response with matching students
+    """
+    try:
+        query = request.GET.get('q', '').strip()
+        
+        if len(query) < 2:
+            return JsonResponse({'students': []})
+        
+        # Search students by name or student ID
+        students = Student.objects.filter(
+            models.Q(name__icontains=query) | 
+            models.Q(student_id__icontains=query),
+            is_active=True
+        ).select_related('classroom', 'classroom__academic_level').order_by('name')[:10]
+        
+        student_data = []
+        for student in students:
+            student_data.append({
+                'id': str(student.id),
+                'name': student.name,
+                'student_id': student.student_id or '',
+                'classroom_name': str(student.classroom) if student.classroom else 'Tidak ada kelas'
+            })
+        
+        return JsonResponse({'students': student_data})
+        
+    except Exception as e:
+        logger.error(f"Error in student search API: {str(e)}")
+        return JsonResponse({'error': 'Terjadi kesalahan saat mencari siswa'}, status=500)
+
+
+@login_required
+def api_student_stats(request, student_id):
+    """
+    API endpoint for individual student attendance statistics.
+    
+    Path Parameters:
+        - student_id: UUID of the student
+    
+    Query Parameters:
+        - start_date: Start date (YYYY-MM-DD) - optional
+        - end_date: End date (YYYY-MM-DD) - optional
+    
+    Returns:
+        JSON response with student attendance statistics
+    """
+    try:
+        # Get student
+        try:
+            student = Student.objects.select_related('classroom').get(id=student_id, is_active=True)
+        except Student.DoesNotExist:
+            return JsonResponse({'error': 'Siswa tidak ditemukan'}, status=404)
+        
+        # Get date range
+        start_date_str = request.GET.get('start_date')
+        end_date_str = request.GET.get('end_date')
+        
+        start_date = None
+        end_date = None
+        
+        if start_date_str:
+            try:
+                start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+            except ValueError:
+                return JsonResponse({'error': 'Format start_date tidak valid'}, status=400)
+        
+        if end_date_str:
+            try:
+                end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+            except ValueError:
+                return JsonResponse({'error': 'Format end_date tidak valid'}, status=400)
+        
+        # Default to last 30 days if no dates provided
+        if not start_date and not end_date:
+            end_date = timezone.now().date()
+            start_date = end_date - timedelta(days=30)
+        elif not start_date:
+            start_date = end_date - timedelta(days=30)
+        elif not end_date:
+            end_date = timezone.now().date()
+        
+        # Get attendance records for the student in the date range
+        records = AttendanceRecord.objects.filter(
+            student=student,
+            date__gte=start_date,
+            date__lte=end_date
+        )
+        
+        # Calculate statistics
+        total_records = records.count()
+        
+        if total_records == 0:
+            return JsonResponse({
+                'hadir_count': 0,
+                'sakit_count': 0,
+                'izin_count': 0,
+                'alpa_count': 0,
+                'hadir_percentage': 0,
+                'sakit_percentage': 0,
+                'izin_percentage': 0,
+                'alpa_percentage': 0,
+                'attendance_index': 0,
+                'total_records': 0,
+                'date_range': {
+                    'start_date': start_date.isoformat(),
+                    'end_date': end_date.isoformat()
+                }
+            })
+        
+        hadir_count = records.filter(status=AttendanceStatus.HADIR).count()
+        sakit_count = records.filter(status=AttendanceStatus.SAKIT).count()
+        izin_count = records.filter(status=AttendanceStatus.IZIN).count()
+        alpa_count = records.filter(status=AttendanceStatus.ALPA).count()
+        
+        # Calculate percentages
+        hadir_percentage = round((hadir_count / total_records) * 100, 1)
+        sakit_percentage = round((sakit_count / total_records) * 100, 1)
+        izin_percentage = round((izin_count / total_records) * 100, 1)
+        alpa_percentage = round((alpa_count / total_records) * 100, 1)
+        
+        # Calculate attendance index (Hadir + Sakit + Izin = acceptable attendance)
+        acceptable_count = hadir_count + sakit_count + izin_count
+        attendance_index = round((acceptable_count / total_records) * 100, 1)
+        
+        return JsonResponse({
+            'hadir_count': hadir_count,
+            'sakit_count': sakit_count,
+            'izin_count': izin_count,
+            'alpa_count': alpa_count,
+            'hadir_percentage': hadir_percentage,
+            'sakit_percentage': sakit_percentage,
+            'izin_percentage': izin_percentage,
+            'alpa_percentage': alpa_percentage,
+            'attendance_index': attendance_index,
+            'total_records': total_records,
+            'date_range': {
+                'start_date': start_date.isoformat(),
+                'end_date': end_date.isoformat()
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Error in student stats API: {str(e)}")
+        return JsonResponse({'error': 'Terjadi kesalahan saat memuat statistik siswa'}, status=500)
