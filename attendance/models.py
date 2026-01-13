@@ -275,15 +275,23 @@ class Student(BaseModel):
                 'name': 'Student name should not contain numbers'
             })
         
-        # Validate enrollment date
-        if self.enrollment_date and self.enrollment_date > timezone.now().date():
+        # Validate enrollment date - skip during migrations
+        import sys
+        is_migration = 'migrate' in sys.argv or 'makemigrations' in sys.argv
+        
+        if not is_migration and self.enrollment_date and self.enrollment_date > timezone.now().date():
             raise ValidationError({
                 'enrollment_date': 'Enrollment date cannot be in the future'
             })
     
     def save(self, *args, **kwargs):
         """Override save to ensure validation"""
-        self.full_clean()
+        # Skip full_clean during migrations to avoid validation issues
+        import sys
+        is_migration = 'migrate' in sys.argv or 'makemigrations' in sys.argv
+        
+        if not is_migration:
+            self.full_clean()
         super().save(*args, **kwargs)
     
     @property
