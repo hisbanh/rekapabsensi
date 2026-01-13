@@ -243,23 +243,27 @@ coverage report
 
 ## Deployment
 
+### PythonAnywhere Deployment
+
+This application is optimized for deployment on PythonAnywhere. See [PYTHONANYWHERE_DEPLOYMENT.md](PYTHONANYWHERE_DEPLOYMENT.md) for detailed deployment instructions.
+
 ### Production Checklist
 - [ ] Set `DEBUG=False`
-- [ ] Configure proper database (PostgreSQL/MySQL)
-- [ ] Set up Redis for caching
+- [ ] Configure proper ALLOWED_HOSTS
+- [ ] Set up CSRF_TRUSTED_ORIGINS
 - [ ] Configure email settings
 - [ ] Set up static file serving
 - [ ] Configure logging
-- [ ] Set up monitoring (Sentry)
+- [ ] Run database migrations
+- [ ] Populate initial data
 
-### Docker Deployment
-```bash
-# Build image
-docker build -t sipa-yaumi .
-
-# Run container
-docker run -p 8000:8000 sipa-yaumi
-```
+### Quick Deployment Steps
+1. Clone repository on PythonAnywhere
+2. Create virtual environment and install dependencies
+3. Configure environment variables in `.env`
+4. Run migrations and collect static files
+5. Configure WSGI and static file mappings
+6. Test the application
 
 ## Monitoring & Maintenance
 
