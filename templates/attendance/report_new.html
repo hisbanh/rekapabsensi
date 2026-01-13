@@ -1,0 +1,171 @@
+{% extends 'base_new.html' %}
+{% load attendance_extras %}
+
+{% block page_title %}Laporan Absensi{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-content">
+    <h1 class="page-title">Laporan Absensi</h1>
+    <p class="page-subtitle">Rekapitulasi kehadiran santri berdasarkan rentang tanggal</p>
+  </div>
+</div>
+
+<!-- Filter Bar -->
+<form method="get" class="mb-6">
+  {% include 'components/_filter_bar.html' with show_date_range=True show_class_filter=True show_export_buttons=True dari_tanggal=form.start_date.value sampai_tanggal=form.end_date.value classrooms=form.classroom.field.queryset selected_class=form.classroom.value %}
+</form>
+
+<!-- Report Results -->
+<div class="card">
+  <div class="card-header">
+    <div class="card-header-content">
+      <h3 class="card-title">Rekapitulasi Total JP</h3>
+      {% if records %}
+        <div class="student-count-badge">
+          {{ records.paginator.count }} SANTRI
+        </div>
+      {% endif %}
+    </div>
+  </div>
+  
+  <div class="card-body">
+    {% if records %}
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th class="text-center" style="width: 60px;">No</th>
+              <th style="width: 120px;">NIS</th>
+              <th>Nama Santri</th>
+              <th class="text-center" style="width: 80px;">Kelas</th>
+              <th class="text-center status-col" style="width: 70px;">H(JP)</th>
+              <th class="text-center status-col" style="width: 70px;">S</th>
+              <th class="text-center status-col" style="width: 70px;">I</th>
+              <th class="text-center status-col" style="width: 70px;">A</th>
+              <th class="text-center" style="width: 100px;">%</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for record in records %}
+            <tr>
+              <td class="text-center">{{ forloop.counter0|add:records.start_index }}</td>
+              <td>{{ record.student.student_id|default:"-" }}</td>
+              <td>
+                <div class="student-info">
+                  {% include 'components/_avatar.html' with name=record.student.name size='sm' %}
+                  <span class="student-name">{{ record.student.name }}</span>
+                </div>
+              </td>
+              <td class="text-center">
+                <span class="class-badge">{{ record.student.classroom.name }}</span>
+              </td>
+              <td class="text-center">
+                <span class="status-count status-hadir">{{ record.present_count|default:0 }}</span>
+              </td>
+              <td class="text-center">
+                <span class="status-count status-sakit">{{ record.sick_count|default:0 }}</span>
+              </td>
+              <td class="text-center">
+                <span class="status-count status-izin">{{ record.permission_count|default:0 }}</span>
+              </td>
+              <td class="text-center">
+                <span class="status-count status-alpa">{{ record.absent_count|default:0 }}</span>
+              </td>
+              <td class="text-center">
+                <div class="percentage-cell">
+                  <div class="progress-bar-container">
+                    <div class="progress-bar" style="width: {{ record.attendance_rate|default:0 }}%"></div>
+                  </div>
+                  <span class="percentage-text">{{ record.attendance_rate|default:0|floatformat:1 }}%</span>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      {% if records.has_other_pages %}
+      <div class="pagination-container">
+        <nav class="pagination-nav">
+          <ul class="pagination">
+            {% if records.has_previous %}
+              <li class="page-item">
+                <a class="page-link" href="?page=1{% if request.GET %}&{{ request.GET.urlencode }}{% endif %}">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="m18.75 4.5-7.5 7.5 7.5 7.5m-6-15L5.25 12l7.5 7.5" />
+                  </svg>
+                </a>
+              </li>
+              <li class="page-item">
+                <a class="page-link" href="?page={{ records.previous_page_number }}{% if request.GET %}&{{ request.GET.urlencode }}{% endif %}">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
+                  </svg>
+                </a>
+              </li>
+            {% endif %}
+
+            {% for num in records.paginator.page_range %}
+              {% if records.number == num %}
+                <li class="page-item active">
+                  <span class="page-link">{{ num }}</span>
+                </li>
+              {% elif num > records.number|add:'-3' and num < records.number|add:'3' %}
+                <li class="page-item">
+                  <a class="page-link" href="?page={{ num }}{% if request.GET %}&{{ request.GET.urlencode }}{% endif %}">{{ num }}</a>
+                </li>
+              {% endif %}
+            {% endfor %}
+
+            {% if records.has_next %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ records.next_page_number }}{% if request.GET %}&{{ request.GET.urlencode }}{% endif %}">
+                  <svg xmlns="http://www.w3.svg/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
+                  </svg>
+                </a>
+              </li>
+              <li class="page-item">
+                <a class="page-link" href="?page={{ records.paginator.num_pages }}{% if request.GET %}&{{ request.GET.urlencode }}{% endif %}">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="m5.25 4.5 7.5 7.5-7.5 7.5m6-15 7.5 7.5-7.5 7.5" />
+                  </svg>
+                </a>
+              </li>
+            {% endif %}
+          </ul>
+        </nav>
+      </div>
+      {% endif %}
+
+    {% else %}
+      <div class="empty-state">
+        <div class="empty-state-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25ZM6.75 12h.008v.008H6.75V12Zm0 3h.008v.008H6.75V15Zm0 3h.008v.008H6.75V18Z" />
+          </svg>
+        </div>
+        <h3 class="empty-state-title">Tidak ada data ditemukan</h3>
+        <p class="empty-state-description">Coba ubah filter atau rentang tanggal untuk melihat data laporan</p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+function exportPDF() {
+  const params = new URLSearchParams(window.location.search);
+  params.set('format', 'pdf');
+  window.open(`{% url 'export_csv' %}?${params.toString()}`, '_blank');
+}
+
+function exportExcel() {
+  const params = new URLSearchParams(window.location.search);
+  params.set('format', 'excel');
+  window.open(`{% url 'export_csv' %}?${params.toString()}`, '_blank');
+}
+</script>
+{% endblock %}

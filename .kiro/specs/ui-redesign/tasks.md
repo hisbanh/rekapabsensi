@@ -116,29 +116,29 @@ Implementasi redesign UI/UX aplikasi SIPA Yaumi dengan design modern menggunakan
   - [x] 8.4 Update input view to use new template
     - _Requirements: 4.1-4.8_
 
-- [ ] 9. Redesign Laporan Page
-  - [ ] 9.1 Create report_new.html template
+- [x] 9. Redesign Laporan Page
+  - [x] 9.1 Create report_new.html template
     - Filter bar with date range and class filter
     - PDF and Excel export buttons
     - _Requirements: 5.1, 5.2_
-  - [ ] 9.2 Implement rekapitulasi table
+  - [x] 9.2 Implement rekapitulasi table
     - Columns: No, NIS, Nama, Kelas, H, S, I, A, %
     - Colored status counts
     - Progress bar for percentage
     - _Requirements: 5.3-5.7_
-  - [ ] 9.3 Update report view to use new template
+  - [x] 9.3 Update report view to use new template
     - _Requirements: 5.1-5.7_
 
-- [ ] 10. Redesign Data Santri Page
-  - [ ] 10.1 Create students_new.html template
+- [x] 10. Redesign Data Santri Page
+  - [x] 10.1 Create students_new.html template
     - Page title and Tambah Santri button
     - Search input and class filter
     - _Requirements: 6.1-6.4_
-  - [ ] 10.2 Implement student table with avatars
+  - [x] 10.2 Implement student table with avatars
     - Avatar with initials
     - Edit and delete action icons
     - _Requirements: 6.5-6.9_
-  - [ ] 10.3 Update student list view to use new template
+  - [x] 10.3 Update student list view to use new template
     - _Requirements: 6.1-6.9_
 
 - [ ] 11. Checkpoint - Verify all pages work

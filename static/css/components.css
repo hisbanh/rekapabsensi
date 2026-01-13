@@ -1545,3 +1545,317 @@
     padding: var(--spacing-3);
   }
 }
+
+/* ============================================
+   REPORT TABLE STYLES
+   Requirements: 5.3-5.7
+   ============================================ */
+
+/* Card Header with Student Count Badge */
+.card-header-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-4);
+}
+
+.card-title {
+  margin: 0;
+  font-size: var(--text-lg);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+}
+
+.student-count-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--spacing-1) var(--spacing-3);
+  font-size: var(--text-xs);
+  font-weight: var(--font-bold);
+  color: var(--primary);
+  background-color: var(--primary-50);
+  border: 1px solid var(--primary-200);
+  border-radius: var(--radius-full);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Data Table Container */
+.table-container {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+}
+
+/* Data Table */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+  background-color: var(--bg-white);
+}
+
+.data-table th {
+  padding: var(--spacing-3) var(--spacing-4);
+  background-color: var(--slate-50);
+  color: var(--text-secondary);
+  font-weight: var(--font-semibold);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--border-color);
+  white-space: nowrap;
+}
+
+.data-table td {
+  padding: var(--spacing-3) var(--spacing-4);
+  border-bottom: 1px solid var(--border-light);
+  vertical-align: middle;
+}
+
+.data-table tbody tr:hover {
+  background-color: var(--slate-25);
+}
+
+.data-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Student Info Cell */
+.student-info {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  min-width: 200px;
+}
+
+.student-name {
+  font-weight: var(--font-medium);
+  color: var(--text-primary);
+}
+
+/* Class Badge */
+.class-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--spacing-1) var(--spacing-2);
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
+  color: var(--slate-600);
+  background-color: var(--slate-100);
+  border-radius: var(--radius-md);
+  white-space: nowrap;
+}
+
+/* Status Count Cells */
+.status-col {
+  width: 70px;
+  min-width: 70px;
+}
+
+.status-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 24px;
+  padding: 0 var(--spacing-2);
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  border-radius: var(--radius-md);
+}
+
+.status-count.status-hadir {
+  color: var(--status-hadir);
+  background-color: var(--status-hadir-bg);
+}
+
+.status-count.status-sakit {
+  color: var(--status-sakit);
+  background-color: var(--status-sakit-bg);
+}
+
+.status-count.status-izin {
+  color: var(--status-izin);
+  background-color: var(--status-izin-bg);
+}
+
+.status-count.status-alpa {
+  color: var(--status-alpa);
+  background-color: var(--status-alpa-bg);
+}
+
+/* Percentage Cell with Progress Bar */
+.percentage-cell {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-1);
+  min-width: 100px;
+}
+
+.progress-bar-container {
+  height: 6px;
+  background-color: var(--slate-200);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 100%;
+  background-color: var(--status-hadir);
+  border-radius: var(--radius-full);
+  transition: width var(--transition-slow);
+  min-width: 2px;
+}
+
+.percentage-text {
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+/* Pagination Container */
+.pagination-container {
+  display: flex;
+  justify-content: center;
+  padding: var(--spacing-4) 0;
+  border-top: 1px solid var(--border-light);
+  margin-top: var(--spacing-4);
+}
+
+.pagination-nav {
+  display: flex;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-1);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.page-item {
+  display: flex;
+}
+
+.page-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 36px;
+  padding: var(--spacing-2);
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  color: var(--text-secondary);
+  text-decoration: none;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+}
+
+.page-link:hover {
+  background-color: var(--bg-light);
+  color: var(--text-primary);
+  border-color: var(--border-dark);
+}
+
+.page-item.active .page-link {
+  background-color: var(--primary);
+  color: var(--text-white);
+  border-color: var(--primary);
+}
+
+.page-item.active .page-link:hover {
+  background-color: var(--primary-hover);
+  border-color: var(--primary-hover);
+}
+
+/* Text Alignment Utilities */
+.text-center {
+  text-align: center;
+}
+
+.text-left {
+  text-align: left;
+}
+
+.text-right {
+  text-align: right;
+}
+
+/* Responsive Report Table */
+@media (max-width: 768px) {
+  .table-container {
+    border-radius: var(--radius-md);
+  }
+  
+  .data-table th,
+  .data-table td {
+    padding: var(--spacing-2) var(--spacing-3);
+  }
+  
+  .student-info {
+    min-width: 150px;
+  }
+  
+  .student-name {
+    font-size: var(--text-xs);
+  }
+  
+  .class-badge {
+    font-size: 10px;
+    padding: 2px var(--spacing-1);
+  }
+  
+  .status-col {
+    width: 50px;
+    min-width: 50px;
+  }
+  
+  .status-count {
+    min-width: 24px;
+    height: 20px;
+    font-size: 10px;
+  }
+  
+  .percentage-cell {
+    min-width: 80px;
+  }
+  
+  .percentage-text {
+    font-size: 10px;
+  }
+  
+  .progress-bar-container {
+    height: 4px;
+  }
+}
+
+@media (max-width: 480px) {
+  .data-table th,
+  .data-table td {
+    padding: var(--spacing-1) var(--spacing-2);
+  }
+  
+  .student-info {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-1);
+    min-width: 120px;
+  }
+  
+  .pagination {
+    gap: 2px;
+  }
+  
+  .page-link {
+    min-width: 32px;
+    height: 32px;
+    font-size: var(--text-xs);
+  }
+}

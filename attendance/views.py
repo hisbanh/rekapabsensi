@@ -412,6 +412,46 @@ def attendance_report(request):
 
 
 @login_required
+def attendance_report_new(request):
+    """New attendance report view with student-level aggregation"""
+    try:
+        form = AttendanceFilterForm(request.GET or None)
+        
+        # Default parameters
+        filters = {}
+        
+        if form.is_valid():
+            if form.cleaned_data.get('classroom'):
+                filters['classroom_id'] = str(form.cleaned_data['classroom'].id)
+        
+        # Generate student performance report using service
+        performance_data = ReportService.generate_student_performance_report(**filters)
+        
+        # Pagination
+        from django.core.paginator import Paginator
+        page = int(request.GET.get('page', 1))
+        per_page = 50
+        paginator = Paginator(performance_data, per_page)
+        records = paginator.get_page(page)
+        
+        context = {
+            'form': form,
+            'records': records,
+        }
+        
+    except ReportServiceError as e:
+        logger.error(f"Report service error: {str(e)}")
+        messages.error(request, f"Kesalahan layanan laporan: {str(e)}")
+        context = {'form': AttendanceFilterForm(), 'records': []}
+    except Exception as e:
+        logger.error(f"Error generating report: {str(e)}")
+        messages.error(request, "Terjadi kesalahan saat membuat laporan")
+        context = {'form': AttendanceFilterForm(), 'records': []}
+    
+    return render(request, 'attendance/report_new.html', context)
+
+
+@login_required
 def student_detail(request, student_id):
     """Student detail view with attendance history"""
     try:
@@ -2126,3 +2166,42 @@ def api_student_stats(request, student_id):
     except Exception as e:
         logger.error(f"Error in student stats API: {str(e)}")
         return JsonResponse({'error': 'Terjadi kesalahan saat memuat statistik siswa'}, status=500)
+
+
+@login_required
+def student_list_new(request):
+    """New student list view with modern UI design"""
+    try:
+        # Get filter parameters
+        classroom_filter = request.GET.get('class', '')
+        search_query = request.GET.get('search', '')
+        page = int(request.GET.get('page', 1))
+        
+        # Get filtered students using service
+        result = StudentService.get_students_with_filters(
+            classroom_id=classroom_filter if classroom_filter else None,
+            search_query=search_query if search_query else None,
+            page=page,
+            per_page=20
+        )
+        
+        # Get filter options
+        classrooms = StudentService.get_classroom_list()
+        
+        context = {
+            'students': result['students'],
+            'classrooms': classrooms,
+            'current_class': classroom_filter,
+            'search_query': search_query,
+            'pagination': result
+        }
+        
+    except Exception as e:
+        logger.error(f"Error loading student list: {str(e)}")
+        messages.error(request, "Terjadi kesalahan saat memuat data siswa")
+        context = {
+            'students': [], 
+            'classrooms': []
+        }
+    
+    return render(request, 'attendance/students_new.html', context)

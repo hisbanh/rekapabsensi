@@ -1,0 +1,161 @@
+{% extends 'base_new.html' %}
+{% load attendance_extras %}
+
+{% block page_title %}Database Santri{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-content">
+    <h1 class="page-title">Database Santri</h1>
+    <p class="page-subtitle">Kelola data santri dengan mudah dan efisien</p>
+  </div>
+  <div class="page-actions">
+    <button class="btn btn-primary">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="btn-icon">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+      </svg>
+      Tambah Santri
+    </button>
+  </div>
+</div>
+
+<!-- Filter Bar -->
+{% include 'components/_filter_bar.html' with search_placeholder='Cari nama santri atau NISN...' show_class_filter=True %}
+
+<!-- Students Table -->
+<div class="card">
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead>
+          <tr>
+            <th style="width: 60px;">No</th>
+            <th>Nama Lengkap</th>
+            <th style="width: 120px;">NISN</th>
+            <th style="width: 100px;">Kelas</th>
+            <th style="width: 100px;" class="text-center">Aksi</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for student in students %}
+          <tr>
+            <td class="text-center">{{ forloop.counter }}</td>
+            <td>
+              <div class="d-flex align-items-center">
+                {% include 'components/_avatar.html' with name=student.name size='sm' %}
+                <div class="ms-3">
+                  <div class="fw-medium">{{ student.name }}</div>
+                  {% if student.student_id %}
+                  <div class="text-muted small">ID: {{ student.student_id }}</div>
+                  {% endif %}
+                </div>
+              </div>
+            </td>
+            <td>
+              {% if student.nisn %}
+                {{ student.nisn }}
+              {% else %}
+                <span class="text-muted">-</span>
+              {% endif %}
+            </td>
+            <td>
+              <span class="badge bg-secondary">{{ student.classroom|default:'-' }}</span>
+            </td>
+            <td class="text-center">
+              <div class="btn-group btn-group-sm">
+                <button type="button" class="btn btn-outline-primary" title="Edit">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="btn-icon-sm">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+                  </svg>
+                </button>
+                <button type="button" class="btn btn-outline-danger" title="Hapus">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="btn-icon-sm">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                  </svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="5" class="text-center py-5">
+              <div class="empty-state">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="empty-icon">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z" />
+                </svg>
+                <h5>Tidak ada data santri</h5>
+                <p class="text-muted">Belum ada santri yang terdaftar atau sesuai dengan filter pencarian</p>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    
+    <!-- Pagination -->
+    {% if students.has_other_pages %}
+    <div class="card-footer">
+      <nav aria-label="Page navigation">
+        <ul class="pagination justify-content-center mb-0">
+          {% if students.has_previous %}
+            <li class="page-item">
+              <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if current_class %}&class={{ current_class }}{% endif %}">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="page-icon">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="m18.75 4.5-7.5 7.5 7.5 7.5m-6-15L5.25 12l7.5 7.5" />
+                </svg>
+              </a>
+            </li>
+            <li class="page-item">
+              <a class="page-link" href="?page={{ students.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if current_class %}&class={{ current_class }}{% endif %}">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="page-icon">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
+                </svg>
+              </a>
+            </li>
+          {% endif %}
+
+          {% for num in students.paginator.page_range %}
+            {% if students.number == num %}
+              <li class="page-item active">
+                <span class="page-link">{{ num }}</span>
+              </li>
+            {% elif num > students.number|add:'-3' and num < students.number|add:'3' %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if current_class %}&class={{ current_class }}{% endif %}">{{ num }}</a>
+              </li>
+            {% endif %}
+          {% endfor %}
+
+          {% if students.has_next %}
+            <li class="page-item">
+              <a class="page-link" href="?page={{ students.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if current_class %}&class={{ current_class }}{% endif %}">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="page-icon">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
+                </svg>
+              </a>
+            </li>
+            <li class="page-item">
+              <a class="page-link" href="?page={{ students.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if current_class %}&class={{ current_class }}{% endif %}">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="page-icon">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="m5.25 4.5 7.5 7.5-7.5 7.5m6-15 7.5 7.5-7.5 7.5" />
+                </svg>
+              </a>
+            </li>
+          {% endif %}
+        </ul>
+      </nav>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Student Count Badge -->
+{% if students %}
+<div class="mt-4 text-center">
+  <span class="badge bg-info fs-6 px-3 py-2">
+    {{ students.paginator.count }} SANTRI
+  </span>
+</div>
+{% endif %}
+{% endblock %}
