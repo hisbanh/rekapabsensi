@@ -4,6 +4,7 @@ Supports the new Classroom and AcademicLevel model structure
 """
 from django.core.management.base import BaseCommand
 from django.db import transaction
+from django.utils import timezone
 from attendance.models import AcademicLevel, Classroom, Student
 
 
@@ -460,7 +461,8 @@ class Command(BaseCommand):
                     defaults={
                         'nisn': student_data['nisn'],
                         'name': student_data['name'],
-                        'classroom': classroom
+                        'classroom': classroom,
+                        'enrollment_date': timezone.now().date()  # Set to today's date
                     }
                 )
                 
@@ -472,6 +474,7 @@ class Command(BaseCommand):
                     student.nisn = student_data['nisn']
                     student.name = student_data['name']
                     student.classroom = classroom
+                    # Don't update enrollment_date for existing students
                     student.save()
                     updated_count += 1
                     self.stdout.write(f"Updated: {student.name} ({student.classroom})")
