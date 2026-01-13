@@ -33,13 +33,13 @@ Implementasi redesign UI/UX aplikasi SIPA Yaumi dengan design modern menggunakan
     - **Property 2: Avatar Color Consistency**
     - **Validates: Requirements 7.1, 7.2**
 
-- [ ] 3. Create New Base Template
-  - [ ] 3.1 Create base_new.html with new layout structure
+- [-] 3. Create New Base Template
+  - [x] 3.1 Create base_new.html with new layout structure
     - Include Inter font
     - Include ApexCharts CDN
     - Sidebar + main content layout
     - _Requirements: 2.1, 2.2_
-  - [ ] 3.2 Create _sidebar_new.html component
+  - [-] 3.2 Create _sidebar_new.html component
     - Logo section with "SY" badge
     - Navigation menu with icons
     - Active state highlighting
