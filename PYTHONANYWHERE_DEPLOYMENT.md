@@ -13,8 +13,8 @@ This guide provides step-by-step instructions for deploying the SIPA Yaumi appli
 1. Open a Bash console in PythonAnywhere
 2. Clone your repository:
 ```bash
-git clone https://github.com/yourusername/sipa-yaumi.git
-cd sipa-yaumi
+git clone https://github.com/hisbanh/rekapabsensi.git
+cd rekapabsensi
 ```
 
 ## Step 2: Create Virtual Environment
@@ -82,17 +82,17 @@ python manage.py collectstatic --noinput
 
 ### Source code:
 ```
-/home/yourusername/sipa-yaumi
+/home/yourusername/rekapabsensi
 ```
 
 ### Working directory:
 ```
-/home/yourusername/sipa-yaumi
+/home/yourusername/rekapabsensi
 ```
 
 ### Virtualenv:
 ```
-/home/yourusername/sipa-yaumi/venv
+/home/yourusername/rekapabsensi/venv
 ```
 
 ### WSGI configuration file:
@@ -103,7 +103,7 @@ import os
 import sys
 
 # Add your project directory to sys.path
-path = '/home/yourusername/sipa-yaumi'
+path = '/home/yourusername/rekapabsensi'
 if path not in sys.path:
     sys.path.insert(0, path)
 
@@ -118,10 +118,10 @@ application = get_wsgi_application()
 In the Web tab, add static file mappings:
 
 ### URL: `/static/`
-### Directory: `/home/yourusername/sipa-yaumi/staticfiles/`
+### Directory: `/home/yourusername/rekapabsensi/staticfiles/`
 
 ### URL: `/media/`
-### Directory: `/home/yourusername/sipa-yaumi/media/`
+### Directory: `/home/yourusername/rekapabsensi/media/`
 
 ## Step 9: Test the Application
 
