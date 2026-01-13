@@ -56,3 +56,56 @@ def subtract(value, arg):
         return int(value) - int(arg)
     except (ValueError, TypeError):
         return 0
+
+@register.filter
+def avatar_initials(name):
+    """Generate 2-letter initials from name"""
+    if not name or not isinstance(name, str):
+        return "??"
+    
+    # Clean the name and split into words
+    name = name.strip()
+    if not name:
+        return "??"
+    
+    words = name.split()
+    
+    if len(words) >= 2:
+        # Take first letter of first two words
+        return (words[0][0] + words[1][0]).upper()
+    elif len(words) == 1:
+        # Take first two letters of single word
+        word = words[0]
+        if len(word) >= 2:
+            return word[:2].upper()
+        else:
+            return (word[0] + word[0]).upper()
+    else:
+        return "??"
+
+@register.filter
+def avatar_color(name):
+    """Generate consistent color based on name hash"""
+    if not name or not isinstance(name, str):
+        return '#6366F1'  # Default primary color
+    
+    # Predefined color palette matching the design system
+    colors = [
+        '#6366F1',  # Primary indigo
+        '#8B5CF6',  # Purple
+        '#EC4899',  # Pink
+        '#EF4444',  # Red
+        '#F97316',  # Orange
+        '#EAB308',  # Yellow
+        '#22C55E',  # Green
+        '#14B8A6',  # Teal
+        '#06B6D4',  # Cyan
+        '#3B82F6'   # Blue
+    ]
+    
+    # Generate hash from name
+    name = name.strip().lower()
+    hash_val = sum(ord(c) for c in name)
+    
+    # Return consistent color based on hash
+    return colors[hash_val % len(colors)]
