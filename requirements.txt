@@ -8,9 +8,9 @@ python-decouple==3.8
 # Admin interface
 django-unfold==0.75.0
 
-# Database drivers (uncomment as needed)
-# psycopg2-binary==2.9.9  # PostgreSQL
-# mysqlclient==2.2.4      # MySQL
+# Database drivers
+psycopg2-binary==2.9.9  # PostgreSQL for Railway
+dj-database-url==2.1.0  # Parse DATABASE_URL
 
 # Caching (uncomment if using Redis)
 # redis==5.0.1

@@ -9,6 +9,7 @@ from decouple import config, Csv
 import logging.config
 from django.templatetags.static import static
 from django.urls import reverse_lazy
+import dj_database_url
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -19,7 +20,20 @@ SECRET_KEY = config('SECRET_KEY', default='django-insecure-change-this-in-produc
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=True, cast=bool)
 
+# Railway provides RAILWAY_PUBLIC_DOMAIN
+RAILWAY_PUBLIC_DOMAIN = config('RAILWAY_PUBLIC_DOMAIN', default='')
+
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1,testserver,hisbanh.pythonanywhere.com', cast=Csv())
+
+# Add Railway domain to allowed hosts
+if RAILWAY_PUBLIC_DOMAIN:
+    ALLOWED_HOSTS.append(RAILWAY_PUBLIC_DOMAIN)
+    ALLOWED_HOSTS.append(f'.{RAILWAY_PUBLIC_DOMAIN}')
+
+# CSRF trusted origins for Railway
+CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', default='', cast=Csv())
+if RAILWAY_PUBLIC_DOMAIN:
+    CSRF_TRUSTED_ORIGINS.append(f'https://{RAILWAY_PUBLIC_DOMAIN}')
 
 # Application definition
 DJANGO_APPS = [
@@ -47,6 +61,7 @@ INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # Serve static files in production
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -80,19 +95,31 @@ WSGI_APPLICATION = 'sipa_yaumi.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
-DATABASES = {
-    'default': {
-        'ENGINE': config('DB_ENGINE', default='django.db.backends.sqlite3'),
-        'NAME': config('DB_NAME', default=BASE_DIR / 'db.sqlite3'),
-        'USER': config('DB_USER', default=''),
-        'PASSWORD': config('DB_PASSWORD', default=''),
-        'HOST': config('DB_HOST', default=''),
-        'PORT': config('DB_PORT', default=''),
-        'OPTIONS': {
-            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
-        } if config('DB_ENGINE', default='').endswith('mysql') else {},
+
+# Check if DATABASE_URL is provided (Railway provides this)
+DATABASE_URL = config('DATABASE_URL', default='')
+
+if DATABASE_URL:
+    # Use PostgreSQL from Railway
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=DATABASE_URL,
+            conn_max_age=600,
+            conn_health_checks=True,
+        )
     }
-}
+else:
+    # Use SQLite for local development
+    DATABASES = {
+        'default': {
+            'ENGINE': config('DB_ENGINE', default='django.db.backends.sqlite3'),
+            'NAME': config('DB_NAME', default=BASE_DIR / 'db.sqlite3'),
+            'USER': config('DB_USER', default=''),
+            'PASSWORD': config('DB_PASSWORD', default=''),
+            'HOST': config('DB_HOST', default=''),
+            'PORT': config('DB_PORT', default=''),
+        }
+    }
 
 # Cache configuration
 CACHES = {
@@ -135,6 +162,9 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
+# WhiteNoise configuration for serving static files in production
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
 # Media files
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
@@ -167,54 +197,90 @@ if not DEBUG:
     X_FRAME_OPTIONS = 'DENY'
 
 # Logging configuration
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'formatters': {
-        'verbose': {
-            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
-            'style': '{',
+if DEBUG:
+    # Local development - log to file and console
+    LOGGING = {
+        'version': 1,
+        'disable_existing_loggers': False,
+        'formatters': {
+            'verbose': {
+                'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+                'style': '{',
+            },
+            'simple': {
+                'format': '{levelname} {message}',
+                'style': '{',
+            },
         },
-        'simple': {
-            'format': '{levelname} {message}',
-            'style': '{',
+        'handlers': {
+            'file': {
+                'level': 'INFO',
+                'class': 'logging.handlers.RotatingFileHandler',
+                'filename': BASE_DIR / 'logs' / 'django.log',
+                'maxBytes': 1024*1024*15,  # 15MB
+                'backupCount': 10,
+                'formatter': 'verbose',
+            },
+            'console': {
+                'level': 'DEBUG',
+                'class': 'logging.StreamHandler',
+                'formatter': 'simple',
+            },
         },
-    },
-    'handlers': {
-        'file': {
-            'level': 'INFO',
-            'class': 'logging.handlers.RotatingFileHandler',
-            'filename': BASE_DIR / 'logs' / 'django.log',
-            'maxBytes': 1024*1024*15,  # 15MB
-            'backupCount': 10,
-            'formatter': 'verbose',
-        },
-        'console': {
-            'level': 'DEBUG' if DEBUG else 'INFO',
-            'class': 'logging.StreamHandler',
-            'formatter': 'simple',
-        },
-    },
-    'root': {
-        'handlers': ['console', 'file'],
-        'level': 'INFO',
-    },
-    'loggers': {
-        'django': {
+        'root': {
             'handlers': ['console', 'file'],
             'level': 'INFO',
-            'propagate': False,
         },
-        'attendance': {
-            'handlers': ['console', 'file'],
-            'level': 'DEBUG' if DEBUG else 'INFO',
-            'propagate': False,
+        'loggers': {
+            'django': {
+                'handlers': ['console', 'file'],
+                'level': 'INFO',
+                'propagate': False,
+            },
+            'attendance': {
+                'handlers': ['console', 'file'],
+                'level': 'DEBUG',
+                'propagate': False,
+            },
         },
-    },
-}
-
-# Create logs directory if it doesn't exist
-os.makedirs(BASE_DIR / 'logs', exist_ok=True)
+    }
+    # Create logs directory if it doesn't exist
+    os.makedirs(BASE_DIR / 'logs', exist_ok=True)
+else:
+    # Production (Railway) - log to console only
+    LOGGING = {
+        'version': 1,
+        'disable_existing_loggers': False,
+        'formatters': {
+            'verbose': {
+                'format': '{levelname} {asctime} {module} {message}',
+                'style': '{',
+            },
+        },
+        'handlers': {
+            'console': {
+                'level': 'INFO',
+                'class': 'logging.StreamHandler',
+                'formatter': 'verbose',
+            },
+        },
+        'root': {
+            'handlers': ['console'],
+            'level': 'INFO',
+        },
+        'loggers': {
+            'django': {
+                'handlers': ['console'],
+                'level': 'INFO',
+                'propagate': False,
+            },
+            'attendance': {
+                'handlers': ['console'],
+                'level': 'INFO',
+                'propagate': False,
+            },
+        },
+    }
 
 # Application-specific settings
 SIPA_YAUMI = {
