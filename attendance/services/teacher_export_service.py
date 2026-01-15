@@ -458,6 +458,7 @@ class TeacherExportService:
     def export_teacher_individual_pdf(teacher, start_date=None, end_date=None):
         """
         Export individual teacher attendance report to PDF
+        Format sama seperti student report - dengan detail per JP per hari
         
         Args:
             teacher: Teacher instance
@@ -469,143 +470,79 @@ class TeacherExportService:
         """
         try:
             from attendance.services.teacher_service import TeacherService
+            from attendance.models import TeacherDailyAttendance
+            from django.utils import timezone
             
             # Get summary
             summary = TeacherService.get_teacher_attendance_summary(
                 teacher, start_date=start_date, end_date=end_date
             )
             
+            # Default dates
+            if not start_date:
+                start_date = timezone.now().date()
+            if not end_date:
+                end_date = timezone.now().date()
+            
             # Create PDF
             buffer = io.BytesIO()
             doc = SimpleDocTemplate(buffer, pagesize=A4)
             styles = getSampleStyleSheet()
             
-            # Custom styles
+            # Custom styles (match student PDF style)
             title_style = ParagraphStyle(
-                'CustomTitle',
+                'ReportTitle',
                 parent=styles['Heading1'],
-                fontSize=20,
-                textColor=colors.HexColor('#1F4788'),
-                spaceAfter=6,
+                fontSize=16,
+                textColor=colors.HexColor('#6B5344'),
                 alignment=TA_CENTER,
+                spaceAfter=12,
+                fontName='Helvetica-Bold'
+            )
+            
+            subtitle_style = ParagraphStyle(
+                'ReportSubtitle',
+                parent=styles['Normal'],
+                fontSize=11,
+                textColor=colors.HexColor('#6B6560'),
+                alignment=TA_CENTER,
+                spaceAfter=12,
+                fontName='Helvetica'
+            )
+            
+            section_header_style = ParagraphStyle(
+                'SectionHeader',
+                parent=styles['Heading2'],
+                fontSize=12,
+                textColor=colors.HexColor('#8B7355'),
+                spaceBefore=15,
+                spaceAfter=8,
                 fontName='Helvetica-Bold'
             )
             
             elements = []
             
-            # School name
-            elements.append(Paragraph("LAPORAN KEHADIRAN USTADZ", title_style))
+            # Title
+            elements.append(Paragraph("Laporan Kehadiran Ustadz Per JP", title_style))
             
             # Teacher info
-            elements.append(Spacer(1, 0.3*cm))
-            teacher_info = f"""
-            <b>Nama:</b> {teacher.name}<br/>
-            <b>ID Ustadz:</b> {teacher.teacher_id}<br/>
-            <b>NIP:</b> {teacher.nip or '-'}<br/>
-            <b>Mata Pelajaran:</b> {teacher.subjects or '-'}
-            """
-            elements.append(Paragraph(teacher_info, styles['Normal']))
+            teacher_info = f"<b>{teacher.name}</b><br/>ID: {teacher.teacher_id} | NIP: {teacher.nip or '-'} | Mata Pelajaran: {teacher.subjects or '-'}"
+            elements.append(Paragraph(teacher_info, subtitle_style))
             
             # Date range
-            if start_date and end_date:
-                period = f"Periode: {start_date.strftime('%d %B %Y')} - {end_date.strftime('%d %B %Y')}"
-            else:
-                period = f"Tanggal Cetak: {timezone.now().strftime('%d %B %Y')}"
+            date_range = f"Periode: {start_date.strftime('%d/%m/%Y')} - {end_date.strftime('%d/%m/%Y')}"
+            elements.append(Paragraph(date_range, subtitle_style))
             
-            elements.append(Spacer(1, 0.2*cm))
-            elements.append(Paragraph(f"<b>{period}</b>", styles['Normal']))
+            # Build attendance detail table (tanggal x JP format)
+            elements.extend(
+                TeacherExportService._build_teacher_attendance_detail(teacher, start_date, end_date, styles)
+            )
             
-            # Summary section
-            elements.append(Spacer(1, 0.4*cm))
-            elements.append(Paragraph("RINGKASAN KEHADIRAN", ParagraphStyle(
-                'SectionTitle',
-                parent=styles['Heading2'],
-                fontSize=12,
-                textColor=colors.HexColor('#1F4788'),
-                fontName='Helvetica-Bold'
-            )))
-            
-            # Summary table
-            summary_data = [
-                ['Statistik', 'Jumlah'],
-                ['Total Hari Kerja', str(summary['total_days'])],
-                ['Total JP', str(summary['total_jp'])],
-                ['Hadir', f"{summary['hadir']} ({summary.get('hadir_rate', 0):.1f}%)"],
-                ['Sakit', f"{summary['sakit']} ({summary.get('sakit_rate', 0):.1f}%)"],
-                ['Izin', f"{summary['izin']} ({summary.get('izin_rate', 0):.1f}%)"],
-                ['Alpa', f"{summary['alpa']} ({summary.get('alpa_rate', 0):.1f}%)"],
-                ['<b>Persentase Kehadiran</b>', f"<b>{summary['attendance_rate']:.2f}%</b>"],
-            ]
-            
-            summary_table = Table(summary_data, colWidths=[4*cm, 3*cm])
-            summary_table.setStyle(TableStyle([
-                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1F4788')),
-                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-                ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
-                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                ('FONTSIZE', (0, 0), (-1, 0), 10),
-                ('GRID', (0, 0), (-1, -1), 1, colors.grey),
-                ('ROWBACKGROUNDS', (0, 1), (-1, -2), [colors.white, colors.HexColor('#F5F5F5')]),
-                ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor('#E8E8E8')),
-                ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
-                ('ALIGN', (0, 1), (-1, -1), 'CENTER'),
-                ('ALIGN', (0, 1), (0, -1), 'LEFT'),
-            ]))
-            
-            elements.append(summary_table)
-            
-            # Recent records
-            elements.append(Spacer(1, 0.4*cm))
-            elements.append(Paragraph("CATATAN KEHADIRAN TERBARU", ParagraphStyle(
-                'SectionTitle',
-                parent=styles['Heading2'],
-                fontSize=12,
-                textColor=colors.HexColor('#1F4788'),
-                fontName='Helvetica-Bold'
-            )))
-            
-            recent_data = [['Tanggal', 'Status JP', 'Catatan']]
-            
-            for record in summary['recent_records'][:10]:  # Last 10 records
-                date_str = record.date.strftime('%d/%m/%Y')
-                
-                statuses = []
-                if record.jp_statuses:
-                    for jp_num in sorted([int(k) for k in record.jp_statuses.keys()]):
-                        status_map = {'H': '✓', 'S': 'S', 'I': 'I', 'A': 'A'}
-                        status = status_map.get(record.jp_statuses.get(str(jp_num), ''), '?')
-                        statuses.append(f"JP{jp_num}:{status}")
-                
-                status_str = ' | '.join(statuses) if statuses else '-'
-                notes = record.notes[:30] if record.notes else '-'
-                
-                recent_data.append([date_str, status_str, notes])
-            
-            recent_table = Table(recent_data, colWidths=[2*cm, 4*cm, 3*cm])
-            recent_table.setStyle(TableStyle([
-                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1F4788')),
-                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-                ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
-                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                ('FONTSIZE', (0, 0), (-1, 0), 9),
-                ('GRID', (0, 0), (-1, -1), 1, colors.grey),
-                ('FONTSIZE', (0, 1), (-1, -1), 8),
-                ('ALIGN', (0, 1), (-1, -1), 'CENTER'),
-                ('ALIGN', (2, 1), (2, -1), 'LEFT'),
-            ]))
-            
-            elements.append(recent_table)
-            
-            # Footer
-            elements.append(Spacer(1, 0.5*cm))
-            footer_text = f"Dicetak pada: {timezone.now().strftime('%d %B %Y pukul %H:%M')}"
-            elements.append(Paragraph(footer_text, ParagraphStyle(
-                'Footer',
-                parent=styles['Normal'],
-                fontSize=8,
-                textColor=colors.grey,
-                alignment=TA_CENTER
-            )))
+            # Add summary section
+            elements.append(Spacer(1, 20))
+            elements.extend(
+                TeacherExportService._build_teacher_summary_table(summary, section_header_style, styles)
+            )
             
             # Build PDF
             doc.build(elements)
@@ -621,3 +558,251 @@ class TeacherExportService:
         except Exception as e:
             logger.error(f"Error exporting individual teacher PDF: {str(e)}")
             raise Exception(f"Gagal export laporan ustadz: {str(e)}")
+    
+    @staticmethod
+    def _build_teacher_attendance_detail(teacher, start_date, end_date, styles):
+        """Build attendance detail table dengan format Tanggal x JP (sama seperti student)"""
+        from attendance.models import TeacherDailyAttendance, TeacherSchedule
+        from django.utils import timezone
+        
+        elements = []
+        
+        # Color definitions (matching student PDF style)
+        COLORS = {
+            'primary': colors.HexColor('#8B7355'),
+            'header_bg': colors.HexColor('#F8F6F4'),
+            'hadir': colors.HexColor('#4CAF50'),
+            'sakit': colors.HexColor('#FF9800'),
+            'izin': colors.HexColor('#2196F3'),
+            'alpa': colors.HexColor('#F44336'),
+            'border': colors.HexColor('#E8E4E0'),
+        }
+        
+        # Section header
+        section_style = ParagraphStyle(
+            'SectionHeader',
+            parent=styles['Heading2'],
+            fontSize=12,
+            textColor=COLORS['primary'],
+            spaceBefore=10,
+            spaceAfter=8,
+            fontName='Helvetica-Bold'
+        )
+        elements.append(Paragraph("Detail Kehadiran Per Hari", section_style))
+        
+        # Get all records dalam range
+        daily_records = TeacherDailyAttendance.objects.filter(
+            teacher=teacher,
+            date__gte=start_date,
+            date__lte=end_date
+        ).order_by('date')
+        
+        if not daily_records.exists():
+            elements.append(Paragraph("Tidak ada data kehadiran untuk ditampilkan.", styles['Normal']))
+            return elements
+        
+        # Find max JP count
+        max_jp = 0
+        for record in daily_records:
+            if record.jp_statuses:
+                max_jp = max(max_jp, max([int(k) for k in record.jp_statuses.keys()]))
+        
+        # Build header row
+        header = ['No', 'Tanggal', 'Hari']
+        for jp_num in range(1, max_jp + 1):
+            header.append(f'JP{jp_num}')
+        header.extend(['H', 'S', 'I', 'A'])
+        
+        # Build data rows
+        data = [header]
+        day_names = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu']
+        
+        for idx, record in enumerate(daily_records, 1):
+            row = [
+                str(idx),
+                record.date.strftime('%d/%m/%Y'),
+                day_names[record.date.weekday()][:3],
+            ]
+            
+            # Add JP statuses
+            for jp_num in range(1, max_jp + 1):
+                status = record.jp_statuses.get(str(jp_num), '-') if record.jp_statuses else '-'
+                row.append(status)
+            
+            # Add day summary
+            day_sum = {
+                'hadir': sum(1 for s in record.jp_statuses.values() if s == 'H') if record.jp_statuses else 0,
+                'sakit': sum(1 for s in record.jp_statuses.values() if s == 'S') if record.jp_statuses else 0,
+                'izin': sum(1 for s in record.jp_statuses.values() if s == 'I') if record.jp_statuses else 0,
+                'alpa': sum(1 for s in record.jp_statuses.values() if s == 'A') if record.jp_statuses else 0,
+            }
+            row.extend([
+                str(day_sum['hadir']),
+                str(day_sum['sakit']),
+                str(day_sum['izin']),
+                str(day_sum['alpa']),
+            ])
+            
+            data.append(row)
+        
+        # Calculate column widths (sama seperti student)
+        available_width = A4[0] - 3*cm
+        fixed_widths = [0.8*cm, 2.2*cm, 1.2*cm]
+        summary_widths = [0.8*cm, 0.8*cm, 0.8*cm, 0.8*cm]
+        fixed_total = sum(fixed_widths) + sum(summary_widths)
+        remaining = available_width - fixed_total
+        jp_col_width = remaining / max_jp if max_jp > 0 else 1*cm
+        col_widths = fixed_widths + [jp_col_width] * max_jp + summary_widths
+        
+        # Create table
+        table = Table(data, colWidths=col_widths, repeatRows=1)
+        
+        # Apply table style with status coloring (sama seperti student)
+        table_style = [
+            # Header style
+            ('BACKGROUND', (0, 0), (-1, 0), COLORS['primary']),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 8),
+            ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            
+            # Data style
+            ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+            ('FONTSIZE', (0, 1), (-1, -1), 8),
+            ('ALIGN', (0, 1), (-1, -1), 'CENTER'),
+            
+            # Grid
+            ('GRID', (0, 0), (-1, -1), 0.5, COLORS['border']),
+            ('BOX', (0, 0), (-1, -1), 1, COLORS['primary']),
+            
+            # Alternating row colors
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, COLORS['header_bg']]),
+            
+            # Padding
+            ('TOPPADDING', (0, 0), (-1, -1), 3),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+            ('LEFTPADDING', (0, 0), (-1, -1), 2),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 2),
+        ]
+        
+        # Add status-based coloring for JP columns
+        for row_idx, record in enumerate(daily_records, 1):
+            for jp_num in range(1, max_jp + 1):
+                col_idx = 3 + (jp_num - 1)
+                status = record.jp_statuses.get(str(jp_num), '-') if record.jp_statuses else '-'
+                
+                if status == 'H':
+                    table_style.append(
+                        ('TEXTCOLOR', (col_idx, row_idx), (col_idx, row_idx), COLORS['hadir'])
+                    )
+                elif status == 'S':
+                    table_style.append(
+                        ('TEXTCOLOR', (col_idx, row_idx), (col_idx, row_idx), COLORS['sakit'])
+                    )
+                elif status == 'I':
+                    table_style.append(
+                        ('TEXTCOLOR', (col_idx, row_idx), (col_idx, row_idx), COLORS['izin'])
+                    )
+                elif status == 'A':
+                    table_style.append(
+                        ('TEXTCOLOR', (col_idx, row_idx), (col_idx, row_idx), COLORS['alpa'])
+                    )
+        
+        table.setStyle(TableStyle(table_style))
+        elements.append(table)
+        
+        # Add legend
+        elements.append(Spacer(1, 15))
+        legend = Paragraph(
+            "<b>Keterangan Status:</b> H = Hadir, S = Sakit, I = Izin, A = Alpa",
+            styles['Normal']
+        )
+        elements.append(legend)
+        
+        return elements
+    
+    @staticmethod
+    def _build_teacher_summary_table(summary, section_header_style, styles):
+        """Build summary statistics table (sama format seperti student PDF)"""
+        from attendance.models import TeacherDailyAttendance
+        
+        elements = []
+        
+        # Color definitions (matching student PDF)
+        COLORS = {
+            'primary': colors.HexColor('#8B7355'),
+            'header_bg': colors.HexColor('#F8F6F4'),
+            'hadir': colors.HexColor('#4CAF50'),
+            'sakit': colors.HexColor('#FF9800'),
+            'izin': colors.HexColor('#2196F3'),
+            'alpa': colors.HexColor('#F44336'),
+            'border': colors.HexColor('#E8E4E0'),
+        }
+        
+        # Section header (using provided style)
+        elements.append(Paragraph("Statistik Kehadiran", section_header_style))
+        
+        # Build summary table (same structure as student PDF)
+        data = [
+            ['Status', 'Jumlah', 'Persentase'],
+            ['Hadir', str(summary.get('hadir', 0)), f"{summary.get('hadir_rate', 0):.1f}%"],
+            ['Sakit', str(summary.get('sakit', 0)), f"{summary.get('sakit_rate', 0):.1f}%"],
+            ['Izin', str(summary.get('izin', 0)), f"{summary.get('izin_rate', 0):.1f}%"],
+            ['Alpa', str(summary.get('alpa', 0)), f"{summary.get('alpa_rate', 0):.1f}%"],
+        ]
+        
+        # Calculate widths
+        available_width = A4[0] - 3*cm
+        col_widths = [available_width * 0.4, available_width * 0.3, available_width * 0.3]
+        
+        # Create table
+        table = Table(data, colWidths=col_widths)
+        
+        # Apply styling (exact same as student PDF)
+        table_style = [
+            # Header row
+            ('BACKGROUND', (0, 0), (-1, 0), COLORS['primary']),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 10),
+            ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+            ('VALIGN', (0, 0), (-1, 0), 'MIDDLE'),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+            ('TOPPADDING', (0, 0), (-1, 0), 8),
+            
+            # Data rows
+            ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+            ('FONTSIZE', (0, 1), (-1, -1), 9),
+            ('ALIGN', (0, 1), (-1, -1), 'CENTER'),
+            ('VALIGN', (0, 1), (-1, -1), 'MIDDLE'),
+            ('TOPPADDING', (0, 1), (-1, -1), 5),
+            ('BOTTOMPADDING', (0, 1), (-1, -1), 5),
+            
+            # Alternating backgrounds
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, COLORS['header_bg']]),
+            
+            # Borders
+            ('GRID', (0, 0), (-1, -1), 0.5, COLORS['border']),
+            ('BOX', (0, 0), (-1, -1), 1, COLORS['primary']),
+        ]
+        
+        # Add status-based coloring untuk nilai
+        status_colors = {
+            'Hadir': COLORS['hadir'],
+            'Sakit': COLORS['sakit'],
+            'Izin': COLORS['izin'],
+            'Alpa': COLORS['alpa'],
+        }
+        
+        for row_idx in range(1, 5):
+            status = data[row_idx][0]
+            color = status_colors.get(status, COLORS['primary'])
+            table_style.append(
+                ('TEXTCOLOR', (1, row_idx), (2, row_idx), color)
+            )
+        
+        table.setStyle(TableStyle(table_style))
+        elements.append(table)
+        
+        return elements
