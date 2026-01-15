@@ -741,3 +741,390 @@ class AuditLog(models.Model):
     
     def __str__(self):
         return f"{self.user} - {self.action} - {self.model_name} - {self.created_at}"
+
+
+
+# ============================================
+# Teacher/Ustadz Models
+# ============================================
+
+class TeacherStatus(models.TextChoices):
+    """Enumeration for teacher attendance status options"""
+    HADIR = 'H', 'Hadir'
+    SAKIT = 'S', 'Sakit'
+    IZIN = 'I', 'Izin'
+    ALPA = 'A', 'Alpa'
+    TIDAK_ADA_JADWAL = 'T', 'Tidak Ada Jadwal'
+    DINAS_LUAR = 'D', 'Dinas Luar'
+    CUTI = 'C', 'Cuti'
+    TERLAMBAT = 'L', 'Terlambat'
+
+
+class Teacher(BaseModel):
+    """Teacher/Ustadz model with user account integration"""
+    
+    # Validators
+    teacher_id_validator = RegexValidator(
+        regex=r'^[0-9A-Z]{2,10}$',
+        message='Teacher ID must be 2-10 characters long and contain only numbers and uppercase letters'
+    )
+    
+    nip_validator = RegexValidator(
+        regex=r'^\d{18}$',
+        message='NIP must be exactly 18 digits'
+    )
+    
+    # Core fields
+    teacher_id = models.CharField(
+        max_length=10,
+        unique=True,
+        validators=[teacher_id_validator],
+        help_text='Unique teacher identifier'
+    )
+    nip = models.CharField(
+        max_length=18,
+        blank=True,
+        validators=[nip_validator],
+        help_text='Nomor Induk Pegawai (18 digits)'
+    )
+    name = models.CharField(
+        max_length=100,
+        validators=[MinLengthValidator(2)],
+        help_text='Full name of the teacher'
+    )
+    
+    # User account (for login)
+    user = models.OneToOneField(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='teacher_profile',
+        help_text='User account for login (if applicable)'
+    )
+    
+    # Subject information
+    subjects = models.TextField(
+        blank=True,
+        help_text='Mata pelajaran yang diajar (comma-separated)'
+    )
+    
+    # Status
+    is_active = models.BooleanField(default=True)
+    
+    # Academic year
+    academic_year = models.CharField(
+        max_length=9,
+        help_text='Academic year (e.g., 2024/2025)'
+    )
+    
+    class Meta:
+        ordering = ['name']
+        indexes = [
+            models.Index(fields=['teacher_id']),
+            models.Index(fields=['nip']),
+            models.Index(fields=['is_active']),
+            models.Index(fields=['user']),
+        ]
+        verbose_name = 'Teacher'
+        verbose_name_plural = 'Teachers'
+    
+    def __str__(self):
+        return f"{self.name} ({self.teacher_id})"
+    
+    def clean(self):
+        """Custom validation logic"""
+        super().clean()
+        
+        # Validate name doesn't contain numbers
+        if self.name and any(char.isdigit() for char in self.name):
+            raise ValidationError({
+                'name': 'Teacher name should not contain numbers'
+            })
+    
+    def save(self, *args, **kwargs):
+        """Override save to ensure validation"""
+        import sys
+        is_migration = 'migrate' in sys.argv or 'makemigrations' in sys.argv
+        
+        if not is_migration:
+            self.full_clean()
+        super().save(*args, **kwargs)
+    
+    @property
+    def subject_list(self):
+        """Get subjects as list"""
+        if self.subjects:
+            return [s.strip() for s in self.subjects.split(',')]
+        return []
+    
+    @property
+    def attendance_rate(self):
+        """Calculate overall attendance rate for this teacher"""
+        total_records = self.teacher_daily_attendances.count()
+        if total_records == 0:
+            return 0.0
+        
+        # Count total JP with Hadir status
+        present_count = 0
+        total_jp_count = 0
+        
+        for attendance in self.teacher_daily_attendances.all():
+            for status in attendance.jp_statuses.values():
+                total_jp_count += 1
+                if status == 'H':
+                    present_count += 1
+        
+        if total_jp_count == 0:
+            return 0.0
+        
+        return round((present_count / total_jp_count) * 100, 2)
+    
+    @property
+    def total_jp_per_week(self):
+        """Calculate total JP per week from schedules"""
+        total = 0
+        schedules = self.schedules.all()
+        for schedule in schedules:
+            total += len(schedule.jp_numbers) if schedule.jp_numbers else 0
+        return total
+    
+    def get_weekly_schedule_breakdown(self):
+        """Get breakdown of JP per day"""
+        breakdown = []
+        schedules = self.schedules.order_by('day_of_week')
+        
+        for schedule in schedules:
+            jp_count = len(schedule.jp_numbers) if schedule.jp_numbers else 0
+            breakdown.append({
+                'day': schedule.get_day_of_week_display(),
+                'jp_count': jp_count,
+                'jp_numbers': schedule.jp_numbers,
+                'subject': schedule.subject,
+                'is_piket': schedule.is_piket,
+            })
+        
+        return breakdown
+
+
+class TeacherSchedule(BaseModel):
+    """Weekly schedule for teachers"""
+    
+    DAY_CHOICES = [
+        (0, 'Senin'),
+        (1, 'Selasa'),
+        (2, 'Rabu'),
+        (3, 'Kamis'),
+        (4, 'Jumat'),
+        (5, 'Sabtu'),
+        (6, 'Minggu'),
+    ]
+    
+    teacher = models.ForeignKey(
+        Teacher,
+        on_delete=models.CASCADE,
+        related_name='schedules',
+        help_text='Teacher for this schedule'
+    )
+    day_of_week = models.IntegerField(
+        choices=DAY_CHOICES,
+        help_text='Day of week (0=Senin, 6=Minggu)'
+    )
+    jp_numbers = models.JSONField(
+        default=list,
+        help_text='JP numbers as JSON array: [1, 2, 3, ...]'
+    )
+    subject = models.CharField(
+        max_length=100,
+        blank=True,
+        help_text='Mata pelajaran yang diajar'
+    )
+    is_piket = models.BooleanField(
+        default=False,
+        help_text='Apakah hari piket'
+    )
+    academic_year = models.CharField(
+        max_length=9,
+        help_text='Academic year (e.g., 2024/2025)'
+    )
+    notes = models.TextField(
+        blank=True,
+        help_text='Additional notes'
+    )
+    
+    class Meta:
+        ordering = ['teacher', 'day_of_week', 'jp_numbers']
+        indexes = [
+            models.Index(fields=['teacher', 'day_of_week']),
+            models.Index(fields=['academic_year']),
+        ]
+        verbose_name = 'Teacher Schedule'
+        verbose_name_plural = 'Teacher Schedules'
+    
+    def __str__(self):
+        day_name = dict(self.DAY_CHOICES)[self.day_of_week]
+        jp_str = ', '.join(map(str, self.jp_numbers)) if self.jp_numbers else 'No JP'
+        return f"{self.teacher.name} - {day_name} - JP {jp_str}"
+    
+    def clean(self):
+        """Custom validation logic"""
+        super().clean()
+        
+        # Validate jp_numbers is a list
+        if not isinstance(self.jp_numbers, list):
+            raise ValidationError({
+                'jp_numbers': 'JP numbers must be a list'
+            })
+        
+        # Validate JP numbers are valid integers
+        if self.jp_numbers:
+            for jp in self.jp_numbers:
+                if not isinstance(jp, int) or jp < 1 or jp > 10:
+                    raise ValidationError({
+                        'jp_numbers': 'JP numbers must be integers between 1 and 10'
+                    })
+    
+    def save(self, *args, **kwargs):
+        """Override save to ensure validation"""
+        self.full_clean()
+        super().save(*args, **kwargs)
+    
+    @property
+    def jp_count(self):
+        """Get total JP count"""
+        return len(self.jp_numbers) if self.jp_numbers else 0
+    
+    @property
+    def jp_range_display(self):
+        """Get JP range as display string"""
+        if not self.jp_numbers:
+            return 'Tidak ada JP'
+        
+        jp_sorted = sorted(self.jp_numbers)
+        if len(jp_sorted) == 1:
+            return f"JP {jp_sorted[0]}"
+        
+        # Check if consecutive
+        is_consecutive = all(jp_sorted[i] + 1 == jp_sorted[i + 1] for i in range(len(jp_sorted) - 1))
+        
+        if is_consecutive:
+            return f"JP {jp_sorted[0]}-{jp_sorted[-1]}"
+        else:
+            return f"JP {', '.join(map(str, jp_sorted))}"
+
+
+class TeacherDailyAttendance(BaseModel):
+    """Daily attendance record for teachers with JP statuses"""
+    
+    teacher = models.ForeignKey(
+        Teacher,
+        on_delete=models.CASCADE,
+        related_name='teacher_daily_attendances',
+        help_text='Teacher for this attendance record'
+    )
+    date = models.DateField(
+        help_text='Date of attendance'
+    )
+    jp_statuses = models.JSONField(
+        default=dict,
+        help_text='JP statuses as JSON: {"1": "H", "2": "H", "3": "S", ...}'
+    )
+    notes = models.TextField(
+        blank=True,
+        help_text='Additional notes (e.g., replacement info)'
+    )
+    is_replacement = models.BooleanField(
+        default=False,
+        help_text='Flag if this includes replacement teaching'
+    )
+    replaced_teacher = models.ForeignKey(
+        Teacher,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='replacements_received',
+        help_text='Teacher being replaced (if applicable)'
+    )
+    recorded_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='teacher_recorded_attendances',
+        help_text='User who recorded this attendance'
+    )
+    recorded_at = models.DateTimeField(
+        auto_now_add=True,
+        help_text='Timestamp when attendance was recorded'
+    )
+    
+    class Meta:
+        unique_together = ['teacher', 'date']
+        ordering = ['-date', 'teacher__name']
+        indexes = [
+            models.Index(fields=['date']),
+            models.Index(fields=['teacher', 'date']),
+            models.Index(fields=['is_replacement']),
+        ]
+        verbose_name = 'Teacher Daily Attendance'
+        verbose_name_plural = 'Teacher Daily Attendances'
+    
+    def __str__(self):
+        return f"{self.teacher.name} - {self.date}"
+    
+    def clean(self):
+        """Custom validation logic"""
+        super().clean()
+        
+        # Validate jp_statuses contains only valid status values
+        valid_statuses = {choice[0] for choice in TeacherStatus.choices}
+        if self.jp_statuses:
+            for jp_num, status in self.jp_statuses.items():
+                if status not in valid_statuses:
+                    raise ValidationError({
+                        'jp_statuses': f'Invalid status "{status}" for JP {jp_num}. Valid values: {", ".join(valid_statuses)}'
+                    })
+        
+        # Validate date is not in the future
+        if self.date and self.date > timezone.now().date():
+            raise ValidationError({
+                'date': 'Attendance date cannot be in the future'
+            })
+    
+    def save(self, *args, **kwargs):
+        """Override save to ensure validation"""
+        self.full_clean()
+        super().save(*args, **kwargs)
+    
+    @property
+    def total_hadir(self):
+        """Count total Hadir (H) status"""
+        return sum(1 for status in self.jp_statuses.values() if status == 'H')
+    
+    @property
+    def total_sakit(self):
+        """Count total Sakit (S) status"""
+        return sum(1 for status in self.jp_statuses.values() if status == 'S')
+    
+    @property
+    def total_izin(self):
+        """Count total Izin (I) status"""
+        return sum(1 for status in self.jp_statuses.values() if status == 'I')
+    
+    @property
+    def total_alpa(self):
+        """Count total Alpa (A) status"""
+        return sum(1 for status in self.jp_statuses.values() if status == 'A')
+    
+    @property
+    def total_jp(self):
+        """Get total number of JP slots"""
+        return len(self.jp_statuses)
+    
+    @property
+    def has_schedule_for_date(self):
+        """Check if teacher has schedule for this date"""
+        day_of_week = self.date.weekday()
+        return TeacherSchedule.objects.filter(
+            teacher=self.teacher,
+            day_of_week=day_of_week
+        ).exists()

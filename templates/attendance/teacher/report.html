@@ -1,0 +1,239 @@
+{% extends 'base.html' %}
+
+{% block title %}Laporan Absensi Ustadz - SIPA Beta{% endblock %}
+
+{% block page_title %}Laporan Absensi Ustadz{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'teacher_dashboard' %}">Dashboard Ustadz</a></li>
+        <li class="breadcrumb-item active">Laporan</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<!-- Filter Card -->
+<div class="card mb-3">
+    <div class="card-header">
+        <i class="fas fa-filter me-2"></i>Filter Laporan
+    </div>
+    <div class="card-body">
+        <form method="get" id="filterForm">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    {{ form.teacher.label_tag }}
+                    {{ form.teacher }}
+                </div>
+                <div class="col-md-3">
+                    {{ form.start_date.label_tag }}
+                    {{ form.start_date }}
+                </div>
+                <div class="col-md-3">
+                    {{ form.end_date.label_tag }}
+                    {{ form.end_date }}
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-search me-1"></i>Tampilkan
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Report Results -->
+{% if teachers_data %}
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="fas fa-chart-bar me-2"></i>Hasil Laporan</span>
+        <div>
+            <a href="{% url 'teacher_export_excel' %}?{{ request.GET.urlencode }}" class="btn btn-sm btn-success">
+                <i class="fas fa-file-excel me-1"></i>Export Excel
+            </a>
+            <a href="{% url 'teacher_export_csv' %}?{{ request.GET.urlencode }}" class="btn btn-sm btn-info">
+                <i class="fas fa-file-csv me-1"></i>Export CSV
+            </a>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0" id="reportTable">
+                <thead>
+                    <tr>
+                        <th>No</th>
+                        <th>Nama Ustadz</th>
+                        <th>ID</th>
+                        <th class="text-center">Total Hari</th>
+                        <th class="text-center">Total JP</th>
+                        <th class="text-center">Hadir</th>
+                        <th class="text-center">Sakit</th>
+                        <th class="text-center">Izin</th>
+                        <th class="text-center">Alpa</th>
+                        <th class="text-center">Lainnya</th>
+                        <th class="text-center">Persentase</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in teachers_data %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>
+                            <div class="fw-semibold">{{ item.teacher.name }}</div>
+                            {% if item.teacher.subjects %}
+                            <small class="text-muted">{{ item.teacher.subjects }}</small>
+                            {% endif %}
+                        </td>
+                        <td>{{ item.teacher.teacher_id }}</td>
+                        <td class="text-center">{{ item.summary.total_days }}</td>
+                        <td class="text-center fw-bold">{{ item.summary.total_jp }}</td>
+                        <td class="text-center">
+                            <span class="badge bg-success">{{ item.summary.hadir }}</span>
+                        </td>
+                        <td class="text-center">
+                            {% if item.summary.sakit > 0 %}
+                            <span class="badge bg-warning">{{ item.summary.sakit }}</span>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if item.summary.izin > 0 %}
+                            <span class="badge bg-info">{{ item.summary.izin }}</span>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if item.summary.alpa > 0 %}
+                            <span class="badge bg-danger">{{ item.summary.alpa }}</span>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            <small class="text-muted">
+                                {% if item.summary.tidak_ada_jadwal > 0 %}T:{{ item.summary.tidak_ada_jadwal }}{% endif %}
+                                {% if item.summary.dinas_luar > 0 %} D:{{ item.summary.dinas_luar }}{% endif %}
+                                {% if item.summary.cuti > 0 %} C:{{ item.summary.cuti }}{% endif %}
+                                {% if item.summary.terlambat > 0 %} L:{{ item.summary.terlambat }}{% endif %}
+                            </small>
+                        </td>
+                        <td class="text-center">
+                            <div class="progress" style="height: 20px; min-width: 80px;">
+                                <div 
+                                    class="progress-bar bg-success" 
+                                    style="width: {{ item.summary.attendance_rate }}%"
+                                    role="progressbar"
+                                >
+                                    {{ item.summary.attendance_rate }}%
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <a href="{% url 'teacher_detail' item.teacher.id %}" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr class="table-light fw-bold">
+                        <td colspan="3">TOTAL</td>
+                        <td class="text-center">-</td>
+                        <td class="text-center">
+                            {% widthratio teachers_data|length 1 1 as total_teachers %}
+                            {{ teachers_data|length }}
+                        </td>
+                        <td class="text-center">
+                            {% for item in teachers_data %}
+                            {% if forloop.first %}{% with total_hadir=0 %}{% endwith %}{% endif %}
+                            {% endfor %}
+                            -
+                        </td>
+                        <td colspan="6"></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="row g-3 mt-3">
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <h3 class="mb-1">{{ teachers_data|length }}</h3>
+                <p class="text-muted mb-0">Total Ustadz</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <h3 class="mb-1 text-success">
+                    {% widthratio teachers_data|length 1 1 as count %}
+                    {% for item in teachers_data %}
+                    {% if forloop.first %}{{ item.summary.hadir }}{% endif %}
+                    {% endfor %}
+                </h3>
+                <p class="text-muted mb-0">Total JP Hadir</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <h3 class="mb-1 text-warning">
+                    {% for item in teachers_data %}
+                    {% if forloop.first %}{{ item.summary.sakit }}{% endif %}
+                    {% endfor %}
+                </h3>
+                <p class="text-muted mb-0">Total JP Sakit</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <h3 class="mb-1 text-primary">
+                    {% for item in teachers_data %}
+                    {% if forloop.first %}
+                    {{ item.summary.attendance_rate|floatformat:1 }}%
+                    {% endif %}
+                    {% endfor %}
+                </h3>
+                <p class="text-muted mb-0">Rata-rata Kehadiran</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% else %}
+<!-- Empty State -->
+<div class="card">
+    <div class="card-body text-center py-5">
+        <i class="fas fa-chart-bar fa-4x text-muted mb-3 opacity-25"></i>
+        <h5 class="text-muted">Tidak Ada Data</h5>
+        <p class="text-muted">Pilih filter dan klik "Tampilkan" untuk melihat laporan</p>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Auto-submit form on date change (optional)
+document.querySelectorAll('#filterForm input[type="date"]').forEach(input => {
+    input.addEventListener('change', function() {
+        // Optional: auto-submit on date change
+        // document.getElementById('filterForm').submit();
+    });
+});
+</script>
+{% endblock %}

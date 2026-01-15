@@ -1,0 +1,196 @@
+{% extends 'base.html' %}
+
+{% block title %}Kelola Jadwal - {{ teacher.name }} - SIPA Beta{% endblock %}
+
+{% block page_title %}Kelola Jadwal Ustadz{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'teacher_dashboard' %}">Dashboard Ustadz</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'teacher_list' %}">Data Ustadz</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'teacher_detail' teacher.id %}">{{ teacher.name }}</a></li>
+        <li class="breadcrumb-item active">Kelola Jadwal</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'teacher_detail' teacher.id %}" class="btn btn-outline-secondary">
+    <i class="fas fa-arrow-left me-1"></i>Kembali
+</a>
+{% endblock %}
+
+{% block content %}
+<!-- Teacher Info Card -->
+<div class="card mb-3">
+    <div class="card-body">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h5 class="mb-1">
+                    <i class="fas fa-user-tie me-2 text-primary"></i>
+                    {{ teacher.name }}
+                </h5>
+                <p class="text-muted mb-0">
+                    <small>
+                        <i class="fas fa-id-card me-1"></i>{{ teacher.teacher_id }}
+                        {% if teacher.subjects %}
+                        <span class="ms-2"><i class="fas fa-book me-1"></i>{{ teacher.subjects }}</span>
+                        {% endif %}
+                    </small>
+                </p>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <span class="badge bg-primary" style="font-size: 1rem;">
+                    <i class="fas fa-calendar-week me-1"></i>
+                    {{ teacher.total_jp_per_week }} JP/Minggu
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Info Alert -->
+<div class="alert alert-info mb-3">
+    <i class="fas fa-info-circle me-2"></i>
+    <strong>Petunjuk:</strong> Klik tombol "Edit" untuk mengatur jadwal pada hari tertentu. Klik "Hapus" untuk menghapus jadwal.
+</div>
+
+<!-- Weekly Schedule Grid -->
+<div class="row g-3">
+    {% for item in schedule_data %}
+    <div class="col-lg-6">
+        <div class="card {% if not item.has_schedule %}border-secondary{% endif %}">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span class="fw-semibold">
+                    <i class="fas fa-calendar-day me-2"></i>
+                    {{ item.day_name }}
+                </span>
+                <div>
+                    {% if item.has_schedule %}
+                    <span class="badge bg-success me-2">
+                        {{ item.total_jp }} JP
+                    </span>
+                    <span class="badge bg-info">
+                        {{ item.schedules|length }} Sesi
+                    </span>
+                    {% else %}
+                    <span class="badge bg-secondary">Belum ada jadwal</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card-body">
+                {% if item.has_schedule %}
+                <!-- Multiple Schedules -->
+                {% for schedule in item.schedules %}
+                <div class="border rounded p-3 mb-2 {% if not forloop.last %}mb-3{% endif %}">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div class="flex-grow-1">
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="fas fa-clock text-primary me-2"></i>
+                                <span class="fw-semibold">{{ schedule.jp_range_display }}</span>
+                                <span class="badge bg-primary ms-2">{{ schedule.jp_count }} JP</span>
+                            </div>
+                            
+                            {% if schedule.subject %}
+                            <div class="d-flex align-items-center mb-1">
+                                <i class="fas fa-book text-primary me-2"></i>
+                                <span>{{ schedule.subject }}</span>
+                            </div>
+                            {% endif %}
+                            
+                            {% if schedule.is_piket %}
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-user-shield text-info me-2"></i>
+                                <span class="badge bg-info">Hari Piket</span>
+                            </div>
+                            {% endif %}
+                            
+                            {% if schedule.notes %}
+                            <div class="mt-2">
+                                <small class="text-muted">
+                                    <i class="fas fa-sticky-note me-1"></i>{{ schedule.notes }}
+                                </small>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    <div class="d-flex gap-2 mt-2">
+                        <a href="{% url 'teacher_schedule_edit' teacher.id item.day_num %}?schedule_id={{ schedule.id }}" class="btn btn-sm btn-warning flex-grow-1">
+                            <i class="fas fa-edit me-1"></i>Edit
+                        </a>
+                        <form method="post" action="{% url 'teacher_schedule_delete' schedule.id %}" class="d-inline" onsubmit="return confirm('Yakin ingin menghapus jadwal ini?')">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-danger">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                {% endfor %}
+                
+                <!-- Add More Button -->
+                <div class="text-center mt-3">
+                    <a href="{% url 'teacher_schedule_edit' teacher.id item.day_num %}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-plus me-1"></i>Tambah Jadwal Lain
+                    </a>
+                </div>
+                
+                {% else %}
+                <!-- No Schedule -->
+                <div class="text-center py-3 text-muted">
+                    <i class="fas fa-calendar-times fa-2x mb-2 opacity-25"></i>
+                    <p class="mb-3 small">Belum ada jadwal untuk hari {{ item.day_name }}</p>
+                    <a href="{% url 'teacher_schedule_edit' teacher.id item.day_num %}" class="btn btn-sm btn-primary">
+                        <i class="fas fa-plus me-1"></i>Tambah Jadwal
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Summary Card -->
+<div class="card mt-3">
+    <div class="card-body">
+        <div class="row text-center">
+            <div class="col-md-3">
+                <h4 class="mb-1">{{ teacher.total_jp_per_week }}</h4>
+                <p class="text-muted mb-0 small">Total JP/Minggu</p>
+            </div>
+            <div class="col-md-3">
+                <h4 class="mb-1">
+                    {% for item in schedule_data %}
+                    {% if item.has_schedule %}{{ forloop.counter }}{% endif %}
+                    {% endfor %}
+                </h4>
+                <p class="text-muted mb-0 small">Hari Mengajar</p>
+            </div>
+            <div class="col-md-3">
+                <h4 class="mb-1">
+                    {% for item in schedule_data %}
+                    {% for schedule in item.schedules %}
+                    {{ forloop.parentloop.counter }}
+                    {% endfor %}
+                    {% endfor %}
+                </h4>
+                <p class="text-muted mb-0 small">Total Sesi</p>
+            </div>
+            <div class="col-md-3">
+                <h4 class="mb-1">
+                    {% for item in schedule_data %}
+                    {% for schedule in item.schedules %}
+                    {% if schedule.is_piket %}{{ forloop.parentloop.counter }}{% endif %}
+                    {% endfor %}
+                    {% endfor %}
+                </h4>
+                <p class="text-muted mb-0 small">Hari Piket</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

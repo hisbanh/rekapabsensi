@@ -1,0 +1,402 @@
+{% extends 'base.html' %}
+
+{% block title %}Input Absensi Ustadz - {{ date|date:"d F Y" }} - SIPA Beta{% endblock %}
+
+{% block page_title %}Input Absensi Ustadz{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item"><a href="{% url 'teacher_dashboard' %}">Dashboard Ustadz</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'teacher_attendance_input' %}">Input Absensi</a></li>
+        <li class="breadcrumb-item active">{{ date|date:"d F Y" }}</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'teacher_attendance_input' %}" class="btn btn-outline-secondary">
+    <i class="fas fa-arrow-left me-1"></i> Kembali
+</a>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .attendance-grid {
+        overflow-x: auto;
+    }
+    
+    .attendance-table {
+        min-width: 100%;
+    }
+    
+    .attendance-table th,
+    .attendance-table td {
+        text-align: center;
+        vertical-align: middle;
+        white-space: nowrap;
+        padding: 0.75rem 0.5rem;
+    }
+    
+    .attendance-table th.teacher-col,
+    .attendance-table td.teacher-col {
+        text-align: left;
+        min-width: 250px;
+        position: sticky;
+        left: 0;
+        background-color: var(--bg-white);
+        z-index: 1;
+        box-shadow: 2px 0 5px rgba(0,0,0,0.05);
+    }
+    
+    .attendance-table thead th {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        background-color: var(--bg-light);
+    }
+    
+    .attendance-table thead th.teacher-col {
+        z-index: 3;
+    }
+    
+    .status-cell {
+        width: 50px;
+        height: 40px;
+        cursor: pointer;
+        user-select: none;
+        font-weight: 600;
+        font-size: 0.85rem;
+        border-radius: 6px;
+        transition: all 0.15s ease;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin: 2px;
+        border: 2px solid transparent;
+    }
+    
+    .status-cell:hover {
+        transform: scale(1.05);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+    
+    .status-cell.in-schedule {
+        border-color: var(--primary);
+    }
+    
+    .status-H { background-color: #4CAF50; color: white; }
+    .status-S { background-color: #FF9800; color: white; }
+    .status-I { background-color: #2196F3; color: white; }
+    .status-A { background-color: #F44336; color: white; }
+    .status-T { background-color: #9E9E9E; color: white; }
+    .status-D { background-color: #673AB7; color: white; }
+    .status-C { background-color: #795548; color: white; }
+    .status-L { background-color: #FF5722; color: white; }
+    .status-empty { background-color: #f5f5f5; color: #999; border: 1px dashed #ddd; }
+    
+    .notes-input {
+        font-size: 0.85rem;
+        padding: 0.375rem 0.5rem;
+    }
+    
+    .teacher-info {
+        font-size: 0.85rem;
+    }
+    
+    .schedule-indicator {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background-color: var(--primary);
+        margin-right: 4px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Date & Info Card -->
+<div class="card mb-3">
+    <div class="card-body">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <h5 class="mb-1">
+                    <i class="fas fa-calendar-day me-2 text-primary"></i>
+                    {{ date|date:"l, d F Y" }}
+                </h5>
+                <p class="text-muted mb-0">
+                    <small>
+                        <i class="fas fa-clock me-1"></i>
+                        Total JP: {{ jp_count }}
+                        {% if day_schedule %}
+                        ({{ day_schedule.day_name }})
+                        {% endif %}
+                    </small>
+                </p>
+            </div>
+            <div class="col-md-6 text-md-end">
+                <span class="badge bg-primary me-2">
+                    <i class="fas fa-users me-1"></i>{{ total_teachers }} Ustadz
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Status Legend -->
+<div class="card mb-3">
+    <div class="card-body py-2">
+        <div class="d-flex flex-wrap gap-3 align-items-center">
+            <small class="text-muted fw-semibold">Keterangan Status:</small>
+            {% for code, label in status_choices %}
+            <div class="d-flex align-items-center">
+                <span class="status-cell status-{{ code }}" style="width: 30px; height: 30px; font-size: 0.75rem;">{{ code }}</span>
+                <small class="ms-1">{{ label }}</small>
+            </div>
+            {% endfor %}
+            <div class="d-flex align-items-center">
+                <span class="schedule-indicator"></span>
+                <small>= Sesuai Jadwal</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Attendance Form -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="fas fa-clipboard-check me-2"></i>Form Absensi</span>
+        <button type="button" class="btn btn-sm btn-success" id="saveBtn">
+            <i class="fas fa-save me-1"></i>Simpan Absensi
+        </button>
+    </div>
+    <div class="card-body p-0">
+        <div class="attendance-grid">
+            <table class="table attendance-table mb-0">
+                <thead>
+                    <tr>
+                        <th class="teacher-col">Ustadz</th>
+                        {% for jp in jp_range %}
+                        <th>JP {{ jp }}</th>
+                        {% endfor %}
+                        <th style="min-width: 200px;">Keterangan</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in teachers_data %}
+                    <tr data-teacher-id="{{ item.teacher.id }}">
+                        <td class="teacher-col">
+                            <div class="teacher-info">
+                                <div class="fw-semibold">{{ item.teacher.name }}</div>
+                                <small class="text-muted">
+                                    {{ item.teacher.teacher_id }}
+                                    {% if item.schedule %}
+                                    <br>
+                                    <span class="schedule-indicator"></span>
+                                    JP: {{ item.schedule.jp_numbers|join:", " }}
+                                    {% if item.schedule.subject %} - {{ item.schedule.subject }}{% endif %}
+                                    {% if item.schedule.is_piket %}
+                                    <span class="badge bg-info badge-sm ms-1">Piket</span>
+                                    {% endif %}
+                                    {% endif %}
+                                </small>
+                            </div>
+                        </td>
+                        {% for jp_status in item.jp_statuses %}
+                        <td>
+                            <div 
+                                class="status-cell {% if jp_status.status %}status-{{ jp_status.status }}{% else %}status-empty{% endif %} {% if jp_status.in_schedule %}in-schedule{% endif %}"
+                                data-jp="{{ jp_status.jp_num }}"
+                                data-status="{{ jp_status.status|default:'' }}"
+                                onclick="cycleStatus(this)"
+                            >
+                                {{ jp_status.status|default:'-' }}
+                            </div>
+                        </td>
+                        {% endfor %}
+                        <td>
+                            <input 
+                                type="text" 
+                                class="form-control notes-input" 
+                                placeholder="Catatan (opsional)"
+                                value="{{ item.notes }}"
+                                data-notes
+                            >
+                            {% if item.is_replacement %}
+                            <small class="text-info">
+                                <i class="fas fa-exchange-alt"></i> Penggantian
+                            </small>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="card-footer">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <small class="text-muted">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Klik pada sel JP untuk mengubah status. Sel dengan border biru adalah JP sesuai jadwal.
+                </small>
+            </div>
+            <button type="button" class="btn btn-success" id="saveBtn2">
+                <i class="fas fa-save me-1"></i>Simpan Absensi
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Overlay -->
+<div id="loadingOverlay" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;">
+    <div class="spinner-border text-light" role="status">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Status cycle order
+const statusCycle = ['H', 'S', 'I', 'A', 'T', 'D', 'C', 'L', ''];
+
+function cycleStatus(cell) {
+    const currentStatus = cell.dataset.status || '';
+    const currentIndex = statusCycle.indexOf(currentStatus);
+    const nextIndex = (currentIndex + 1) % statusCycle.length;
+    const nextStatus = statusCycle[nextIndex];
+    
+    // Remove all status classes
+    cell.classList.remove('status-H', 'status-S', 'status-I', 'status-A', 'status-T', 'status-D', 'status-C', 'status-L', 'status-empty');
+    
+    // Add new status class
+    if (nextStatus) {
+        cell.classList.add('status-' + nextStatus);
+        cell.textContent = nextStatus;
+    } else {
+        cell.classList.add('status-empty');
+        cell.textContent = '-';
+    }
+    
+    // Update data attribute
+    cell.dataset.status = nextStatus;
+}
+
+function collectAttendanceData() {
+    const rows = document.querySelectorAll('.attendance-table tbody tr');
+    const attendanceData = [];
+    
+    rows.forEach(row => {
+        const teacherId = row.dataset.teacherId;
+        const jpCells = row.querySelectorAll('.status-cell');
+        const notesInput = row.querySelector('[data-notes]');
+        
+        const jpStatuses = {};
+        let hasAnyStatus = false;
+        
+        jpCells.forEach(cell => {
+            const jp = cell.dataset.jp;
+            const status = cell.dataset.status;
+            
+            if (status) {
+                jpStatuses[jp] = status;
+                hasAnyStatus = true;
+            }
+        });
+        
+        // Only include if has any status
+        if (hasAnyStatus) {
+            attendanceData.push({
+                teacher_id: teacherId,
+                jp_statuses: jpStatuses,
+                notes: notesInput.value.trim(),
+                is_replacement: notesInput.value.toLowerCase().includes('menggantikan')
+            });
+        }
+    });
+    
+    return attendanceData;
+}
+
+async function saveAttendance() {
+    const attendanceData = collectAttendanceData();
+    
+    if (attendanceData.length === 0) {
+        alert('Tidak ada data absensi untuk disimpan');
+        return;
+    }
+    
+    // Show loading
+    document.getElementById('loadingOverlay').style.display = 'flex';
+    
+    try {
+        const response = await fetch('{% url "api_save_teacher_attendance" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({
+                date: '{{ date_str }}',
+                attendance: attendanceData
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            alert(result.message);
+            window.location.href = '{% url "teacher_dashboard" %}';
+        } else {
+            alert('Error: ' + result.error);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Terjadi kesalahan saat menyimpan data');
+    } finally {
+        document.getElementById('loadingOverlay').style.display = 'none';
+    }
+}
+
+// Event listeners
+document.getElementById('saveBtn').addEventListener('click', saveAttendance);
+document.getElementById('saveBtn2').addEventListener('click', saveAttendance);
+
+// Keyboard shortcuts
+document.addEventListener('keydown', function(e) {
+    // Ctrl+S to save
+    if (e.ctrlKey && e.key === 's') {
+        e.preventDefault();
+        saveAttendance();
+    }
+});
+
+// Auto-save draft to localStorage
+let autoSaveTimer;
+document.querySelectorAll('.status-cell, [data-notes]').forEach(el => {
+    el.addEventListener('click', function() {
+        clearTimeout(autoSaveTimer);
+        autoSaveTimer = setTimeout(() => {
+            const data = collectAttendanceData();
+            localStorage.setItem('teacher_attendance_draft_{{ date_str }}', JSON.stringify(data));
+        }, 1000);
+    });
+});
+
+// Load draft on page load
+window.addEventListener('load', function() {
+    const draft = localStorage.getItem('teacher_attendance_draft_{{ date_str }}');
+    if (draft) {
+        const shouldLoad = confirm('Ditemukan draft absensi yang belum disimpan. Muat draft?');
+        if (shouldLoad) {
+            const data = JSON.parse(draft);
+            // TODO: Implement draft loading
+            console.log('Draft data:', data);
+        }
+    }
+});
+</script>
+{% endblock %}

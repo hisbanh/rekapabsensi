@@ -1,0 +1,169 @@
+{% extends 'base.html' %}
+
+{% block title %}Input Absensi Ustadz - SIPA Beta{% endblock %}
+
+{% block page_title %}Input Absensi Ustadz{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'teacher_dashboard' %}">Dashboard Ustadz</a></li>
+        <li class="breadcrumb-item active">Input Absensi</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-calendar-alt me-2"></i>Pilih Tanggal Absensi
+            </div>
+            <div class="card-body p-4">
+                <!-- Info Box -->
+                <div class="alert alert-info mb-4">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Informasi:</strong>
+                    <ul class="mb-0 mt-2">
+                        <li>Pilih tanggal untuk input absensi ustadz</li>
+                        <li>Anda dapat input absensi untuk minggu berjalan (Senin-Sabtu)</li>
+                        {% if is_teacher_user %}
+                        <li>Anda hanya dapat mengisi absensi untuk diri sendiri</li>
+                        {% else %}
+                        <li>Sebagai admin, Anda dapat mengisi absensi untuk semua ustadz</li>
+                        {% endif %}
+                    </ul>
+                </div>
+                
+                <!-- Date Selection Form -->
+                <form id="dateForm" method="get">
+                    <div class="mb-4">
+                        <label for="attendance_date" class="form-label">
+                            <i class="fas fa-calendar me-2"></i>Tanggal Absensi
+                        </label>
+                        <input 
+                            type="date" 
+                            class="form-control form-control-lg" 
+                            id="attendance_date" 
+                            name="date"
+                            value="{{ today|date:'Y-m-d' }}"
+                            max="{{ today|date:'Y-m-d' }}"
+                            required
+                        >
+                        <small class="form-text text-muted">
+                            Pilih tanggal dalam minggu berjalan
+                        </small>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-arrow-right me-2"></i>Lanjutkan ke Form Absensi
+                        </button>
+                        <a href="{% url 'teacher_dashboard' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Kembali ke Dashboard
+                        </a>
+                    </div>
+                </form>
+                
+                <!-- Quick Date Buttons -->
+                <div class="mt-4">
+                    <p class="text-muted mb-2"><small>Atau pilih cepat:</small></p>
+                    <div class="d-flex gap-2 flex-wrap">
+                        <button type="button" class="btn btn-sm btn-outline-primary quick-date" data-days="0">
+                            Hari Ini
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-primary quick-date" data-days="-1">
+                            Kemarin
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-primary quick-date" data-days="-2">
+                            2 Hari Lalu
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- User Info Card (for teachers) -->
+        {% if is_teacher_user and teacher %}
+        <div class="card mt-3">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="me-3">
+                        <div class="bg-primary bg-opacity-25 rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                            <i class="fas fa-user-tie text-primary fa-lg"></i>
+                        </div>
+                    </div>
+                    <div>
+                        <h6 class="mb-1">{{ teacher.name }}</h6>
+                        <p class="text-muted mb-0 small">
+                            <i class="fas fa-id-card me-1"></i>{{ teacher.teacher_id }}
+                            {% if teacher.subjects %}
+                            <span class="ms-2"><i class="fas fa-book me-1"></i>{{ teacher.subjects }}</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const dateInput = document.getElementById('attendance_date');
+    const form = document.getElementById('dateForm');
+    const quickDateButtons = document.querySelectorAll('.quick-date');
+    
+    // Handle form submission
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const selectedDate = dateInput.value;
+        if (selectedDate) {
+            window.location.href = "{% url 'teacher_attendance_form' '0000-00-00' %}".replace('0000-00-00', selectedDate);
+        }
+    });
+    
+    // Handle quick date buttons
+    quickDateButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const days = parseInt(this.dataset.days);
+            const date = new Date();
+            date.setDate(date.getDate() + days);
+            
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const dateStr = `${year}-${month}-${day}`;
+            
+            dateInput.value = dateStr;
+            form.submit();
+        });
+    });
+    
+    // Validate date is within current week
+    dateInput.addEventListener('change', function() {
+        const selectedDate = new Date(this.value);
+        const today = new Date();
+        
+        // Get Monday of current week
+        const monday = new Date(today);
+        monday.setDate(today.getDate() - today.getDay() + 1);
+        monday.setHours(0, 0, 0, 0);
+        
+        // Get Saturday of current week
+        const saturday = new Date(monday);
+        saturday.setDate(monday.getDate() + 5);
+        saturday.setHours(23, 59, 59, 999);
+        
+        if (selectedDate < monday || selectedDate > saturday) {
+            alert('Tanggal harus dalam minggu berjalan (Senin - Sabtu)');
+            this.value = today.toISOString().split('T')[0];
+        }
+    });
+});
+</script>
+{% endblock %}

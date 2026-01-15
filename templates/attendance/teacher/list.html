@@ -1,0 +1,244 @@
+{% extends 'base.html' %}
+
+{% block title %}Data Ustadz - SIPA Beta{% endblock %}
+
+{% block page_title %}Data Ustadz{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'teacher_dashboard' %}">Dashboard Ustadz</a></li>
+        <li class="breadcrumb-item active">Data Ustadz</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block page_actions %}
+{% if user.is_superuser %}
+<a href="{% url 'teacher_create' %}" class="btn btn-primary">
+    <i class="fas fa-plus me-1"></i>Tambah Ustadz
+</a>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<!-- Search & Filter Card -->
+<div class="card mb-3">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-6">
+                <input 
+                    type="text" 
+                    name="search" 
+                    class="form-control" 
+                    placeholder="Cari nama atau ID ustadz..."
+                    value="{{ search_query }}"
+                >
+            </div>
+            <div class="col-md-3">
+                <select name="is_active" class="form-select">
+                    <option value="">Semua Status</option>
+                    <option value="1" {% if is_active == '1' %}selected{% endif %}>Aktif</option>
+                    <option value="0" {% if is_active == '0' %}selected{% endif %}>Nonaktif</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-search me-1"></i>Cari
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Teachers List -->
+<div class="card">
+    <div class="card-header">
+        <i class="fas fa-users me-2"></i>Daftar Ustadz
+        <span class="badge bg-primary ms-2">{{ pagination.total }} Ustadz</span>
+    </div>
+    <div class="card-body p-0">
+        {% if teachers %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>No</th>
+                        <th>ID</th>
+                        <th>Nama</th>
+                        <th>Mata Pelajaran</th>
+                        <th class="text-center">JP/Minggu</th>
+                        <th>Tahun Ajaran</th>
+                        <th>Status</th>
+                        <th>Akun Login</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for teacher in teachers %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>
+                            <span class="badge bg-secondary">{{ teacher.teacher_id }}</span>
+                        </td>
+                        <td>
+                            <div class="fw-semibold">{{ teacher.name }}</div>
+                            {% if teacher.nip %}
+                            <small class="text-muted">NIP: {{ teacher.nip }}</small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if teacher.subjects %}
+                            <small>{{ teacher.subjects }}</small>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if teacher.total_jp_per_week > 0 %}
+                            <span class="badge bg-primary" style="font-size: 0.9rem;">
+                                {{ teacher.total_jp_per_week }} JP
+                            </span>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ teacher.academic_year }}</td>
+                        <td>
+                            {% if teacher.is_active %}
+                            <span class="badge bg-success">Aktif</span>
+                            {% else %}
+                            <span class="badge bg-secondary">Nonaktif</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if teacher.user %}
+                            <span class="badge bg-info">
+                                <i class="fas fa-user me-1"></i>{{ teacher.user.username }}
+                            </span>
+                            {% else %}
+                            <span class="text-muted small">Belum ada</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{% url 'teacher_detail' teacher.id %}" class="btn btn-outline-primary" title="Detail">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                {% if user.is_superuser %}
+                                <a href="{% url 'teacher_schedule_manage' teacher.id %}" class="btn btn-outline-info" title="Jadwal">
+                                    <i class="fas fa-calendar-alt"></i>
+                                </a>
+                                <a href="{% url 'teacher_edit' teacher.id %}" class="btn btn-outline-warning" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <a href="{% url 'teacher_delete' teacher.id %}" class="btn btn-outline-danger" title="Hapus" onclick="return confirm('Yakin ingin menghapus ustadz ini?')">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Pagination -->
+        {% if pagination.pages > 1 %}
+        <div class="card-footer">
+            <nav>
+                <ul class="pagination pagination-sm mb-0 justify-content-center">
+                    {% if pagination.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ pagination.current_page|add:'-1' }}&search={{ search_query }}&is_active={{ is_active }}">
+                            <i class="fas fa-chevron-left"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for i in pagination.pages|slice:":10" %}
+                    <li class="page-item {% if i == pagination.current_page %}active{% endif %}">
+                        <a class="page-link" href="?page={{ i }}&search={{ search_query }}&is_active={{ is_active }}">{{ i }}</a>
+                    </li>
+                    {% endfor %}
+                    
+                    {% if pagination.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ pagination.current_page|add:'1' }}&search={{ search_query }}&is_active={{ is_active }}">
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+        
+        {% else %}
+        <!-- Empty State -->
+        <div class="text-center py-5">
+            <i class="fas fa-user-tie fa-4x text-muted mb-3 opacity-25"></i>
+            <h5 class="text-muted">Tidak Ada Data Ustadz</h5>
+            <p class="text-muted">
+                {% if search_query %}
+                Tidak ditemukan ustadz dengan kata kunci "{{ search_query }}"
+                {% else %}
+                Belum ada data ustadz yang terdaftar
+                {% endif %}
+            </p>
+            {% if user.is_superuser %}
+            <a href="{% url 'teacher_create' %}" class="btn btn-primary">
+                <i class="fas fa-plus me-1"></i>Tambah Ustadz Pertama
+            </a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Quick Stats -->
+{% if teachers %}
+<div class="row g-3 mt-3">
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <h4 class="mb-1">{{ pagination.total }}</h4>
+                <p class="text-muted mb-0 small">Total Ustadz</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <h4 class="mb-1 text-success">
+                    {% widthratio teachers|length 1 1 as active_count %}
+                    {{ teachers|length }}
+                </h4>
+                <p class="text-muted mb-0 small">Ustadz Aktif</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <h4 class="mb-1 text-primary">
+                    {{ total_jp }}
+                </h4>
+                <p class="text-muted mb-0 small">Total JP/Minggu</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <h4 class="mb-1 text-info">
+                    {{ avg_jp_per_week }}
+                </h4>
+                <p class="text-muted mb-0 small">Rata-rata JP/Ustadz</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

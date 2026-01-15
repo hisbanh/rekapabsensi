@@ -1,0 +1,176 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if is_edit %}Edit{% else %}Tambah{% endif %} Jadwal {{ day_name }} - {{ teacher.name }} - SIPA Beta{% endblock %}
+
+{% block page_title %}{% if is_edit %}Edit{% else %}Tambah{% endif %} Jadwal {{ day_name }}{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'teacher_dashboard' %}">Dashboard Ustadz</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'teacher_list' %}">Data Ustadz</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'teacher_detail' teacher.id %}">{{ teacher.name }}</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'teacher_schedule_manage' teacher.id %}">Kelola Jadwal</a></li>
+        <li class="breadcrumb-item active">{{ day_name }}</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <!-- Teacher Info -->
+        <div class="card mb-3">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="bg-primary bg-opacity-25 rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 50px; height: 50px;">
+                        <i class="fas fa-user-tie text-primary"></i>
+                    </div>
+                    <div>
+                        <h6 class="mb-0">{{ teacher.name }}</h6>
+                        <small class="text-muted">{{ teacher.teacher_id }}</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Schedule Form -->
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-calendar-alt me-2"></i>Jadwal {{ day_name }}
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        {{ form.non_field_errors }}
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Hidden Fields -->
+                    {{ form.teacher.as_hidden }}
+                    {{ form.day_of_week.as_hidden }}
+                    
+                    <div class="row g-3">
+                        <!-- JP Numbers -->
+                        <div class="col-12">
+                            <label for="{{ form.jp_numbers_display.id_for_label }}" class="form-label">
+                                Jam Pelajaran (JP) <span class="text-danger">*</span>
+                            </label>
+                            {{ form.jp_numbers_display }}
+                            {% if form.jp_numbers_display.errors %}
+                            <div class="text-danger small mt-1">{{ form.jp_numbers_display.errors }}</div>
+                            {% endif %}
+                            <small class="form-text text-muted">
+                                {{ form.jp_numbers_display.help_text }}
+                            </small>
+                            
+                            <!-- Quick JP Buttons -->
+                            <div class="mt-2">
+                                <small class="text-muted d-block mb-1">Pilih cepat:</small>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <button type="button" class="btn btn-outline-secondary quick-jp" data-jp="1,2">JP 1-2</button>
+                                    <button type="button" class="btn btn-outline-secondary quick-jp" data-jp="1,2,3">JP 1-3</button>
+                                    <button type="button" class="btn btn-outline-secondary quick-jp" data-jp="4,5">JP 4-5</button>
+                                    <button type="button" class="btn btn-outline-secondary quick-jp" data-jp="4,5,6">JP 4-6</button>
+                                    <button type="button" class="btn btn-outline-secondary quick-jp" data-jp="6,7,8">JP 6-8</button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Subject -->
+                        <div class="col-12">
+                            <label for="{{ form.subject.id_for_label }}" class="form-label">
+                                Mata Pelajaran
+                            </label>
+                            {{ form.subject }}
+                            {% if form.subject.errors %}
+                            <div class="text-danger small mt-1">{{ form.subject.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Academic Year -->
+                        <div class="col-md-6">
+                            <label for="{{ form.academic_year.id_for_label }}" class="form-label">
+                                Tahun Ajaran <span class="text-danger">*</span>
+                            </label>
+                            {{ form.academic_year }}
+                            {% if form.academic_year.errors %}
+                            <div class="text-danger small mt-1">{{ form.academic_year.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Is Piket -->
+                        <div class="col-md-6">
+                            <label class="form-label d-block">Tugas Tambahan</label>
+                            <div class="form-check">
+                                {{ form.is_piket }}
+                                <label class="form-check-label" for="{{ form.is_piket.id_for_label }}">
+                                    Hari Piket
+                                </label>
+                            </div>
+                            {% if form.is_piket.errors %}
+                            <div class="text-danger small mt-1">{{ form.is_piket.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Notes -->
+                        <div class="col-12">
+                            <label for="{{ form.notes.id_for_label }}" class="form-label">
+                                Catatan
+                            </label>
+                            {{ form.notes }}
+                            {% if form.notes.errors %}
+                            <div class="text-danger small mt-1">{{ form.notes.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <hr class="my-4">
+                    
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i>Simpan Jadwal
+                        </button>
+                        <a href="{% url 'teacher_schedule_manage' teacher.id %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-1"></i>Batal
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Help Card -->
+        <div class="card mt-3">
+            <div class="card-body">
+                <h6 class="mb-2"><i class="fas fa-question-circle me-2 text-info"></i>Bantuan</h6>
+                <ul class="mb-0 small text-muted">
+                    <li>Format JP: Gunakan koma untuk memisahkan (contoh: 1,2,3) atau range (contoh: 1-3)</li>
+                    <li>Anda bisa menggunakan tombol "Pilih cepat" untuk memilih JP yang umum digunakan</li>
+                    <li>Centang "Hari Piket" jika ustadz bertugas piket di hari ini</li>
+                    <li>Catatan bersifat opsional, bisa digunakan untuk informasi tambahan</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const jpInput = document.getElementById('{{ form.jp_numbers_display.id_for_label }}');
+    const quickJpButtons = document.querySelectorAll('.quick-jp');
+    
+    // Quick JP buttons
+    quickJpButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            jpInput.value = this.dataset.jp;
+            jpInput.focus();
+        });
+    });
+});
+</script>
+{% endblock %}

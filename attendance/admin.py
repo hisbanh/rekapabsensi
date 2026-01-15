@@ -16,7 +16,8 @@ from django.template.response import TemplateResponse
 
 from .models import (
     AcademicLevel, Classroom, Student, AttendanceRecord, 
-    AttendanceSummary, AuditLog, AttendanceStatus
+    AttendanceSummary, AuditLog, AttendanceStatus,
+    Teacher, TeacherSchedule, TeacherDailyAttendance, TeacherStatus
 )
 
 
@@ -413,6 +414,274 @@ class AuditLogAdmin(admin.ModelAdmin):
     def has_delete_permission(self, request, obj=None):
         """Only superusers can delete audit logs"""
         return request.user.is_superuser
+
+
+# ============================================
+# Teacher Admin Classes
+# ============================================
+
+@admin.register(Teacher)
+class TeacherAdmin(admin.ModelAdmin, ExportCsvMixin):
+    """Teacher admin with comprehensive features"""
+    
+    list_display = [
+        'teacher_id', 'name', 'nip', 'subjects_preview', 
+        'user_link', 'total_jp_display', 'is_active', 'academic_year'
+    ]
+    list_filter = [
+        'is_active', 'academic_year',
+        ('user', admin.RelatedOnlyFieldListFilter)
+    ]
+    search_fields = ['teacher_id', 'nip', 'name', 'subjects']
+    ordering = ['name']
+    
+    fieldsets = (
+        ('Basic Information', {
+            'fields': ('teacher_id', 'nip', 'name', 'user')
+        }),
+        ('Teaching Information', {
+            'fields': ('subjects', 'academic_year')
+        }),
+        ('Status', {
+            'fields': ('is_active',)
+        }),
+        ('System Information', {
+            'fields': ('created_by', 'updated_by', 'created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    readonly_fields = ['created_by', 'updated_by', 'created_at', 'updated_at', 'id']
+    
+    actions = ['export_as_csv', 'activate_teachers', 'deactivate_teachers']
+    
+    def subjects_preview(self, obj):
+        """Show preview of subjects"""
+        if obj.subjects:
+            subjects = obj.subjects[:50]
+            return subjects + '...' if len(obj.subjects) > 50 else subjects
+        return '-'
+    subjects_preview.short_description = 'Mata Pelajaran'
+    
+    def user_link(self, obj):
+        """Display user link"""
+        if obj.user:
+            url = reverse('admin:auth_user_change', args=[obj.user.id])
+            return format_html('<a href="{}">{}</a>', url, obj.user.username)
+        return '-'
+    user_link.short_description = 'User Account'
+    
+    def total_jp_display(self, obj):
+        """Display total JP per week"""
+        total = obj.total_jp_per_week
+        return format_html('<span style="font-weight: bold; color: #28a745;">{} JP</span>', total)
+    total_jp_display.short_description = 'Total JP/Week'
+    
+    def activate_teachers(self, request, queryset):
+        """Bulk activate teachers"""
+        updated = queryset.update(is_active=True)
+        self.message_user(request, f'{updated} ustadz activated.')
+    activate_teachers.short_description = "Activate selected teachers"
+    
+    def deactivate_teachers(self, request, queryset):
+        """Bulk deactivate teachers"""
+        updated = queryset.update(is_active=False)
+        self.message_user(request, f'{updated} ustadz deactivated.')
+    deactivate_teachers.short_description = "Deactivate selected teachers"
+
+
+class TeacherScheduleInline(admin.TabularInline):
+    """Inline display of teacher schedules"""
+    model = TeacherSchedule
+    extra = 1
+    fields = ['day_of_week', 'jp_numbers', 'subject', 'is_piket', 'notes']
+    ordering = ['day_of_week']
+
+
+@admin.register(TeacherSchedule)
+class TeacherScheduleAdmin(admin.ModelAdmin, ExportCsvMixin):
+    """Teacher Schedule admin"""
+    
+    list_display = [
+        'teacher_link', 'day_name_display', 'jp_count_display', 
+        'subject', 'is_piket', 'academic_year'
+    ]
+    list_filter = [
+        'day_of_week', 'is_piket', 'academic_year',
+        ('teacher', admin.RelatedOnlyFieldListFilter)
+    ]
+    search_fields = ['teacher__name', 'subject', 'teacher__teacher_id']
+    ordering = ['teacher', 'day_of_week']
+    
+    fieldsets = (
+        ('Teacher Schedule', {
+            'fields': ('teacher', 'day_of_week', 'jp_numbers')
+        }),
+        ('Class Information', {
+            'fields': ('subject', 'is_piket', 'academic_year')
+        }),
+        ('Notes', {
+            'fields': ('notes',),
+            'classes': ('collapse',)
+        }),
+        ('System Information', {
+            'fields': ('created_by', 'updated_by', 'created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    readonly_fields = ['created_by', 'updated_by', 'created_at', 'updated_at', 'id']
+    
+    actions = ['export_as_csv']
+    
+    def teacher_link(self, obj):
+        """Display teacher link"""
+        url = reverse('admin:attendance_teacher_change', args=[obj.teacher.id])
+        return format_html('<a href="{}">{}</a>', url, obj.teacher.name)
+    teacher_link.short_description = 'Teacher'
+    teacher_link.admin_order_field = 'teacher__name'
+    
+    def day_name_display(self, obj):
+        """Display day name"""
+        days = {0: 'Senin', 1: 'Selasa', 2: 'Rabu', 3: 'Kamis', 4: 'Jumat', 5: 'Sabtu', 6: 'Minggu'}
+        return days.get(obj.day_of_week, 'Unknown')
+    day_name_display.short_description = 'Hari'
+    day_name_display.admin_order_field = 'day_of_week'
+    
+    def jp_count_display(self, obj):
+        """Display JP count"""
+        count = len(obj.jp_numbers) if obj.jp_numbers else 0
+        return format_html('<span style="font-weight: bold;">{} JP</span>', count)
+    jp_count_display.short_description = 'JP Count'
+
+
+@admin.register(TeacherDailyAttendance)
+class TeacherDailyAttendanceAdmin(admin.ModelAdmin, ExportCsvMixin):
+    """Teacher Daily Attendance admin"""
+    
+    list_display = [
+        'teacher_link', 'date', 'jp_summary_display', 
+        'is_replacement_display', 'recorded_by_display', 'recorded_at'
+    ]
+    list_filter = [
+        'date', 'is_replacement',
+        ('teacher', admin.RelatedOnlyFieldListFilter),
+        ('recorded_by', admin.RelatedOnlyFieldListFilter)
+    ]
+    search_fields = ['teacher__name', 'teacher__teacher_id', 'notes']
+    ordering = ['-date', 'teacher__name']
+    date_hierarchy = 'date'
+    
+    fieldsets = (
+        ('Attendance Record', {
+            'fields': ('teacher', 'date', 'jp_statuses')
+        }),
+        ('Replacement Information', {
+            'fields': ('is_replacement', 'replaced_teacher'),
+            'classes': ('collapse',)
+        }),
+        ('Notes', {
+            'fields': ('notes',),
+            'classes': ('collapse',)
+        }),
+        ('Recording Information', {
+            'fields': ('recorded_by', 'recorded_at', 'created_by', 'updated_by', 'created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    readonly_fields = [
+        'recorded_at', 'created_by', 'updated_by', 'created_at', 'updated_at', 'id'
+    ]
+    
+    actions = ['export_as_csv', 'mark_hadir', 'mark_sakit', 'mark_izin', 'mark_alpa']
+    
+    def teacher_link(self, obj):
+        """Display teacher link"""
+        url = reverse('admin:attendance_teacher_change', args=[obj.teacher.id])
+        return format_html('<a href="{}">{}</a>', url, obj.teacher.name)
+    teacher_link.short_description = 'Teacher'
+    teacher_link.admin_order_field = 'teacher__name'
+    
+    def jp_summary_display(self, obj):
+        """Display JP summary"""
+        if not obj.jp_statuses:
+            return '-'
+        
+        statuses = obj.jp_statuses
+        hadir = sum(1 for s in statuses.values() if s == 'H')
+        sakit = sum(1 for s in statuses.values() if s == 'S')
+        izin = sum(1 for s in statuses.values() if s == 'I')
+        alpa = sum(1 for s in statuses.values() if s == 'A')
+        
+        summary = f"H:{hadir} S:{sakit} I:{izin} A:{alpa}"
+        return format_html('<span style="font-family: monospace;">{}</span>', summary)
+    jp_summary_display.short_description = 'JP Summary'
+    
+    def is_replacement_display(self, obj):
+        """Display replacement status with color"""
+        if obj.is_replacement:
+            return format_html(
+                '<span style="background-color: #fff3cd; padding: 3px 6px; border-radius: 3px;">Replacement</span>'
+            )
+        return '-'
+    is_replacement_display.short_description = 'Replacement'
+    
+    def recorded_by_display(self, obj):
+        """Display who recorded this"""
+        if obj.recorded_by:
+            return obj.recorded_by.username
+        return '-'
+    recorded_by_display.short_description = 'Recorded By'
+    
+    def mark_hadir(self, request, queryset):
+        """Mark all selected as Hadir"""
+        count = 0
+        for obj in queryset:
+            # Mark all JP as Hadir
+            jp_statuses = {str(i): 'H' for i in range(1, len(obj.jp_statuses) + 1) if str(i) in obj.jp_statuses}
+            if jp_statuses:
+                obj.jp_statuses = jp_statuses
+                obj.save()
+                count += 1
+        self.message_user(request, f'{count} records marked as Hadir.')
+    mark_hadir.short_description = "Mark selected as Hadir (H)"
+    
+    def mark_sakit(self, request, queryset):
+        """Mark all selected as Sakit"""
+        count = 0
+        for obj in queryset:
+            jp_statuses = {str(i): 'S' for i in range(1, len(obj.jp_statuses) + 1) if str(i) in obj.jp_statuses}
+            if jp_statuses:
+                obj.jp_statuses = jp_statuses
+                obj.save()
+                count += 1
+        self.message_user(request, f'{count} records marked as Sakit.')
+    mark_sakit.short_description = "Mark selected as Sakit (S)"
+    
+    def mark_izin(self, request, queryset):
+        """Mark all selected as Izin"""
+        count = 0
+        for obj in queryset:
+            jp_statuses = {str(i): 'I' for i in range(1, len(obj.jp_statuses) + 1) if str(i) in obj.jp_statuses}
+            if jp_statuses:
+                obj.jp_statuses = jp_statuses
+                obj.save()
+                count += 1
+        self.message_user(request, f'{count} records marked as Izin.')
+    mark_izin.short_description = "Mark selected as Izin (I)"
+    
+    def mark_alpa(self, request, queryset):
+        """Mark all selected as Alpa"""
+        count = 0
+        for obj in queryset:
+            jp_statuses = {str(i): 'A' for i in range(1, len(obj.jp_statuses) + 1) if str(i) in obj.jp_statuses}
+            if jp_statuses:
+                obj.jp_statuses = jp_statuses
+                obj.save()
+                count += 1
+        self.message_user(request, f'{count} records marked as Alpa.')
+    mark_alpa.short_description = "Mark selected as Alpa (A)"
 
 
 # Customize the default admin site

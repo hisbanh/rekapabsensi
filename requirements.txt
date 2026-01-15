@@ -1,36 +1,18 @@
-Django==5.1.5
-asgiref==3.8.1
-sqlparse==0.5.3
-
-# Configuration management
-python-decouple==3.8
-
-# Admin interface
+asgiref==3.11.0
+certifi==2026.1.4
+chardet==5.2.0
+charset-normalizer==3.4.4
+dj-database-url==3.1.0
+Django==6.0.1
 django-unfold==0.75.0
-
-# Development tools
-django-extensions==3.2.3
-
-# Production tools
-whitenoise==6.6.0
-
-# PDF Generation
+et_xmlfile==2.0.0
+idna==3.11
+openpyxl==3.1.5
+pillow==12.1.0
+psycopg2-binary==2.9.11
+python-decouple==3.8
 reportlab==4.0.8
-
-# Excel Generation
-openpyxl==3.1.2
-
-# Testing
-pytest==7.4.3
-pytest-django==4.7.0
-factory-boy==3.3.0
-coverage==7.3.2
-
-# Code quality
-flake8==6.1.0
-black==23.11.0
-isort==5.12.0
-
-# Security
-django-ratelimit==4.1.0
-django-cors-headers==4.3.1
+requests==2.32.5
+sqlparse==0.5.5
+urllib3==2.6.3
+whitenoise==6.11.0

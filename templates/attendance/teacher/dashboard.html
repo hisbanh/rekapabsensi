@@ -1,0 +1,271 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard Ustadz - SIPA Beta{% endblock %}
+
+{% block page_title %}Dashboard Ustadz{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item active">Dashboard Ustadz</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<!-- Stats Cards Row -->
+<div class="row g-3 mb-4">
+    <!-- Total Ustadz -->
+    <div class="col-md-3">
+        <div class="card stats-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div class="stats-card-icon">
+                        <i class="fas fa-user-tie"></i>
+                    </div>
+                </div>
+                <div class="stats-card-value">{{ total_teachers }}</div>
+                <div class="stats-card-label">Total Ustadz Aktif</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Average JP per Week -->
+    <div class="col-md-3">
+        <div class="card stats-card" style="background: linear-gradient(135deg, #9C27B0 0%, #7B1FA2 100%);">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div class="stats-card-icon">
+                        <i class="fas fa-calendar-week"></i>
+                    </div>
+                </div>
+                <div class="stats-card-value">{{ avg_jp_per_week }}</div>
+                <div class="stats-card-label">Rata-rata JP/Minggu</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Attendance Rate -->
+    <div class="col-md-3">
+        <div class="card stats-card" style="background: linear-gradient(135deg, #4CAF50 0%, #388E3C 100%);">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div class="stats-card-icon">
+                        <i class="fas fa-percentage"></i>
+                    </div>
+                </div>
+                <div class="stats-card-value">{{ stats.attendance_rate }}%</div>
+                <div class="stats-card-label">Tingkat Kehadiran</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Belum Absen Hari Ini -->
+    <div class="col-md-3">
+        <div class="card stats-card" style="background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%);">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div class="stats-card-icon">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                </div>
+                <div class="stats-card-value">{{ missing_count }}</div>
+                <div class="stats-card-label">Belum Absen Hari Ini</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Missing Attendance Alert -->
+{% if missing_today %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card border-warning">
+            <div class="card-header bg-warning bg-opacity-10 text-warning">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <strong>Ustadz yang Belum Absen Hari Ini ({{ today|date:"d F Y" }})</strong>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for item in missing_today %}
+                    <div class="col-md-6 mb-2">
+                        <div class="d-flex align-items-center p-2 border rounded">
+                            <div class="me-3">
+                                <div class="bg-warning bg-opacity-25 rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                    <i class="fas fa-user text-warning"></i>
+                                </div>
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="fw-semibold">{{ item.teacher.name }}</div>
+                                <small class="text-muted">
+                                    JP: {{ item.jp_numbers|join:", " }}
+                                    {% if item.subject %} - {{ item.subject }}{% endif %}
+                                    {% if item.is_piket %}<span class="badge bg-info ms-1">Piket</span>{% endif %}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Main Content Row -->
+<div class="row g-3">
+    <!-- Recent Attendance -->
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-history me-2"></i>Absensi Terbaru</span>
+                <a href="{% url 'teacher_attendance_report' %}" class="btn btn-sm btn-outline-primary">
+                    Lihat Semua
+                </a>
+            </div>
+            <div class="card-body p-0">
+                {% if recent_attendance %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Tanggal</th>
+                                <th>Ustadz</th>
+                                <th>Total JP</th>
+                                <th>Hadir</th>
+                                <th>Tidak Hadir</th>
+                                <th>Dicatat Oleh</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for attendance in recent_attendance %}
+                            <tr>
+                                <td>{{ attendance.date|date:"d M Y" }}</td>
+                                <td>
+                                    <a href="{% url 'teacher_detail' attendance.teacher.id %}" class="text-decoration-none">
+                                        {{ attendance.teacher.name }}
+                                    </a>
+                                </td>
+                                <td>{{ attendance.total_jp }}</td>
+                                <td>
+                                    <span class="badge bg-success">{{ attendance.total_hadir }} JP</span>
+                                </td>
+                                <td>
+                                    {% if attendance.total_sakit > 0 %}
+                                        <span class="badge bg-warning">S: {{ attendance.total_sakit }}</span>
+                                    {% endif %}
+                                    {% if attendance.total_izin > 0 %}
+                                        <span class="badge bg-info">I: {{ attendance.total_izin }}</span>
+                                    {% endif %}
+                                    {% if attendance.total_alpa > 0 %}
+                                        <span class="badge bg-danger">A: {{ attendance.total_alpa }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <small class="text-muted">
+                                        {{ attendance.recorded_by.get_full_name|default:attendance.recorded_by.username }}
+                                    </small>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5 text-muted">
+                    <i class="fas fa-inbox fa-3x mb-3 opacity-25"></i>
+                    <p>Belum ada data absensi</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Quick Stats -->
+    <div class="col-lg-4">
+        <div class="card mb-3">
+            <div class="card-header">
+                <i class="fas fa-chart-pie me-2"></i>Statistik Kehadiran
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-muted small">Hadir</span>
+                        <span class="fw-semibold">{{ stats.hadir }} JP</span>
+                    </div>
+                    <div class="progress" style="height: 8px;">
+                        <div class="progress-bar bg-success" style="width: {% if stats.total_jp > 0 %}{% widthratio stats.hadir stats.total_jp 100 %}{% else %}0{% endif %}%"></div>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-muted small">Sakit</span>
+                        <span class="fw-semibold">{{ stats.sakit }} JP</span>
+                    </div>
+                    <div class="progress" style="height: 8px;">
+                        <div class="progress-bar bg-warning" style="width: {% if stats.total_jp > 0 %}{% widthratio stats.sakit stats.total_jp 100 %}{% else %}0{% endif %}%"></div>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-muted small">Izin</span>
+                        <span class="fw-semibold">{{ stats.izin }} JP</span>
+                    </div>
+                    <div class="progress" style="height: 8px;">
+                        <div class="progress-bar bg-info" style="width: {% if stats.total_jp > 0 %}{% widthratio stats.izin stats.total_jp 100 %}{% else %}0{% endif %}%"></div>
+                    </div>
+                </div>
+                
+                <div class="mb-0">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-muted small">Alpa</span>
+                        <span class="fw-semibold">{{ stats.alpa }} JP</span>
+                    </div>
+                    <div class="progress" style="height: 8px;">
+                        <div class="progress-bar bg-danger" style="width: {% if stats.total_jp > 0 %}{% widthratio stats.alpa stats.total_jp 100 %}{% else %}0{% endif %}%"></div>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <div class="d-flex justify-content-between">
+                    <span class="text-muted">Total JP</span>
+                    <span class="fw-bold">{{ stats.total_jp }}</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quick Actions -->
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-bolt me-2"></i>Aksi Cepat
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'teacher_attendance_input' %}" class="btn btn-primary">
+                        <i class="fas fa-user-check me-2"></i>Input Absensi
+                    </a>
+                    <a href="{% url 'teacher_list' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-users me-2"></i>Kelola Ustadz
+                    </a>
+                    <a href="{% url 'teacher_attendance_report' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-file-alt me-2"></i>Lihat Laporan
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Auto refresh missing attendance every 5 minutes
+setTimeout(function() {
+    location.reload();
+}, 300000);
+</script>
+{% endblock %}

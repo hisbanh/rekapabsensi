@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from . import views_teacher
 
 urlpatterns = [
     path('', views.dashboard, name='dashboard'),
@@ -63,4 +64,37 @@ urlpatterns = [
     path('export/excel/class/', views.export_excel_class, name='export_excel_class'),
     path('export/excel/all/', views.export_excel_all, name='export_excel_all'),
     path('api/students-by-classroom/', views.api_get_students_by_classroom, name='api_students_by_classroom'),
+    
+    # ============================================
+    # Teacher/Ustadz URLs
+    # ============================================
+    
+    # Teacher Dashboard
+    path('teacher/', views_teacher.teacher_dashboard, name='teacher_dashboard'),
+    
+    # Teacher Management
+    path('teacher/list/', views_teacher.teacher_list, name='teacher_list'),
+    path('teacher/create/', views_teacher.teacher_create, name='teacher_create'),
+    path('teacher/<uuid:pk>/', views_teacher.teacher_detail, name='teacher_detail'),
+    path('teacher/<uuid:pk>/edit/', views_teacher.teacher_edit, name='teacher_edit'),
+    path('teacher/<uuid:pk>/delete/', views_teacher.teacher_delete, name='teacher_delete'),
+    
+    # Teacher Schedule Management
+    path('teacher/<uuid:teacher_id>/schedule/', views_teacher.teacher_schedule_manage, name='teacher_schedule_manage'),
+    path('teacher/<uuid:teacher_id>/schedule/<int:day_of_week>/edit/', views_teacher.teacher_schedule_edit, name='teacher_schedule_edit'),
+    path('teacher/schedule/<uuid:schedule_id>/delete/', views_teacher.teacher_schedule_delete, name='teacher_schedule_delete'),
+    
+    # Teacher Attendance Input
+    path('teacher/attendance/', views_teacher.teacher_attendance_input, name='teacher_attendance_input'),
+    path('teacher/attendance/<str:date_str>/', views_teacher.teacher_attendance_form, name='teacher_attendance_form'),
+    path('api/teacher/attendance/save/', views_teacher.api_save_teacher_attendance, name='api_save_teacher_attendance'),
+    
+    # Teacher Attendance Reports
+    path('teacher/report/', views_teacher.teacher_attendance_report, name='teacher_attendance_report'),
+    
+    # Teacher Export
+    path('teacher/export/excel/', views_teacher.teacher_export_excel, name='teacher_export_excel'),
+    path('teacher/export/csv/', views_teacher.teacher_export_csv, name='teacher_export_csv'),
+    path('teacher/export/pdf/', views_teacher.teacher_export_pdf, name='teacher_export_pdf'),
+    path('teacher/<uuid:teacher_id>/export/pdf/', views_teacher.teacher_export_individual_pdf, name='teacher_export_individual_pdf'),
 ]

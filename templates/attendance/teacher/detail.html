@@ -1,0 +1,271 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ teacher.name }} - Detail Ustadz - SIPA Beta{% endblock %}
+
+{% block page_title %}Detail Ustadz{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'teacher_dashboard' %}">Dashboard Ustadz</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'teacher_list' %}">Data Ustadz</a></li>
+        <li class="breadcrumb-item active">{{ teacher.name }}</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block page_actions %}
+<div class="btn-group">
+    {% if user.is_superuser %}
+    <a href="{% url 'teacher_edit' teacher.id %}" class="btn btn-warning">
+        <i class="fas fa-edit me-1"></i>Edit
+    </a>
+    <a href="{% url 'teacher_schedule_manage' teacher.id %}" class="btn btn-info">
+        <i class="fas fa-calendar-alt me-1"></i>Jadwal
+    </a>
+    {% endif %}
+    <a href="{% url 'teacher_list' %}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left me-1"></i>Kembali
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<!-- Teacher Info Card -->
+<div class="card mb-3">
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-2 text-center">
+                <div class="bg-primary bg-opacity-25 rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 100px; height: 100px;">
+                    <i class="fas fa-user-tie text-primary" style="font-size: 3rem;"></i>
+                </div>
+            </div>
+            <div class="col-md-10">
+                <h3 class="mb-2">{{ teacher.name }}</h3>
+                <div class="row">
+                    <div class="col-md-6">
+                        <table class="table table-sm table-borderless">
+                            <tr>
+                                <td width="150"><i class="fas fa-id-card me-2 text-muted"></i>ID Ustadz</td>
+                                <td><strong>{{ teacher.teacher_id }}</strong></td>
+                            </tr>
+                            {% if teacher.nip %}
+                            <tr>
+                                <td><i class="fas fa-id-badge me-2 text-muted"></i>NIP</td>
+                                <td><strong>{{ teacher.nip }}</strong></td>
+                            </tr>
+                            {% endif %}
+                            <tr>
+                                <td><i class="fas fa-book me-2 text-muted"></i>Mata Pelajaran</td>
+                                <td>{{ teacher.subjects|default:"-" }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <table class="table table-sm table-borderless">
+                            <tr>
+                                <td width="150"><i class="fas fa-calendar me-2 text-muted"></i>Tahun Ajaran</td>
+                                <td>{{ teacher.academic_year }}</td>
+                            </tr>
+                            <tr>
+                                <td><i class="fas fa-toggle-on me-2 text-muted"></i>Status</td>
+                                <td>
+                                    {% if teacher.is_active %}
+                                    <span class="badge bg-success">Aktif</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">Nonaktif</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><i class="fas fa-user me-2 text-muted"></i>Akun Login</td>
+                                <td>
+                                    {% if teacher.user %}
+                                    <span class="badge bg-info">{{ teacher.user.username }}</span>
+                                    {% else %}
+                                    <span class="text-muted">Belum ada</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Stats Row -->
+<div class="row g-3 mb-3">
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <h4 class="mb-1">{{ summary.total_days }}</h4>
+                <p class="text-muted mb-0 small">Total Hari</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <h4 class="mb-1">{{ summary.total_jp }}</h4>
+                <p class="text-muted mb-0 small">Total JP</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <h4 class="mb-1 text-success">{{ summary.hadir }}</h4>
+                <p class="text-muted mb-0 small">JP Hadir</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <h4 class="mb-1 text-primary">{{ summary.attendance_rate }}%</h4>
+                <p class="text-muted mb-0 small">Persentase</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Schedules & Attendance -->
+<div class="row g-3">
+    <!-- Weekly Schedule -->
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-calendar-week me-2"></i>Jadwal Mingguan</span>
+                <span class="badge bg-primary">{{ teacher.total_jp_per_week }} JP/Minggu</span>
+            </div>
+            <div class="card-body">
+                {% if schedules %}
+                <div class="list-group list-group-flush">
+                    {% for schedule in schedules %}
+                    <div class="list-group-item px-0">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <div class="fw-semibold">{{ schedule.get_day_of_week_display }}</div>
+                                <small class="text-muted">
+                                    {{ schedule.jp_range_display }}
+                                    {% if schedule.subject %} - {{ schedule.subject }}{% endif %}
+                                </small>
+                                {% if schedule.is_piket %}
+                                <span class="badge bg-info badge-sm ms-1">Piket</span>
+                                {% endif %}
+                            </div>
+                            <span class="badge bg-primary">{{ schedule.jp_count }} JP</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <hr>
+                
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="fw-semibold">Total JP/Minggu:</span>
+                    <span class="badge bg-success" style="font-size: 1rem;">{{ teacher.total_jp_per_week }} JP</span>
+                </div>
+                {% else %}
+                <div class="text-center text-muted py-3">
+                    <i class="fas fa-calendar-times fa-2x mb-2 opacity-25"></i>
+                    <p class="mb-0 small">Belum ada jadwal</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Attendance History -->
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-history me-2"></i>Riwayat Absensi
+            </div>
+            <div class="card-body p-0">
+                {% if records %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Tanggal</th>
+                                <th>Total JP</th>
+                                <th>Hadir</th>
+                                <th>Tidak Hadir</th>
+                                <th>Keterangan</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for attendance in records %}
+                            <tr>
+                                <td>{{ attendance.date|date:"d M Y" }}</td>
+                                <td>{{ attendance.total_jp }}</td>
+                                <td>
+                                    <span class="badge bg-success">{{ attendance.total_hadir }}</span>
+                                </td>
+                                <td>
+                                    {% if attendance.total_sakit > 0 %}
+                                    <span class="badge bg-warning">S:{{ attendance.total_sakit }}</span>
+                                    {% endif %}
+                                    {% if attendance.total_izin > 0 %}
+                                    <span class="badge bg-info">I:{{ attendance.total_izin }}</span>
+                                    {% endif %}
+                                    {% if attendance.total_alpa > 0 %}
+                                    <span class="badge bg-danger">A:{{ attendance.total_alpa }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if attendance.notes %}
+                                    <small class="text-muted">{{ attendance.notes|truncatewords:10 }}</small>
+                                    {% else %}
+                                    <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Pagination -->
+                {% if records.has_other_pages %}
+                <div class="card-footer">
+                    <nav>
+                        <ul class="pagination pagination-sm mb-0 justify-content-center">
+                            {% if records.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ records.previous_page_number }}">
+                                    <i class="fas fa-chevron-left"></i>
+                                </a>
+                            </li>
+                            {% endif %}
+                            
+                            <li class="page-item active">
+                                <span class="page-link">{{ records.number }} / {{ records.paginator.num_pages }}</span>
+                            </li>
+                            
+                            {% if records.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ records.next_page_number }}">
+                                    <i class="fas fa-chevron-right"></i>
+                                </a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                </div>
+                {% endif %}
+                
+                {% else %}
+                <div class="text-center py-5 text-muted">
+                    <i class="fas fa-inbox fa-3x mb-3 opacity-25"></i>
+                    <p>Belum ada riwayat absensi</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

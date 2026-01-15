@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+
+{% block title %}Hapus Ustadz - SIPA Beta{% endblock %}
+
+{% block page_title %}Hapus Ustadz{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'teacher_dashboard' %}">Dashboard Ustadz</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'teacher_list' %}">Data Ustadz</a></li>
+        <li class="breadcrumb-item active">Hapus</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <i class="fas fa-exclamation-triangle me-2"></i>Konfirmasi Hapus
+            </div>
+            <div class="card-body">
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    <strong>Peringatan!</strong> Tindakan ini tidak dapat dibatalkan.
+                </div>
+                
+                <p class="mb-3">Apakah Anda yakin ingin menghapus ustadz berikut?</p>
+                
+                <div class="card bg-light">
+                    <div class="card-body">
+                        <table class="table table-sm table-borderless mb-0">
+                            <tr>
+                                <td width="120"><strong>ID Ustadz</strong></td>
+                                <td>{{ teacher.teacher_id }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Nama</strong></td>
+                                <td>{{ teacher.name }}</td>
+                            </tr>
+                            {% if teacher.subjects %}
+                            <tr>
+                                <td><strong>Mata Pelajaran</strong></td>
+                                <td>{{ teacher.subjects }}</td>
+                            </tr>
+                            {% endif %}
+                            <tr>
+                                <td><strong>Tahun Ajaran</strong></td>
+                                <td>{{ teacher.academic_year }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+                
+                <div class="alert alert-info mt-3 mb-0">
+                    <small>
+                        <i class="fas fa-info-circle me-1"></i>
+                        Data jadwal dan riwayat absensi ustadz ini juga akan terhapus.
+                    </small>
+                </div>
+            </div>
+            <div class="card-footer">
+                <form method="post" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash me-1"></i>Ya, Hapus
+                    </button>
+                    <a href="{% url 'teacher_list' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-times me-1"></i>Batal
+                    </a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

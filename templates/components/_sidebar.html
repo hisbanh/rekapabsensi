@@ -48,6 +48,39 @@
             </div>
         </div>
         
+        <!-- Teacher/Ustadz Section -->
+        <div class="nav-section">
+            <div class="nav-section-title">Absensi Ustadz</div>
+            
+            <div class="nav-item">
+                <a href="{% url 'teacher_dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'teacher_dashboard' %}active{% endif %}">
+                    <i class="fas fa-chalkboard-teacher"></i>
+                    <span>Dashboard Ustadz</span>
+                </a>
+            </div>
+            
+            <div class="nav-item">
+                <a href="{% url 'teacher_attendance_input' %}" class="nav-link {% if 'teacher_attendance' in request.resolver_match.url_name %}active{% endif %}">
+                    <i class="fas fa-user-check"></i>
+                    <span>Input Absensi Ustadz</span>
+                </a>
+            </div>
+            
+            <div class="nav-item">
+                <a href="{% url 'teacher_attendance_report' %}" class="nav-link {% if request.resolver_match.url_name == 'teacher_attendance_report' %}active{% endif %}">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Laporan Ustadz</span>
+                </a>
+            </div>
+            
+            <div class="nav-item">
+                <a href="{% url 'teacher_list' %}" class="nav-link {% if 'teacher_list' in request.resolver_match.url_name or 'teacher_detail' in request.resolver_match.url_name %}active{% endif %}">
+                    <i class="fas fa-user-tie"></i>
+                    <span>Data Ustadz</span>
+                </a>
+            </div>
+        </div>
+        
         <!-- Management Section -->
         <div class="nav-section">
             <div class="nav-section-title">Manajemen</div>

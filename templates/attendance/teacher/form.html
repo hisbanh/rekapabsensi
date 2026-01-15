@@ -1,0 +1,135 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} - SIPA Beta{% endblock %}
+
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'teacher_dashboard' %}">Dashboard Ustadz</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'teacher_list' %}">Data Ustadz</a></li>
+        <li class="breadcrumb-item active">{{ title }}</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-user-tie me-2"></i>{{ title }}
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        {{ form.non_field_errors }}
+                    </div>
+                    {% endif %}
+                    
+                    <div class="row g-3">
+                        <!-- Teacher ID -->
+                        <div class="col-md-6">
+                            <label for="{{ form.teacher_id.id_for_label }}" class="form-label">
+                                ID Ustadz <span class="text-danger">*</span>
+                            </label>
+                            {{ form.teacher_id }}
+                            {% if form.teacher_id.errors %}
+                            <div class="text-danger small mt-1">{{ form.teacher_id.errors }}</div>
+                            {% endif %}
+                            <small class="form-text text-muted">Contoh: U001, U002</small>
+                        </div>
+                        
+                        <!-- NIP -->
+                        <div class="col-md-6">
+                            <label for="{{ form.nip.id_for_label }}" class="form-label">
+                                NIP
+                            </label>
+                            {{ form.nip }}
+                            {% if form.nip.errors %}
+                            <div class="text-danger small mt-1">{{ form.nip.errors }}</div>
+                            {% endif %}
+                            <small class="form-text text-muted">18 digit (opsional)</small>
+                        </div>
+                        
+                        <!-- Name -->
+                        <div class="col-12">
+                            <label for="{{ form.name.id_for_label }}" class="form-label">
+                                Nama Lengkap <span class="text-danger">*</span>
+                            </label>
+                            {{ form.name }}
+                            {% if form.name.errors %}
+                            <div class="text-danger small mt-1">{{ form.name.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Subjects -->
+                        <div class="col-12">
+                            <label for="{{ form.subjects.id_for_label }}" class="form-label">
+                                Mata Pelajaran
+                            </label>
+                            {{ form.subjects }}
+                            {% if form.subjects.errors %}
+                            <div class="text-danger small mt-1">{{ form.subjects.errors }}</div>
+                            {% endif %}
+                            <small class="form-text text-muted">Pisahkan dengan koma. Contoh: Bahasa Arab, Tahfidz, Fiqih</small>
+                        </div>
+                        
+                        <!-- User Account -->
+                        <div class="col-md-6">
+                            <label for="{{ form.user.id_for_label }}" class="form-label">
+                                Akun Login
+                            </label>
+                            {{ form.user }}
+                            {% if form.user.errors %}
+                            <div class="text-danger small mt-1">{{ form.user.errors }}</div>
+                            {% endif %}
+                            <small class="form-text text-muted">Link ke akun user (opsional)</small>
+                        </div>
+                        
+                        <!-- Academic Year -->
+                        <div class="col-md-6">
+                            <label for="{{ form.academic_year.id_for_label }}" class="form-label">
+                                Tahun Ajaran <span class="text-danger">*</span>
+                            </label>
+                            {{ form.academic_year }}
+                            {% if form.academic_year.errors %}
+                            <div class="text-danger small mt-1">{{ form.academic_year.errors }}</div>
+                            {% endif %}
+                            <small class="form-text text-muted">Contoh: 2024/2025</small>
+                        </div>
+                        
+                        <!-- Is Active -->
+                        <div class="col-12">
+                            <div class="form-check">
+                                {{ form.is_active }}
+                                <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
+                                    Aktif
+                                </label>
+                            </div>
+                            {% if form.is_active.errors %}
+                            <div class="text-danger small mt-1">{{ form.is_active.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <hr class="my-4">
+                    
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i>Simpan
+                        </button>
+                        <a href="{% url 'teacher_list' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-1"></i>Batal
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

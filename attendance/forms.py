@@ -3,7 +3,7 @@ from django.utils import timezone
 from django.contrib.auth.models import User
 from .models import (
     AttendanceRecord, AttendanceStatus, Student, Classroom, 
-    AcademicLevel, Holiday, DaySchedule
+    AcademicLevel, Holiday, DaySchedule, Teacher, TeacherSchedule
 )
 
 
@@ -541,5 +541,252 @@ class JPReportFilterForm(forms.Form):
             max_days = 93  # ~3 months
             if (end_date - start_date).days > max_days:
                 raise forms.ValidationError(f'Rentang tanggal maksimal {max_days} hari')
+        
+        return cleaned_data
+
+
+
+# ============================================
+# Teacher Management Forms
+# ============================================
+
+class TeacherForm(forms.ModelForm):
+    """Form for creating and editing teachers"""
+    
+    class Meta:
+        model = Teacher
+        fields = [
+            'teacher_id', 'nip', 'name', 'user', 'subjects',
+            'academic_year', 'is_active'
+        ]
+        widgets = {
+            'teacher_id': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Contoh: U001'
+            }),
+            'nip': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': '18 digit NIP'
+            }),
+            'name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Nama lengkap ustadz'
+            }),
+            'user': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'subjects': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 2,
+                'placeholder': 'Mata pelajaran (pisahkan dengan koma)'
+            }),
+            'academic_year': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': '2024/2025'
+            }),
+            'is_active': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Filter only active users without teacher profile
+        self.fields['user'].queryset = User.objects.filter(
+            is_active=True,
+            teacher_profile__isnull=True
+        ) | User.objects.filter(
+            id=self.instance.user_id if self.instance and self.instance.user_id else None
+        )
+        self.fields['user'].required = False
+
+
+class TeacherScheduleForm(forms.ModelForm):
+    """Form for creating and editing teacher schedules"""
+    
+    jp_numbers_display = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Contoh: 1,2,3 atau 1-5'
+        }),
+        help_text='Masukkan nomor JP (pisahkan dengan koma atau gunakan range)'
+    )
+    
+    class Meta:
+        model = TeacherSchedule
+        fields = ['teacher', 'day_of_week', 'subject', 'is_piket', 'academic_year', 'notes']
+        widgets = {
+            'teacher': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'day_of_week': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'subject': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Mata pelajaran'
+            }),
+            'is_piket': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+            'academic_year': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': '2024/2025'
+            }),
+            'notes': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 2,
+                'placeholder': 'Catatan tambahan'
+            }),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['teacher'].queryset = Teacher.objects.filter(is_active=True).order_by('name')
+        
+        # Set initial jp_numbers_display from instance
+        if self.instance and self.instance.pk and self.instance.jp_numbers:
+            self.initial['jp_numbers_display'] = ','.join(map(str, self.instance.jp_numbers))
+    
+    def clean_jp_numbers_display(self):
+        """Parse JP numbers from display string"""
+        jp_str = self.cleaned_data.get('jp_numbers_display', '').strip()
+        
+        if not jp_str:
+            return []
+        
+        jp_numbers = []
+        
+        try:
+            # Split by comma
+            parts = jp_str.split(',')
+            
+            for part in parts:
+                part = part.strip()
+                
+                # Check if it's a range (e.g., "1-5")
+                if '-' in part:
+                    start, end = part.split('-')
+                    start = int(start.strip())
+                    end = int(end.strip())
+                    
+                    if start > end:
+                        raise forms.ValidationError(f"Range tidak valid: {part}")
+                    
+                    jp_numbers.extend(range(start, end + 1))
+                else:
+                    # Single number
+                    jp_numbers.append(int(part))
+            
+            # Remove duplicates and sort
+            jp_numbers = sorted(set(jp_numbers))
+            
+            # Validate range
+            for jp in jp_numbers:
+                if jp < 1 or jp > 10:
+                    raise forms.ValidationError(f"Nomor JP harus antara 1-10, ditemukan: {jp}")
+            
+            return jp_numbers
+            
+        except ValueError:
+            raise forms.ValidationError("Format JP tidak valid. Gunakan angka, koma, atau range (contoh: 1,2,3 atau 1-5)")
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        jp_numbers = cleaned_data.get('jp_numbers_display', [])
+        teacher = cleaned_data.get('teacher')
+        day_of_week = cleaned_data.get('day_of_week')
+        
+        if jp_numbers and teacher and day_of_week is not None:
+            # Check for overlapping JP with other schedules on the same day
+            existing_schedules = TeacherSchedule.objects.filter(
+                teacher=teacher,
+                day_of_week=day_of_week
+            )
+            
+            # Exclude current instance if editing
+            if self.instance and self.instance.pk:
+                existing_schedules = existing_schedules.exclude(pk=self.instance.pk)
+            
+            # Check for overlap
+            for schedule in existing_schedules:
+                if schedule.jp_numbers:
+                    overlap = set(jp_numbers) & set(schedule.jp_numbers)
+                    if overlap:
+                        day_name = dict(TeacherSchedule.DAY_CHOICES).get(day_of_week, 'hari ini')
+                        overlap_str = ', '.join(map(str, sorted(overlap)))
+                        raise forms.ValidationError(
+                            f'JP {overlap_str} sudah digunakan untuk jadwal lain di hari {day_name} '
+                            f'({schedule.subject or "tanpa mata pelajaran"}). '
+                            f'Silakan pilih JP yang berbeda.'
+                        )
+        
+        return cleaned_data
+    
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        
+        # Set jp_numbers from parsed display
+        instance.jp_numbers = self.cleaned_data.get('jp_numbers_display', [])
+        
+        if commit:
+            instance.save()
+        
+        return instance
+
+
+class TeacherAttendanceFilterForm(forms.Form):
+    """Form for filtering teacher attendance reports"""
+    
+    teacher = forms.ModelChoiceField(
+        required=False,
+        queryset=Teacher.objects.none(),
+        empty_label='Semua Ustadz',
+        widget=forms.Select(attrs={
+            'class': 'form-select'
+        })
+    )
+    start_date = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={
+            'type': 'date',
+            'class': 'form-control'
+        })
+    )
+    end_date = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={
+            'type': 'date',
+            'class': 'form-control'
+        })
+    )
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # Set default dates (current month)
+        today = timezone.now().date()
+        first_day_of_month = today.replace(day=1)
+        
+        if not self.data.get('start_date'):
+            self.initial['start_date'] = first_day_of_month
+        if not self.data.get('end_date'):
+            self.initial['end_date'] = today
+        
+        # Populate teacher choices
+        self.fields['teacher'].queryset = Teacher.objects.filter(
+            is_active=True
+        ).order_by('name')
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        start_date = cleaned_data.get('start_date')
+        end_date = cleaned_data.get('end_date')
+        
+        # Validate date range
+        if start_date and end_date:
+            if start_date > end_date:
+                raise forms.ValidationError('Tanggal mulai tidak boleh lebih besar dari tanggal akhir')
         
         return cleaned_data
