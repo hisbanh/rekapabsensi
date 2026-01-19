@@ -266,8 +266,8 @@ class TeacherExportService:
     @staticmethod
     def export_to_pdf(teachers_data, start_date=None, end_date=None):
         """
-        Export teacher attendance report to PDF using HTML template
-        PROFESSIONAL version with WeasyPrint rendering
+        Export teacher attendance report to PDF using PROFESSIONAL ReportLab
+        with A4 paper size, chart, KPI styling, and modern layout
         
         Args:
             teachers_data: List of dicts with teacher and summary
@@ -278,19 +278,24 @@ class TeacherExportService:
             HttpResponse with PDF file
         """
         try:
-            from django.template.loader import render_to_string
+            from reportlab.platypus import Image, SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak
+            from reportlab.lib import colors
+            from reportlab.lib.pagesizes import A4
+            from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+            from reportlab.lib.enums import TA_CENTER, TA_LEFT
+            from reportlab.lib.units import cm
             import base64
             from io import BytesIO
             
-            # Lazy-load matplotlib
+            # Lazy load matplotlib
             MATPLOTLIB_AVAILABLE = False
             try:
                 import matplotlib
                 matplotlib.use('Agg')
                 import matplotlib.pyplot as plt
                 MATPLOTLIB_AVAILABLE = True
-            except ImportError as e:
-                logger.warning(f"Matplotlib not available: {e}. Charts will be skipped.")
+            except ImportError:
+                logger.warning("Matplotlib not available. Charts will be skipped.")
             
             # Default dates
             if not start_date:
@@ -298,80 +303,275 @@ class TeacherExportService:
             if not end_date:
                 end_date = timezone.now().date()
             
+            # Create PDF
+            buffer = BytesIO()
+            doc = SimpleDocTemplate(buffer, pagesize=A4, topMargin=0.8*cm, bottomMargin=0.8*cm, 
+                                   leftMargin=1*cm, rightMargin=1*cm)
+            
+            # Setup styles
+            styles = getSampleStyleSheet()
+            
+            # Custom styles
+            title_style = ParagraphStyle(
+                'CustomTitle',
+                parent=styles['Heading1'],
+                fontSize=24,
+                textColor=colors.HexColor('#1F4788'),
+                spaceAfter=3,
+                alignment=TA_CENTER,
+                fontName='Helvetica-Bold'
+            )
+            
+            subtitle_style = ParagraphStyle(
+                'CustomSubtitle',
+                parent=styles['Normal'],
+                fontSize=11,
+                textColor=colors.HexColor('#555555'),
+                spaceAfter=12,
+                alignment=TA_CENTER,
+                fontName='Helvetica'
+            )
+            
+            period_style = ParagraphStyle(
+                'Period',
+                parent=styles['Normal'],
+                fontSize=10,
+                textColor=colors.HexColor('#666666'),
+                spaceAfter=12,
+                alignment=TA_CENTER,
+                fontName='Helvetica-Oblique'
+            )
+            
+            section_style = ParagraphStyle(
+                'SectionTitle',
+                parent=styles['Heading2'],
+                fontSize=13,
+                textColor=colors.HexColor('#1F4788'),
+                spaceAfter=6,
+                spaceBefore=8,
+                fontName='Helvetica-Bold',
+                borderColor=colors.HexColor('#1F4788'),
+                borderWidth=2,
+                borderPadding=4
+            )
+            
+            # Container for elements
+            elements = []
+            
+            # Header
+            elements.append(Paragraph("PESANTREN YAUMI YOGYAKARTA", title_style))
+            elements.append(Paragraph("Sistem Informasi Presensi (SIPA Beta)", subtitle_style))
+            elements.append(Paragraph("LAPORAN KEHADIRAN GURU", ParagraphStyle(
+                'ReportTitle',
+                parent=styles['Heading1'],
+                fontSize=18,
+                textColor=colors.HexColor('#2C3E50'),
+                spaceAfter=3,
+                alignment=TA_CENTER,
+                fontName='Helvetica-Bold'
+            )))
+            
+            # Period
+            if start_date and end_date:
+                period_text = f"Periode: {start_date.strftime('%d %B %Y')} - {end_date.strftime('%d %B %Y')}"
+            else:
+                period_text = f"Tanggal: {timezone.now().strftime('%d %B %Y')}"
+            elements.append(Paragraph(period_text, period_style))
+            elements.append(Spacer(1, 0.3*cm))
+            
             # Calculate summary statistics
             total_teachers = len(teachers_data)
             total_hadir = sum(item['summary']['hadir'] for item in teachers_data)
             total_sakit = sum(item['summary']['sakit'] for item in teachers_data)
             total_izin = sum(item['summary']['izin'] for item in teachers_data)
             total_alpa = sum(item['summary']['alpa'] for item in teachers_data)
-            avg_attendance_rate = (
+            avg_attendance = (
                 sum(item['summary']['attendance_rate'] for item in teachers_data) / total_teachers
             ) if total_teachers > 0 else 0
             
-            # Generate pie chart as base64
-            pie_chart_url = None
+            # KPI Cards (simplified table-based approach)
+            kpi_data = [
+                [
+                    'HADIR',
+                    'SAKIT',
+                    'IZIN',
+                    'ALPA'
+                ],
+                [
+                    str(total_hadir),
+                    str(total_sakit),
+                    str(total_izin),
+                    str(total_alpa)
+                ]
+            ]
+            
+            kpi_table = Table(kpi_data, colWidths=[3*cm, 3*cm, 3*cm, 3*cm])
+            kpi_table.setStyle(TableStyle([
+                # Header
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1F4788')),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, 0), 11),
+                ('PADDING', (0, 0), (-1, 0), 8),
+                
+                # Data rows
+                ('BACKGROUND', (0, 1), (0, 1), colors.HexColor('#D5F4E6')),
+                ('BACKGROUND', (1, 1), (1, 1), colors.HexColor('#FEF5E7')),
+                ('BACKGROUND', (2, 1), (2, 1), colors.HexColor('#D6EAF8')),
+                ('BACKGROUND', (3, 1), (3, 1), colors.HexColor('#FADBD8')),
+                
+                ('TEXTCOLOR', (0, 1), (0, 1), colors.HexColor('#27AE60')),
+                ('TEXTCOLOR', (1, 1), (1, 1), colors.HexColor('#F39C12')),
+                ('TEXTCOLOR', (2, 1), (2, 1), colors.HexColor('#2980B9')),
+                ('TEXTCOLOR', (3, 1), (3, 1), colors.HexColor('#E74C3C')),
+                
+                ('ALIGN', (0, 1), (-1, 1), 'CENTER'),
+                ('FONTNAME', (0, 1), (-1, 1), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 1), (-1, 1), 16),
+                ('PADDING', (0, 1), (-1, 1), 12),
+                
+                ('GRID', (0, 0), (-1, -1), 1.5, colors.HexColor('#ECEFF1')),
+            ]))
+            
+            elements.append(kpi_table)
+            elements.append(Spacer(1, 0.4*cm))
+            
+            # Attendance percentage
+            elements.append(Paragraph(f"Rata-rata Tingkat Kehadiran: <b>{avg_attendance:.1f}%</b>", ParagraphStyle(
+                'Average',
+                parent=styles['Normal'],
+                fontSize=12,
+                textColor=colors.HexColor('#27AE60'),
+                alignment=TA_CENTER,
+                spaceAfter=6
+            )))
+            
+            # Generate chart if matplotlib available
+            chart_image = None
             if MATPLOTLIB_AVAILABLE:
                 try:
-                    fig, ax = plt.subplots(figsize=(6, 4), dpi=100)
+                    fig, ax = plt.subplots(figsize=(5, 3.5), dpi=100)
                     labels = ['Hadir', 'Sakit', 'Izin', 'Alpa']
                     sizes = [total_hadir, total_sakit, total_izin, total_alpa]
                     colors_pie = ['#27ae60', '#f39c12', '#2980b9', '#e74c3c']
                     explode = (0.05, 0, 0, 0)
                     
                     ax.pie(sizes, explode=explode, labels=labels, colors=colors_pie, autopct='%1.1f%%',
-                           shadow=True, startangle=90, textprops={'fontsize': 10, 'weight': 'bold'})
+                           shadow=True, startangle=90, textprops={'fontsize': 9, 'weight': 'bold'})
                     ax.axis('equal')
                     
-                    buffer_chart = BytesIO()
-                    plt.savefig(buffer_chart, format='png', bbox_inches='tight', dpi=100)
-                    buffer_chart.seek(0)
-                    chart_base64 = base64.b64encode(buffer_chart.getvalue()).decode()
+                    chart_buffer = BytesIO()
+                    plt.savefig(chart_buffer, format='png', bbox_inches='tight', dpi=100)
+                    chart_buffer.seek(0)
                     plt.close(fig)
-                    pie_chart_url = f"data:image/png;base64,{chart_base64}"
+                    
+                    chart_image = Image(chart_buffer, width=6*cm, height=4.5*cm)
+                    elements.append(chart_image)
+                    elements.append(Spacer(1, 0.3*cm))
                 except Exception as chart_error:
                     logger.warning(f"Chart generation failed: {chart_error}")
-                    pie_chart_url = None
-            else:
-                logger.info("Matplotlib not available. Skipping chart generation.")
             
-            # Prepare context for template
-            context = {
-                'start_date': start_date,
-                'end_date': end_date,
-                'teachers_data': teachers_data,
-                'total_teachers': total_teachers,
-                'stats': {
-                    'total_hadir': total_hadir,
-                    'total_sakit': total_sakit,
-                    'total_izin': total_izin,
-                    'total_alpa': total_alpa,
-                    'attendance_rate': avg_attendance_rate,
-                    'hadir_percentage': (total_hadir / (total_hadir + total_sakit + total_izin + total_alpa) * 100) if (total_hadir + total_sakit + total_izin + total_alpa) > 0 else 0,
-                    'sakit_percentage': (total_sakit / (total_hadir + total_sakit + total_izin + total_alpa) * 100) if (total_hadir + total_sakit + total_izin + total_alpa) > 0 else 0,
-                    'izin_percentage': (total_izin / (total_hadir + total_sakit + total_izin + total_alpa) * 100) if (total_hadir + total_sakit + total_izin + total_alpa) > 0 else 0,
-                    'alpa_percentage': (total_alpa / (total_hadir + total_sakit + total_izin + total_alpa) * 100) if (total_hadir + total_sakit + total_izin + total_alpa) > 0 else 0,
-                },
-                'pie_chart_url': pie_chart_url,
-                'print_date': timezone.now(),
-            }
+            elements.append(Spacer(1, 0.3*cm))
             
-            # Render HTML from template
-            html_content = render_to_string('attendance/teacher/report_summary_pdf.html', context)
+            # Detail Table
+            elements.append(Paragraph("DETAIL KEHADIRAN GURU", section_style))
+            elements.append(Spacer(1, 0.2*cm))
             
-            # Try WeasyPrint first (professional quality)
-            if WEASYPRINT_AVAILABLE:
-                try:
-                    pdf_bytes = weasyprint.HTML(string=html_content).write_pdf()
-                    response = HttpResponse(pdf_bytes, content_type='application/pdf')
-                    response['Content-Disposition'] = f'attachment; filename="laporan_absensi_guru_{timezone.now().strftime("%Y%m%d_%H%M%S")}.pdf"'
-                    return response
-                except Exception as weasy_error:
-                    logger.warning(f"WeasyPrint rendering failed: {weasy_error}. Falling back to HTML preview.")
+            table_data = [[
+                'No',
+                'ID Guru',
+                'Nama',
+                'Hadir',
+                'Sakit',
+                'Izin',
+                'Alpa',
+                'Kehadiran (%)'
+            ]]
             
-            # Fallback to HTML response
-            logger.info("WeasyPrint not available or failed. Returning HTML preview.")
-            response = HttpResponse(html_content, content_type='text/html; charset=utf-8')
-            response['Content-Disposition'] = f'attachment; filename="laporan_absensi_guru_{timezone.now().strftime("%Y%m%d_%H%M%S")}.html"'
+            # Add data rows
+            for idx, item in enumerate(teachers_data, 1):
+                teacher = item['teacher']
+                summary = item['summary']
+                
+                table_data.append([
+                    str(idx),
+                    str(teacher.teacher_id)[:8],
+                    teacher.name[:20],
+                    str(summary['hadir']),
+                    str(summary['sakit']),
+                    str(summary['izin']),
+                    str(summary['alpa']),
+                    f"{summary['attendance_rate']:.1f}%"
+                ])
+            
+            # Add average row
+            if teachers_data:
+                table_data.append([
+                    '',
+                    '',
+                    'RATA-RATA',
+                    f"{total_hadir/total_teachers:.1f}" if total_teachers > 0 else '0',
+                    f"{total_sakit/total_teachers:.1f}" if total_teachers > 0 else '0',
+                    f"{total_izin/total_teachers:.1f}" if total_teachers > 0 else '0',
+                    f"{total_alpa/total_teachers:.1f}" if total_teachers > 0 else '0',
+                    f"{avg_attendance:.1f}%"
+                ])
+            
+            # Create table
+            table = Table(table_data, colWidths=[0.6*cm, 1.2*cm, 3*cm, 0.9*cm, 0.9*cm, 0.9*cm, 0.9*cm, 1.2*cm])
+            
+            # Style table
+            table.setStyle(TableStyle([
+                # Header row
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1F4788')),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, 0), 9),
+                ('PADDING', (0, 0), (-1, 0), 6),
+                
+                # Data rows
+                ('FONTNAME', (0, 1), (-1, -2), 'Helvetica'),
+                ('FONTSIZE', (0, 1), (-1, -2), 8),
+                ('ALIGN', (0, 1), (-1, -2), 'CENTER'),
+                ('ALIGN', (2, 1), (2, -2), 'LEFT'),
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#ECEFF1')),
+                
+                # Alternating row colors
+                ('ROWBACKGROUNDS', (0, 1), (-1, -2), [colors.white, colors.HexColor('#F5F8FA')]),
+                
+                # Average row
+                ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor('#E8F0F7')),
+                ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, -1), (-1, -1), 9),
+                ('ALIGN', (0, -1), (-1, -1), 'CENTER'),
+                ('TEXTCOLOR', (0, -1), (-1, -1), colors.HexColor('#1F4788')),
+                ('PADDING', (0, -1), (-1, -1), 6),
+            ]))
+            
+            elements.append(table)
+            
+            # Footer
+            elements.append(Spacer(1, 0.4*cm))
+            footer_text = f"Generated: {timezone.now().strftime('%d %B %Y at %H:%M')} | Total Guru: {total_teachers}"
+            elements.append(Paragraph(footer_text, ParagraphStyle(
+                'Footer',
+                parent=styles['Normal'],
+                fontSize=8,
+                textColor=colors.HexColor('#999999'),
+                alignment=TA_CENTER
+            )))
+            
+            # Build PDF
+            doc.build(elements)
+            
+            # Return PDF response
+            buffer.seek(0)
+            response = HttpResponse(buffer.getvalue(), content_type='application/pdf')
+            response['Content-Disposition'] = f'attachment; filename="laporan_kehadiran_guru_{timezone.now().strftime("%Y%m%d_%H%M%S")}.pdf"'
+            
             return response
             
         except Exception as e:
