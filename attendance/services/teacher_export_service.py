@@ -9,7 +9,7 @@ from django.utils import timezone
 from django.template.loader import render_to_string
 import logging
 
-# PDF imports
+# PDF imports - ReportLab (untuk backward compatibility)
 from reportlab.lib.pagesizes import letter, A4
 from reportlab.lib.units import inch, cm
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
@@ -19,6 +19,14 @@ from reportlab.lib import colors
 from reportlab.pdfgen import canvas
 
 logger = logging.getLogger(__name__)
+
+# WeasyPrint untuk HTML→PDF conversion
+WEASYPRINT_AVAILABLE = False
+try:
+    import weasyprint
+    WEASYPRINT_AVAILABLE = True
+except (ImportError, OSError) as e:
+    logger.debug(f"WeasyPrint not available: {str(e)}. HTML export will fallback to template preview.")
 
 
 class TeacherExportService:
@@ -806,3 +814,234 @@ class TeacherExportService:
         elements.append(table)
         
         return elements
+
+    @staticmethod
+    def export_teacher_attendance_pdf_html(teacher, start_date=None, end_date=None):
+        """
+        Export individual teacher attendance report to PDF menggunakan HTML+CSS template
+        Menghasilkan desain modern, minimalis dengan better visual quality
+        
+        Args:
+            teacher: Teacher instance
+            start_date: Start date untuk report
+            end_date: End date untuk report
+            
+        Returns:
+            HttpResponse dengan PDF file atau HTML preview
+        """
+        from attendance.services.teacher_service import TeacherService
+        from attendance.models import TeacherDailyAttendance
+        
+        try:
+            # Default dates
+            if not start_date:
+                start_date = timezone.now().date()
+            if not end_date:
+                end_date = timezone.now().date()
+            
+            # Get teacher attendance data
+            summary = TeacherService.get_teacher_attendance_summary(
+                teacher, start_date=start_date, end_date=end_date
+            )
+            
+            # Get daily records
+            daily_records = TeacherDailyAttendance.objects.filter(
+                teacher=teacher,
+                date__gte=start_date,
+                date__lte=end_date
+            ).order_by('date')
+            
+            # Format daily records dengan detail
+            formatted_records = []
+            day_names = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu']
+            
+            status_map = {
+                'H': 'Hadir',
+                'S': 'Sakit',
+                'I': 'Izin',
+                'A': 'Alpa'
+            }
+            
+            status_code_map = {
+                'H': 'hadir',
+                'S': 'sakit',
+                'I': 'izin',
+                'A': 'alpa'
+            }
+            
+            for record in daily_records:
+                # Determine primary status (most common on that day)
+                if record.jp_statuses:
+                    statuses = list(record.jp_statuses.values())
+                    # Priority: A > I > S > H
+                    if 'A' in statuses:
+                        primary_status = 'A'
+                    elif 'I' in statuses:
+                        primary_status = 'I'
+                    elif 'S' in statuses:
+                        primary_status = 'S'
+                    else:
+                        primary_status = 'H'
+                else:
+                    primary_status = 'A'
+                
+                formatted_records.append({
+                    'date': record.date,
+                    'day_name': day_names[record.date.weekday()],
+                    'status': status_map.get(primary_status, 'Alpa'),
+                    'status_code': status_code_map.get(primary_status, 'alpa'),
+                    'jp_details': {
+                        f"JP{k}": status_map.get(v, v)
+                        for k, v in (record.jp_statuses.items() if record.jp_statuses else {}).items()
+                    },
+                    'notes': getattr(record, 'notes', '')
+                })
+            
+            # Determine performance level berdasarkan attendance rate
+            attendance_rate = summary.get('hadir_rate', 0)
+            if attendance_rate >= 90:
+                performance_level = 'excellent'
+                performance_label = 'SANGAT BAIK (90%+)'
+            elif attendance_rate >= 80:
+                performance_level = 'good'
+                performance_label = 'BAIK (80-89%)'
+            elif attendance_rate >= 70:
+                performance_level = 'fair'
+                performance_label = 'CUKUP (70-79%)'
+            else:
+                performance_level = 'poor'
+                performance_label = 'KURANG (<70%)'
+            
+            # Context untuk template
+            context = {
+                'teacher': teacher,
+                'start_date': start_date,
+                'end_date': end_date,
+                'print_date': timezone.now(),
+                'stats': {
+                    'total_hadir': summary.get('hadir', 0),
+                    'total_sakit': summary.get('sakit', 0),
+                    'total_izin': summary.get('izin', 0),
+                    'total_alpa': summary.get('alpa', 0),
+                    'hadir_percentage': summary.get('hadir_rate', 0),
+                    'sakit_percentage': summary.get('sakit_rate', 0),
+                    'izin_percentage': summary.get('izin_rate', 0),
+                    'alpa_percentage': summary.get('alpa_rate', 0),
+                    'attendance_rate': summary.get('hadir_rate', 0),
+                    'total_working_days': (end_date - start_date).days + 1,
+                },
+                'performance_level': performance_level,
+                'performance_label': performance_label,
+                'daily_records': formatted_records,
+            }
+            
+            # Render HTML template
+            html_content = render_to_string('attendance/teacher/report_pdf.html', context)
+            
+            # Convert HTML to PDF menggunakan WeasyPrint
+            if WEASYPRINT_AVAILABLE:
+                try:
+                    pdf_file = weasyprint.HTML(string=html_content, base_url='/static/')
+                    pdf_bytes = pdf_file.write_pdf()
+                    
+                    # Return PDF response
+                    response = HttpResponse(pdf_bytes, content_type='application/pdf')
+                    filename = f"laporan_{teacher.teacher_id}_{timezone.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+                    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+                    
+                    return response
+                    
+                except Exception as e:
+                    logger.error(f"WeasyPrint conversion error: {str(e)}")
+                    # Fall back to HTML preview
+                    response = HttpResponse(html_content, content_type='text/html; charset=utf-8')
+                    response['Content-Disposition'] = f'inline; filename="laporan_{teacher.teacher_id}.html"'
+                    return response
+            else:
+                # Return HTML untuk preview jika WeasyPrint tidak tersedia
+                logger.info("WeasyPrint not available, returning HTML for preview")
+                response = HttpResponse(html_content, content_type='text/html; charset=utf-8')
+                response['Content-Disposition'] = f'inline; filename="laporan_{teacher.teacher_id}.html"'
+                return response
+            
+        except Exception as e:
+            logger.error(f"Error exporting teacher attendance PDF: {str(e)}")
+            raise Exception(f"Gagal export laporan ustadz: {str(e)}")
+    
+    @staticmethod
+    def export_all_teachers_pdf_html(teachers=None, start_date=None, end_date=None):
+        """
+        Export laporan semua guru ke PDF menggunakan HTML+CSS
+        
+        Args:
+            teachers: List of Teacher instances (None = all teachers)
+            start_date: Start date untuk report
+            end_date: End date untuk report
+            
+        Returns:
+            HttpResponse dengan PDF file
+        """
+        from attendance.models import Teacher
+        from attendance.services.teacher_service import TeacherService
+        
+        try:
+            # Default dates
+            if not start_date:
+                start_date = timezone.now().date()
+            if not end_date:
+                end_date = timezone.now().date()
+            
+            # Get all teachers jika tidak dispecify
+            if not teachers:
+                teachers = Teacher.objects.filter(is_active=True).order_by('name')
+            
+            # Siapkan context untuk template
+            all_teachers_data = []
+            
+            for teacher in teachers:
+                summary = TeacherService.get_teacher_attendance_summary(
+                    teacher, start_date=start_date, end_date=end_date
+                )
+                
+                all_teachers_data.append({
+                    'teacher': teacher,
+                    'summary': summary,
+                })
+            
+            # Context
+            context = {
+                'teachers': all_teachers_data,
+                'start_date': start_date,
+                'end_date': end_date,
+                'print_date': timezone.now(),
+                'title': 'Laporan Kehadiran Semua Guru',
+            }
+            
+            # Render HTML template
+            html_content = render_to_string('attendance/teacher/report_summary_pdf.html', context)
+            
+            # Check WeasyPrint availability
+            if WEASYPRINT_AVAILABLE:
+                try:
+                    pdf_file = weasyprint.HTML(string=html_content, base_url='/static/')
+                    pdf_bytes = pdf_file.write_pdf()
+                    
+                    response = HttpResponse(pdf_bytes, content_type='application/pdf')
+                    filename = f"laporan_semua_guru_{timezone.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+                    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+                    
+                    return response
+                    
+                except Exception as e:
+                    logger.error(f"WeasyPrint conversion error: {str(e)}")
+                    response = HttpResponse(html_content, content_type='text/html; charset=utf-8')
+                    response['Content-Disposition'] = f'inline; filename="laporan_semua_guru.html"'
+                    return response
+            else:
+                response = HttpResponse(html_content, content_type='text/html; charset=utf-8')
+                response['Content-Disposition'] = f'inline; filename="laporan_semua_guru.html"'
+                return response
+            
+        except Exception as e:
+            logger.error(f"Error exporting all teachers PDF: {str(e)}")
+            raise Exception(f"Gagal export laporan guru: {str(e)}")

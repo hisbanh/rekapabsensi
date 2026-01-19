@@ -264,8 +264,27 @@ class TeacherService:
             
             # Calculate percentage
             attendance_rate = 0.0
+            hadir_rate = 0.0
+            sakit_rate = 0.0
+            izin_rate = 0.0
+            alpa_rate = 0.0
+            
             if total_jp > 0:
                 attendance_rate = round((total_hadir / total_jp) * 100, 2)
+                hadir_rate = round((total_hadir / total_jp) * 100, 2)
+                sakit_rate = round((total_sakit / total_jp) * 100, 2)
+                izin_rate = round((total_izin / total_jp) * 100, 2)
+                alpa_rate = round((total_alpa / total_jp) * 100, 2)
+            
+            # Determine performance level
+            if hadir_rate >= 90:
+                performance_level = 'excellent'
+            elif hadir_rate >= 80:
+                performance_level = 'good'
+            elif hadir_rate >= 70:
+                performance_level = 'fair'
+            else:
+                performance_level = 'poor'
             
             return {
                 'total_days': queryset.count(),
@@ -279,6 +298,11 @@ class TeacherService:
                 'cuti': total_cuti,
                 'terlambat': total_terlambat,
                 'attendance_rate': attendance_rate,
+                'hadir_rate': hadir_rate,
+                'sakit_rate': sakit_rate,
+                'izin_rate': izin_rate,
+                'alpa_rate': alpa_rate,
+                'performance_level': performance_level,
                 'recent_records': queryset.order_by('-date')[:20]
             }
             

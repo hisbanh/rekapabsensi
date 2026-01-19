@@ -165,11 +165,28 @@
 
 <!-- Attendance Form -->
 <div class="card">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <span><i class="fas fa-clipboard-check me-2"></i>Form Absensi</span>
-        <button type="button" class="btn btn-sm btn-success" id="saveBtn">
-            <i class="fas fa-save me-1"></i>Simpan Absensi
-        </button>
+    <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <span><i class="fas fa-clipboard-check me-2"></i>Form Absensi</span>
+            <button type="button" class="btn btn-sm btn-success" id="saveBtn">
+                <i class="fas fa-save me-1"></i>Simpan Absensi
+            </button>
+        </div>
+        <!-- Action Buttons Row -->
+        {% if show_reset_button or show_mark_all_present %}
+        <div class="d-flex gap-2 flex-wrap">
+            {% if show_reset_button %}
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="resetBtn" title="Reset form ke kondisi awal">
+                <i class="fas fa-redo me-1"></i>Reset
+            </button>
+            {% endif %}
+            {% if show_mark_all_present and is_admin %}
+            <button type="button" class="btn btn-sm btn-outline-success" id="markAllPresentBtn" title="Tandai semua guru sebagai hadir">
+                <i class="fas fa-check-double me-1"></i>Semua Hadir
+            </button>
+            {% endif %}
+        </div>
+        {% endif %}
     </div>
     <div class="card-body p-0">
         <div class="attendance-grid">
@@ -364,6 +381,77 @@ async function saveAttendance() {
 // Event listeners
 document.getElementById('saveBtn').addEventListener('click', saveAttendance);
 document.getElementById('saveBtn2').addEventListener('click', saveAttendance);
+
+// Reset button handler
+const resetBtn = document.getElementById('resetBtn');
+if (resetBtn) {
+    resetBtn.addEventListener('click', function() {
+        if (confirm('Apakah Anda yakin ingin mereset form? Semua data yang sudah diinput akan dihapus.')) {
+            // Reset only status cells in the table (not in legend)
+            document.querySelectorAll('.attendance-table .status-cell').forEach(cell => {
+                cell.textContent = '-';
+                cell.dataset.status = '';
+                cell.className = 'status-cell status-empty';
+            });
+            
+            // Clear notes
+            document.querySelectorAll('[data-notes]').forEach(input => {
+                input.value = '';
+            });
+            
+            // Clear localStorage
+            localStorage.removeItem('teacher_attendance_draft_{{ date_str }}');
+            
+            alert('Form telah direset');
+        }
+    });
+}
+
+// Mark all present button handler
+const markAllPresentBtn = document.getElementById('markAllPresentBtn');
+if (markAllPresentBtn) {
+    markAllPresentBtn.addEventListener('click', async function() {
+        try {
+            const response = await fetch('{% url "api_mark_all_teachers_present" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({
+                    date: '{{ date_str }}'
+                })
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                // Update all status cells to 'H' (Hadir)
+                const jpRange = {{ jp_range|safe }};
+                document.querySelectorAll('.attendance-table tbody tr').forEach(row => {
+                    jpRange.forEach(jp => {
+                        const cell = row.querySelector(`.status-cell[data-jp="${jp}"]`);
+                        if (cell) {
+                            cell.textContent = 'H';
+                            cell.dataset.status = 'H';
+                            cell.className = 'status-cell status-H';
+                            if (cell.classList.contains('in-schedule')) {
+                                cell.classList.add('in-schedule');
+                            }
+                        }
+                    });
+                });
+                
+                alert('Semua guru berhasil ditandai sebagai Hadir');
+            } else {
+                alert('Error: ' + result.error);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Terjadi kesalahan saat menandai semua guru');
+        }
+    });
+}
 
 // Keyboard shortcuts
 document.addEventListener('keydown', function(e) {

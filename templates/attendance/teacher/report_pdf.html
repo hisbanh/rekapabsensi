@@ -1,0 +1,280 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laporan Kehadiran Guru - {{ teacher.name }}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #2c3e50;
+        }
+
+        @page {
+            size: A4;
+            margin: 2cm;
+            @bottom-center {
+                content: "Halaman " counter(page) " dari " counter(pages);
+                font-size: 10px;
+                color: #7f8c8d;
+            }
+        }
+
+        .page-break { page-break-after: always; }
+        .header { text-align: center; margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 3px solid #3498db; }
+        .school-name { font-size: 24px; font-weight: 700; color: #2c3e50; margin-bottom: 0.25rem; }
+        .school-info { font-size: 12px; color: #7f8c8d; margin-bottom: 1.5rem; }
+        .report-title { font-size: 20px; font-weight: 600; color: #3498db; margin-bottom: 0.5rem; }
+        .report-period { font-size: 13px; color: #34495e; }
+
+        .teacher-info { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem; padding: 1.5rem; background: #ecf0f1; border-radius: 8px; }
+        .info-item { font-size: 13px; }
+        .info-label { font-weight: 600; color: #34495e; margin-bottom: 0.25rem; }
+        .info-value { color: #2c3e50; font-size: 14px; }
+
+        .kpi-container { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2rem; }
+        .kpi-card { padding: 1.25rem; border-radius: 8px; text-align: center; background: white; border: 2px solid #ecf0f1; }
+        .kpi-card.hadir { border-color: #27ae60; background: #d5f4e6; }
+        .kpi-card.sakit { border-color: #f39c12; background: #fef5e7; }
+        .kpi-card.izin { border-color: #2980b9; background: #d6eaf8; }
+        .kpi-card.alpa { border-color: #e74c3c; background: #fadbd8; }
+        .kpi-label { font-size: 12px; font-weight: 600; color: #7f8c8d; text-transform: uppercase; margin-bottom: 0.5rem; }
+        .kpi-value { font-size: 28px; font-weight: 700; margin-bottom: 0.25rem; }
+        .kpi-hadir { color: #27ae60; }
+        .kpi-sakit { color: #f39c12; }
+        .kpi-izin { color: #2980b9; }
+        .kpi-alpa { color: #e74c3c; }
+        .kpi-percentage { font-size: 12px; color: #7f8c8d; }
+
+        .progress-section { margin-bottom: 2rem; padding: 1.5rem; background: white; border-radius: 8px; border-left: 4px solid #3498db; }
+        .progress-title { font-size: 14px; font-weight: 600; color: #2c3e50; margin-bottom: 1rem; }
+        .progress-bar { width: 100%; height: 24px; background: #ecf0f1; border-radius: 12px; overflow: hidden; margin-bottom: 0.5rem; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, #27ae60, #2ecc71); display: flex; align-items: center; justify-content: center; color: white; font-size: 11px; font-weight: 600; }
+        .progress-label { display: flex; justify-content: space-between; font-size: 12px; color: #7f8c8d; }
+
+        .charts-section { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem; }
+        .chart-card { padding: 1.5rem; background: white; border-radius: 8px; border: 1px solid #ecf0f1; }
+        .chart-title { font-size: 14px; font-weight: 600; color: #2c3e50; margin-bottom: 1rem; text-align: center; }
+        .chart-placeholder { width: 100%; height: 200px; background: #f5f7fa; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: #bdc3c7; font-size: 12px; text-align: center; }
+
+        .section-title { font-size: 16px; font-weight: 700; color: #2c3e50; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid #3498db; }
+        .detail-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            background: white;
+            font-size: 13px;
+            margin: 0 auto 1.5rem auto;
+            box-shadow: 0 2px 8px rgba(44,62,80,0.04);
+        }
+        .detail-table th, .detail-table td {
+            border: 1px solid #d0d7de;
+            padding: 0.7rem 0.5rem;
+            text-align: center;
+            vertical-align: middle;
+        }
+        .detail-table th {
+            background: #1F4788;
+            color: #fff;
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+        .detail-table td {
+            font-size: 13px;
+            color: #2c3e50;
+            background: #fff;
+        }
+        .detail-table tbody tr:nth-child(odd) td {
+            background: #f6f8fa;
+        }
+        .detail-table tfoot td {
+            background: #f0f4f8;
+            font-weight: 700;
+            color: #1F4788;
+            font-size: 14px;
+        }
+        /* Kolom proporsional */
+        .detail-table th:nth-child(1), .detail-table td:nth-child(1) { width: 3.5em; }
+        .detail-table th:nth-child(2), .detail-table td:nth-child(2) { width: 7em; }
+        .detail-table th:nth-child(3), .detail-table td:nth-child(3) { width: 16em; text-align: left; }
+        .detail-table th:nth-child(4), .detail-table td:nth-child(4) { width: 13em; text-align: left; }
+        .detail-table th:nth-child(5), .detail-table td:nth-child(5) { width: 4em; }
+        .detail-table th, .detail-table td { min-width: 2.5em; }
+
+        .status-badge { display: inline-block; padding: 0.35rem 0.75rem; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .status-hadir { background: #d5f4e6; color: #27ae60; }
+        .status-sakit { background: #fef5e7; color: #f39c12; }
+        .status-izin { background: #d6eaf8; color: #2980b9; }
+        .status-alpa { background: #fadbd8; color: #e74c3c; }
+
+        .status-cell { padding: 0.3rem 0.6rem; border-radius: 4px; font-weight: 500; font-size: 11px; }
+        .status-cell.H { background: #d5f4e6; color: #27ae60; }
+        .status-cell.S { background: #fef5e7; color: #f39c12; }
+        .status-cell.I { background: #d6eaf8; color: #2980b9; }
+        .status-cell.A { background: #fadbd8; color: #e74c3c; }
+
+        .footer { margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid #ecf0f1; font-size: 11px; color: #7f8c8d; text-align: center; }
+        .footer-info { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.5rem; margin-top: 1rem; text-align: center; }
+        .footer-item { font-size: 12px; }
+        .footer-label { font-weight: 600; color: #34495e; margin-bottom: 0.5rem; }
+        .footer-value { color: #7f8c8d; font-size: 11px; }
+
+        .performance-badge { display: inline-block; padding: 0.5rem 1.5rem; border-radius: 24px; font-weight: 600; font-size: 14px; text-align: center; margin: 1rem 0; }
+        .performance-excellent { background: #d5f4e6; color: #27ae60; }
+        .performance-good { background: #d6eaf8; color: #2980b9; }
+        .performance-fair { background: #fef5e7; color: #f39c12; }
+        .performance-poor { background: #fadbd8; color: #e74c3c; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="school-name">PESANTREN YAUMI YOGYAKARTA</div>
+        <div class="school-info">Sistem Informasi Presensi (SIPA Beta)</div>
+        <div class="report-title">Laporan Kehadiran Guru</div>
+        <div class="report-period">Periode: {{ start_date|date:"d M Y" }} - {{ end_date|date:"d M Y" }}</div>
+    </div>
+
+    <div class="teacher-info">
+        <div class="info-item">
+            <div class="info-label">Nama Guru</div>
+            <div class="info-value">{{ teacher.name }}</div>
+        </div>
+        <div class="info-item">
+            <div class="info-label">ID Guru</div>
+            <div class="info-value">{{ teacher.teacher_id }}</div>
+        </div>
+        <div class="info-item">
+            <div class="info-label">NIP</div>
+            <div class="info-value">{{ teacher.nip }}</div>
+        </div>
+        <div class="info-item">
+            <div class="info-label">Tanggal Cetak</div>
+            <div class="info-value">{{ print_date|date:"d M Y H:i" }}</div>
+        </div>
+    </div>
+
+    <div style="text-align: center; margin-bottom: 1.5rem;">
+        <span class="performance-badge performance-{{ performance_level }}">
+            {{ performance_label }}
+        </span>
+    </div>
+
+    <div class="kpi-container">
+        <div class="kpi-card hadir">
+            <div class="kpi-label">Hadir</div>
+            <div class="kpi-value kpi-hadir">{{ stats.total_hadir }}</div>
+            <div class="kpi-percentage">{{ stats.hadir_percentage|floatformat:1 }}%</div>
+        </div>
+        <div class="kpi-card sakit">
+            <div class="kpi-label">Sakit</div>
+            <div class="kpi-value kpi-sakit">{{ stats.total_sakit }}</div>
+            <div class="kpi-percentage">{{ stats.sakit_percentage|floatformat:1 }}%</div>
+        </div>
+        <div class="kpi-card izin">
+            <div class="kpi-label">Izin</div>
+            <div class="kpi-value kpi-izin">{{ stats.total_izin }}</div>
+            <div class="kpi-percentage">{{ stats.izin_percentage|floatformat:1 }}%</div>
+        </div>
+        <div class="kpi-card alpa">
+            <div class="kpi-label">Alpa</div>
+            <div class="kpi-value kpi-alpa">{{ stats.total_alpa }}</div>
+            <div class="kpi-percentage">{{ stats.alpa_percentage|floatformat:1 }}%</div>
+        </div>
+    </div>
+
+    <div class="progress-section">
+        <div class="progress-title">Tingkat Kehadiran</div>
+        <div class="progress-bar">
+            <div class="progress-fill" style="width: {{ stats.attendance_rate }}%">
+                {{ stats.attendance_rate|floatformat:0 }}%
+            </div>
+        </div>
+        <div class="progress-label">
+            <span>0%</span>
+            <span>Target: 90%</span>
+            <span>100%</span>
+        </div>
+    </div>
+
+    <div class="charts-section">
+        <div class="chart-card">
+            <div class="chart-title">Distribusi Status Kehadiran</div>
+            <div class="chart-placeholder">[Pie Chart]</div>
+        </div>
+        <div class="chart-card">
+            <div class="chart-title">Trend Kehadiran Mingguan</div>
+            <div class="chart-placeholder">[Line Chart]</div>
+        </div>
+    </div>
+
+    <div class="page-break"></div>
+
+    <div>
+        <div class="section-title">Detail Kehadiran Harian</div>
+        <table class="detail-table">
+            <thead>
+                <tr>
+                    <th>Tanggal</th>
+                    <th>Hari</th>
+                    <th>Status</th>
+                    <th>JP Detail</th>
+                    <th>Keterangan</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for record in daily_records %}
+                <tr>
+                    <td>{{ record.date|date:"d M Y" }}</td>
+                    <td>{{ record.day_name }}</td>
+                    <td>
+                        <span class="status-badge status-{{ record.status_code }}">
+                            {{ record.status }}
+                        </span>
+                    </td>
+                    <td style="text-align:left;">
+                        {% for jp, status in record.jp_details.items %}
+                            <span class="status-cell {{ status }}">JP{{ jp }}</span>
+                        {% empty %}
+                            -
+                        {% endfor %}
+                    </td>
+                    <td style="text-align: left; font-size: 12px;">{{ record.notes|default:"-" }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" style="text-align: center; padding: 1rem; color: #7f8c8d;">
+                        Tidak ada data kehadiran
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="footer">
+        <div class="footer-info">
+            <div class="footer-item">
+                <div class="footer-label">Periode Laporan</div>
+                <div class="footer-value">{{ start_date|date:"d M Y" }} - {{ end_date|date:"d M Y" }}</div>
+            </div>
+            <div class="footer-item">
+                <div class="footer-label">Total Hari Kerja</div>
+                <div class="footer-value">{{ stats.total_working_days }} hari</div>
+            </div>
+            <div class="footer-item">
+                <div class="footer-label">Dihasilkan oleh</div>
+                <div class="footer-value">SIPA Beta</div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -302,7 +302,7 @@ def teacher_schedule_manage(request, teacher_id):
     
     # Prepare schedule data for all days
     days = [
-        (0, 'Senin'),
+        (0, 'Senin'), 
         (1, 'Selasa'),
         (2, 'Rabu'),
         (3, 'Kamis'),
@@ -456,13 +456,27 @@ def teacher_attendance_form(request, date_str):
                     f'({week_start.strftime("%d %b")} - {today.strftime("%d %b %Y")})'
                 )
                 return redirect('teacher_attendance_input')
+        else:
+            # Admin: allow input for dates up to 2 months in the past and future
+            min_date = today - timedelta(days=60)
+            max_date = today + timedelta(days=60)
+            
+            if target_date < min_date or target_date > max_date:
+                messages.warning(
+                    request,
+                    f'Anda dapat input absensi dalam range ±2 bulan dari hari ini '
+                    f'({min_date.strftime("%d %b %Y")} - {max_date.strftime("%d %b %Y")})'
+                )
+                # Still allow but show warning
+                # Uncomment line below to restrict strictly:
+                # return redirect('teacher_attendance_input')
         
         # Check if user is teacher
         is_teacher_user = hasattr(request.user, 'teacher_profile')
         
         # Get JP count for this day
         jp_count = ScheduleService.get_jp_count_for_date(target_date)
-        day_schedule = ScheduleService.get_schedule_for_date(target_date)
+        day_schedule = ScheduleService.get_schedule_for_date(targest_date)
         
         # Determine which teachers to show
         if is_teacher_user and not is_admin:
@@ -543,6 +557,8 @@ def teacher_attendance_form(request, date_str):
             'status_choices': status_choices,
             'is_teacher_user': is_teacher_user,
             'is_admin': is_admin,
+            'show_reset_button': True,  # Show reset button
+            'show_mark_all_present': True,  # Show mark all present button
         }
         
     except ValueError:
@@ -659,6 +675,117 @@ def api_save_teacher_attendance(request):
         }, status=400)
     except Exception as e:
         logger.error(f"Unexpected error saving teacher attendance: {str(e)}")
+        return JsonResponse({
+            'success': False,
+            'error': f'Terjadi kesalahan: {str(e)}'
+        }, status=500)
+
+
+@login_required
+@require_http_methods(["POST"])
+def api_reset_teacher_attendance_form(request):
+    """AJAX endpoint for resetting attendance form fields"""
+    try:
+        data = json.loads(request.body)
+        date_str = data.get('date')
+        
+        if not date_str:
+            return JsonResponse({
+                'success': False,
+                'error': 'date is required'
+            }, status=400)
+        
+        # Parse date
+        try:
+            target_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+        except ValueError:
+            return JsonResponse({
+                'success': False,
+                'error': 'Invalid date format. Use YYYY-MM-DD'
+            }, status=400)
+        
+        # Get JP count for this day
+        jp_count = ScheduleService.get_jp_count_for_date(target_date)
+        
+        # Reset data - generate empty form data
+        reset_data = {
+            'success': True,
+            'message': 'Form telah direset ke kondisi awal',
+            'jp_count': jp_count,
+            'jp_range': list(range(1, jp_count + 1))
+        }
+        
+        return JsonResponse(reset_data)
+        
+    except Exception as e:
+        logger.error(f"Error resetting attendance form: {str(e)}")
+        return JsonResponse({
+            'success': False,
+            'error': f'Terjadi kesalahan: {str(e)}'
+        }, status=500)
+
+
+@login_required
+@require_http_methods(["POST"])
+def api_mark_all_teachers_present(request):
+    """AJAX endpoint for marking all teachers as present"""
+    try:
+        data = json.loads(request.body)
+        date_str = data.get('date')
+        
+        if not date_str:
+            return JsonResponse({
+                'success': False,
+                'error': 'date is required'
+            }, status=400)
+        
+        # Parse date
+        try:
+            target_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+        except ValueError:
+            return JsonResponse({
+                'success': False,
+                'error': 'Invalid date format. Use YYYY-MM-DD'
+            }, status=400)
+        
+        # Check permissions
+        is_admin = request.user.is_superuser
+        if not is_admin:
+            return JsonResponse({
+                'success': False,
+                'error': 'Hanya admin yang dapat menggunakan fitur ini'
+            }, status=403)
+        
+        # Get JP count for this day
+        jp_count = ScheduleService.get_jp_count_for_date(target_date)
+        
+        # Get all active teachers
+        teachers = Teacher.objects.filter(is_active=True).order_by('name')
+        
+        # Create default "Hadir" status for all JPs
+        all_present_data = []
+        for teacher in teachers:
+            # Create JP statuses - all set to 'H' (Hadir)
+            jp_statuses = {}
+            for jp_num in range(1, jp_count + 1):
+                jp_statuses[str(jp_num)] = 'H'
+            
+            all_present_data.append({
+                'teacher_id': str(teacher.id),
+                'jp_statuses': jp_statuses,
+                'notes': '',
+                'is_replacement': False
+            })
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'Semua {len(teachers)} guru siap ditandai sebagai Hadir',
+            'attendance_data': all_present_data,
+            'teachers_count': len(teachers)
+        })
+        
+    except Exception as e:
+        logger.error(f"Error marking all teachers present: {str(e)}")
         return JsonResponse({
             'success': False,
             'error': f'Terjadi kesalahan: {str(e)}'
@@ -908,4 +1035,65 @@ def teacher_export_individual_pdf(request, teacher_id):
         logger.error(f"Error exporting individual PDF: {str(e)}")
         messages.error(request, f"Gagal export laporan: {str(e)}")
         return redirect('teacher_detail', pk=teacher_id)
+
+
+@login_required
+def teacher_export_html_pdf(request, teacher_id):
+    """
+    Export individual teacher attendance report to PDF/HTML
+    Menggunakan HTML template dengan CSS styling modern
+    """
+    if not request.user.is_staff:
+        return JsonResponse({'error': 'Akses ditolak'}, status=403)
+    
+    try:
+        teacher = get_object_or_404(Teacher, pk=teacher_id)
+        
+        # Get date range from request
+        start_date = request.GET.get('start_date')
+        end_date = request.GET.get('end_date')
+        
+        if start_date:
+            start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+        if end_date:
+            end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
+        
+        # Export menggunakan HTML template + WeasyPrint
+        return TeacherExportService.export_teacher_attendance_pdf_html(
+            teacher, start_date=start_date, end_date=end_date
+        )
+        
+    except Exception as e:
+        logger.error(f"Error exporting HTML PDF: {str(e)}")
+        messages.error(request, f"Gagal export laporan: {str(e)}")
+        return redirect('teacher_attendance_report')
+
+
+@login_required
+def teacher_export_all_pdf_html(request):
+    """
+    Export laporan semua guru ke PDF/HTML dengan HTML template
+    """
+    if not request.user.is_staff:
+        return JsonResponse({'error': 'Akses ditolak'}, status=403)
+    
+    try:
+        # Get date range
+        start_date = request.GET.get('start_date')
+        end_date = request.GET.get('end_date')
+        
+        if start_date:
+            start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+        if end_date:
+            end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
+        
+        # Export semua guru
+        return TeacherExportService.export_all_teachers_pdf_html(
+            teachers=None, start_date=start_date, end_date=end_date
+        )
+        
+    except Exception as e:
+        logger.error(f"Error exporting all teachers PDF: {str(e)}")
+        messages.error(request, f"Gagal export laporan: {str(e)}")
+        return redirect('teacher_attendance_report')
 

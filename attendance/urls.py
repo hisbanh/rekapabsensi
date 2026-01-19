@@ -88,6 +88,8 @@ urlpatterns = [
     path('teacher/attendance/', views_teacher.teacher_attendance_input, name='teacher_attendance_input'),
     path('teacher/attendance/<str:date_str>/', views_teacher.teacher_attendance_form, name='teacher_attendance_form'),
     path('api/teacher/attendance/save/', views_teacher.api_save_teacher_attendance, name='api_save_teacher_attendance'),
+    path('api/teacher/attendance/reset/', views_teacher.api_reset_teacher_attendance_form, name='api_reset_teacher_attendance'),
+    path('api/teacher/attendance/mark-all-present/', views_teacher.api_mark_all_teachers_present, name='api_mark_all_teachers_present'),
     
     # Teacher Attendance Reports
     path('teacher/report/', views_teacher.teacher_attendance_report, name='teacher_attendance_report'),
@@ -97,4 +99,8 @@ urlpatterns = [
     path('teacher/export/csv/', views_teacher.teacher_export_csv, name='teacher_export_csv'),
     path('teacher/export/pdf/', views_teacher.teacher_export_pdf, name='teacher_export_pdf'),
     path('teacher/<uuid:teacher_id>/export/pdf/', views_teacher.teacher_export_individual_pdf, name='teacher_export_individual_pdf'),
+    
+    # Teacher Export - HTML/PDF dengan template modern
+    path('teacher/<uuid:teacher_id>/export/html-pdf/', views_teacher.teacher_export_html_pdf, name='teacher_export_html_pdf'),
+    path('teacher/export/all-html-pdf/', views_teacher.teacher_export_all_pdf_html, name='teacher_export_all_pdf_html'),
 ]
