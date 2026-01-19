@@ -281,9 +281,16 @@ class TeacherExportService:
             from django.template.loader import render_to_string
             import base64
             from io import BytesIO
-            import matplotlib
-            matplotlib.use('Agg')
-            import matplotlib.pyplot as plt
+            
+            # Lazy-load matplotlib
+            MATPLOTLIB_AVAILABLE = False
+            try:
+                import matplotlib
+                matplotlib.use('Agg')
+                import matplotlib.pyplot as plt
+                MATPLOTLIB_AVAILABLE = True
+            except ImportError as e:
+                logger.warning(f"Matplotlib not available: {e}. Charts will be skipped.")
             
             # Default dates
             if not start_date:
@@ -302,26 +309,30 @@ class TeacherExportService:
             ) if total_teachers > 0 else 0
             
             # Generate pie chart as base64
-            try:
-                fig, ax = plt.subplots(figsize=(6, 4), dpi=100)
-                labels = ['Hadir', 'Sakit', 'Izin', 'Alpa']
-                sizes = [total_hadir, total_sakit, total_izin, total_alpa]
-                colors_pie = ['#27ae60', '#f39c12', '#2980b9', '#e74c3c']
-                explode = (0.05, 0, 0, 0)
-                
-                ax.pie(sizes, explode=explode, labels=labels, colors=colors_pie, autopct='%1.1f%%',
-                       shadow=True, startangle=90, textprops={'fontsize': 10, 'weight': 'bold'})
-                ax.axis('equal')
-                
-                buffer_chart = BytesIO()
-                plt.savefig(buffer_chart, format='png', bbox_inches='tight', dpi=100)
-                buffer_chart.seek(0)
-                chart_base64 = base64.b64encode(buffer_chart.getvalue()).decode()
-                plt.close(fig)
-                pie_chart_url = f"data:image/png;base64,{chart_base64}"
-            except Exception as chart_error:
-                logger.warning(f"Chart generation failed: {chart_error}")
-                pie_chart_url = None
+            pie_chart_url = None
+            if MATPLOTLIB_AVAILABLE:
+                try:
+                    fig, ax = plt.subplots(figsize=(6, 4), dpi=100)
+                    labels = ['Hadir', 'Sakit', 'Izin', 'Alpa']
+                    sizes = [total_hadir, total_sakit, total_izin, total_alpa]
+                    colors_pie = ['#27ae60', '#f39c12', '#2980b9', '#e74c3c']
+                    explode = (0.05, 0, 0, 0)
+                    
+                    ax.pie(sizes, explode=explode, labels=labels, colors=colors_pie, autopct='%1.1f%%',
+                           shadow=True, startangle=90, textprops={'fontsize': 10, 'weight': 'bold'})
+                    ax.axis('equal')
+                    
+                    buffer_chart = BytesIO()
+                    plt.savefig(buffer_chart, format='png', bbox_inches='tight', dpi=100)
+                    buffer_chart.seek(0)
+                    chart_base64 = base64.b64encode(buffer_chart.getvalue()).decode()
+                    plt.close(fig)
+                    pie_chart_url = f"data:image/png;base64,{chart_base64}"
+                except Exception as chart_error:
+                    logger.warning(f"Chart generation failed: {chart_error}")
+                    pie_chart_url = None
+            else:
+                logger.info("Matplotlib not available. Skipping chart generation.")
             
             # Prepare context for template
             context = {
@@ -360,7 +371,7 @@ class TeacherExportService:
             # Fallback to HTML response
             logger.info("WeasyPrint not available or failed. Returning HTML preview.")
             response = HttpResponse(html_content, content_type='text/html; charset=utf-8')
-            response['Content-Disposition'] = f'inline; filename="laporan_absensi_guru_{timezone.now().strftime("%Y%m%d_%H%M%S")}.html"'
+            response['Content-Disposition'] = f'attachment; filename="laporan_absensi_guru_{timezone.now().strftime("%Y%m%d_%H%M%S")}.html"'
             return response
             
         except Exception as e:
