@@ -476,7 +476,7 @@ def teacher_attendance_form(request, date_str):
         
         # Get JP count for this day
         jp_count = ScheduleService.get_jp_count_for_date(target_date)
-        day_schedule = ScheduleService.get_schedule_for_date(targest_date)
+        day_schedule = ScheduleService.get_schedule_for_date(target_date)
         
         # Determine which teachers to show
         if is_teacher_user and not is_admin:

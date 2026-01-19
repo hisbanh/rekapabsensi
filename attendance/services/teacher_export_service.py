@@ -266,7 +266,8 @@ class TeacherExportService:
     @staticmethod
     def export_to_pdf(teachers_data, start_date=None, end_date=None):
         """
-        Export teacher attendance report to PDF
+        Export teacher attendance report to PDF using HTML template
+        PROFESSIONAL version with WeasyPrint rendering
         
         Args:
             teachers_data: List of dicts with teacher and summary
@@ -277,190 +278,94 @@ class TeacherExportService:
             HttpResponse with PDF file
         """
         try:
-            # Create PDF response
-            buffer = io.BytesIO()
-            doc = SimpleDocTemplate(buffer, pagesize=A4)
+            from django.template.loader import render_to_string
+            import base64
+            from io import BytesIO
+            import matplotlib
+            matplotlib.use('Agg')
+            import matplotlib.pyplot as plt
             
-            # Set up styles
-            styles = getSampleStyleSheet()
+            # Default dates
+            if not start_date:
+                start_date = timezone.now().date()
+            if not end_date:
+                end_date = timezone.now().date()
             
-            # Custom styles
-            title_style = ParagraphStyle(
-                'CustomTitle',
-                parent=styles['Heading1'],
-                fontSize=18,
-                textColor=colors.HexColor('#1F4788'),
-                spaceAfter=6,
-                alignment=TA_CENTER,
-                fontName='Helvetica-Bold'
-            )
+            # Calculate summary statistics
+            total_teachers = len(teachers_data)
+            total_hadir = sum(item['summary']['hadir'] for item in teachers_data)
+            total_sakit = sum(item['summary']['sakit'] for item in teachers_data)
+            total_izin = sum(item['summary']['izin'] for item in teachers_data)
+            total_alpa = sum(item['summary']['alpa'] for item in teachers_data)
+            avg_attendance_rate = (
+                sum(item['summary']['attendance_rate'] for item in teachers_data) / total_teachers
+            ) if total_teachers > 0 else 0
             
-            subtitle_style = ParagraphStyle(
-                'Subtitle',
-                parent=styles['Normal'],
-                fontSize=11,
-                textColor=colors.HexColor('#555555'),
-                spaceAfter=12,
-                alignment=TA_CENTER,
-                fontName='Helvetica'
-            )
-            
-            heading_style = ParagraphStyle(
-                'CustomHeading',
-                parent=styles['Heading2'],
-                fontSize=12,
-                textColor=colors.HexColor('#1F4788'),
-                spaceAfter=6,
-                spaceBefore=6,
-                fontName='Helvetica-Bold'
-            )
-            
-            # Container for elements
-            elements = []
-            
-            # Title
-            elements.append(Paragraph("LAPORAN ABSENSI USTADZ", title_style))
-            
-            # Date range
-            if start_date and end_date:
-                date_text = f"Periode: {start_date.strftime('%d %B %Y')} - {end_date.strftime('%d %B %Y')}"
-            else:
-                date_text = f"Tanggal: {timezone.now().strftime('%d %B %Y')}"
-            
-            elements.append(Paragraph(date_text, subtitle_style))
-            elements.append(Spacer(1, 0.3*cm))
-            
-            # Prepare table data
-            table_data = [[
-                'No',
-                'ID Ustadz',
-                'Nama',
-                'Mata Pelajaran',
-                'Hari',
-                'JP',
-                'Hadir',
-                'Sakit',
-                'Izin',
-                'Alpa',
-                'Lainnya',
-                '%'
-            ]]
-            
-            # Add data rows
-            for idx, item in enumerate(teachers_data, 1):
-                teacher = item['teacher']
-                summary = item['summary']
+            # Generate pie chart as base64
+            try:
+                fig, ax = plt.subplots(figsize=(6, 4), dpi=100)
+                labels = ['Hadir', 'Sakit', 'Izin', 'Alpa']
+                sizes = [total_hadir, total_sakit, total_izin, total_alpa]
+                colors_pie = ['#27ae60', '#f39c12', '#2980b9', '#e74c3c']
+                explode = (0.05, 0, 0, 0)
                 
-                lainnya = (
-                    summary.get('tidak_ada_jadwal', 0) +
-                    summary.get('dinas_luar', 0) +
-                    summary.get('cuti', 0) +
-                    summary.get('terlambat', 0)
-                )
+                ax.pie(sizes, explode=explode, labels=labels, colors=colors_pie, autopct='%1.1f%%',
+                       shadow=True, startangle=90, textprops={'fontsize': 10, 'weight': 'bold'})
+                ax.axis('equal')
                 
-                table_data.append([
-                    str(idx),
-                    str(teacher.teacher_id),
-                    teacher.name[:20],  # Truncate long names
-                    teacher.subjects[:15] if teacher.subjects else '-',
-                    str(summary['total_days']),
-                    str(summary['total_jp']),
-                    str(summary['hadir']),
-                    str(summary['sakit']),
-                    str(summary['izin']),
-                    str(summary['alpa']),
-                    str(lainnya),
-                    f"{summary['attendance_rate']:.1f}%"
-                ])
+                buffer_chart = BytesIO()
+                plt.savefig(buffer_chart, format='png', bbox_inches='tight', dpi=100)
+                buffer_chart.seek(0)
+                chart_base64 = base64.b64encode(buffer_chart.getvalue()).decode()
+                plt.close(fig)
+                pie_chart_url = f"data:image/png;base64,{chart_base64}"
+            except Exception as chart_error:
+                logger.warning(f"Chart generation failed: {chart_error}")
+                pie_chart_url = None
             
-            # Add total row
-            if teachers_data:
-                total_days = sum(item['summary']['total_days'] for item in teachers_data)
-                total_jp = sum(item['summary']['total_jp'] for item in teachers_data)
-                total_hadir = sum(item['summary']['hadir'] for item in teachers_data)
-                total_sakit = sum(item['summary']['sakit'] for item in teachers_data)
-                total_izin = sum(item['summary']['izin'] for item in teachers_data)
-                total_alpa = sum(item['summary']['alpa'] for item in teachers_data)
-                avg_percentage = (
-                    sum(item['summary']['attendance_rate'] for item in teachers_data) / len(teachers_data)
-                ) if teachers_data else 0
-                
-                table_data.append([
-                    '',
-                    '',
-                    'TOTAL',
-                    '',
-                    str(total_days),
-                    str(total_jp),
-                    str(total_hadir),
-                    str(total_sakit),
-                    str(total_izin),
-                    str(total_alpa),
-                    '',
-                    f"{avg_percentage:.1f}%"
-                ])
+            # Prepare context for template
+            context = {
+                'start_date': start_date,
+                'end_date': end_date,
+                'teachers_data': teachers_data,
+                'total_teachers': total_teachers,
+                'stats': {
+                    'total_hadir': total_hadir,
+                    'total_sakit': total_sakit,
+                    'total_izin': total_izin,
+                    'total_alpa': total_alpa,
+                    'attendance_rate': avg_attendance_rate,
+                    'hadir_percentage': (total_hadir / (total_hadir + total_sakit + total_izin + total_alpa) * 100) if (total_hadir + total_sakit + total_izin + total_alpa) > 0 else 0,
+                    'sakit_percentage': (total_sakit / (total_hadir + total_sakit + total_izin + total_alpa) * 100) if (total_hadir + total_sakit + total_izin + total_alpa) > 0 else 0,
+                    'izin_percentage': (total_izin / (total_hadir + total_sakit + total_izin + total_alpa) * 100) if (total_hadir + total_sakit + total_izin + total_alpa) > 0 else 0,
+                    'alpa_percentage': (total_alpa / (total_hadir + total_sakit + total_izin + total_alpa) * 100) if (total_hadir + total_sakit + total_izin + total_alpa) > 0 else 0,
+                },
+                'pie_chart_url': pie_chart_url,
+                'print_date': timezone.now(),
+            }
             
-            # Create table
-            table = Table(table_data, colWidths=[0.5*cm, 1.2*cm, 2*cm, 1.8*cm, 0.6*cm, 0.6*cm, 0.7*cm, 0.7*cm, 0.7*cm, 0.7*cm, 0.7*cm, 0.7*cm])
+            # Render HTML from template
+            html_content = render_to_string('attendance/teacher/report_summary_pdf.html', context)
             
-            # Style table
-            table.setStyle(TableStyle([
-                # Header row
-                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1F4788')),
-                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-                ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
-                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                ('FONTSIZE', (0, 0), (-1, 0), 9),
-                ('BOTTOMPADDING', (0, 0), (-1, 0), 6),
-                ('TOPPADDING', (0, 0), (-1, 0), 6),
-                
-                # Data rows
-                ('FONTNAME', (0, 1), (-1, -2), 'Helvetica'),
-                ('FONTSIZE', (0, 1), (-1, -2), 8),
-                ('ALIGN', (0, 1), (-1, -2), 'CENTER'),
-                ('ALIGN', (2, 1), (2, -2), 'LEFT'),
-                ('ALIGN', (3, 1), (3, -2), 'LEFT'),
-                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-                ('GRID', (0, 0), (-1, -2), 1, colors.grey),
-                
-                # Alternating row colors
-                ('ROWBACKGROUNDS', (0, 1), (-1, -2), [colors.white, colors.HexColor('#F5F5F5')]),
-                
-                # Total row
-                ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor('#E8E8E8')),
-                ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
-                ('FONTSIZE', (0, -1), (-1, -1), 9),
-                ('ALIGN', (0, -1), (-1, -1), 'CENTER'),
-                ('TOPPADDING', (0, -1), (-1, -1), 8),
-                ('BOTTOMPADDING', (0, -1), (-1, -1), 8),
-            ]))
+            # Try WeasyPrint first (professional quality)
+            if WEASYPRINT_AVAILABLE:
+                try:
+                    pdf_bytes = weasyprint.HTML(string=html_content).write_pdf()
+                    response = HttpResponse(pdf_bytes, content_type='application/pdf')
+                    response['Content-Disposition'] = f'attachment; filename="laporan_absensi_guru_{timezone.now().strftime("%Y%m%d_%H%M%S")}.pdf"'
+                    return response
+                except Exception as weasy_error:
+                    logger.warning(f"WeasyPrint rendering failed: {weasy_error}. Falling back to HTML preview.")
             
-            elements.append(table)
-            
-            # Footer info
-            elements.append(Spacer(1, 0.5*cm))
-            footer_text = f"Generated: {timezone.now().strftime('%d %B %Y at %H:%M')}"
-            elements.append(Paragraph(footer_text, ParagraphStyle(
-                'Footer',
-                parent=styles['Normal'],
-                fontSize=8,
-                textColor=colors.grey,
-                alignment=TA_CENTER
-            )))
-            
-            # Build PDF
-            doc.build(elements)
-            
-            # Return PDF response
-            buffer.seek(0)
-            response = HttpResponse(buffer.getvalue(), content_type='application/pdf')
-            response['Content-Disposition'] = f'attachment; filename="laporan_absensi_ustadz_{timezone.now().strftime("%Y%m%d")}.pdf"'
-            
+            # Fallback to HTML response
+            logger.info("WeasyPrint not available or failed. Returning HTML preview.")
+            response = HttpResponse(html_content, content_type='text/html; charset=utf-8')
+            response['Content-Disposition'] = f'inline; filename="laporan_absensi_guru_{timezone.now().strftime("%Y%m%d_%H%M%S")}.html"'
             return response
             
         except Exception as e:
-            logger.error(f"Error exporting to PDF: {str(e)}")
-            raise Exception(f"Gagal export ke PDF: {str(e)}")
+            logger.error(f"Error exporting teacher attendance PDF: {str(e)}")
+            raise Exception(f"Gagal membuat laporan PDF guru: {str(e)}")
     
     @staticmethod
     def export_teacher_individual_pdf(teacher, start_date=None, end_date=None):
