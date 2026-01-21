@@ -171,7 +171,7 @@ Create all required models for teacher attendance system following the design do
   - Add docstrings and type hints
 
 ### 2.5 Add Location Validation Utility
-- [ ] Create `attendance/utils/location.py`
+- [x] Create `attendance/utils/location.py`
   - Implement Haversine distance calculation
   - Implement `validate_school_location(lat: float, lon: float) -> bool`
   - Add school coordinates to settings (SCHOOL_LATITUDE, SCHOOL_LONGITUDE, SCHOOL_RADIUS_METERS)

@@ -234,6 +234,17 @@ SIPA_YAUMI = {
     'BACKUP_RETENTION_DAYS': 30,
 }
 
+# Teacher Attendance - Location Validation Settings
+# Coordinates for Pesantren Yaumi Yogyakarta (example coordinates)
+# Update these with actual school coordinates
+SCHOOL_LATITUDE = config('SCHOOL_LATITUDE', default=-7.7956, cast=float)
+SCHOOL_LONGITUDE = config('SCHOOL_LONGITUDE', default=110.3695, cast=float)
+SCHOOL_RADIUS_METERS = config('SCHOOL_RADIUS_METERS', default=150, cast=int)
+
+# Teacher Photo Upload Settings
+TEACHER_PHOTO_MAX_SIZE = config('TEACHER_PHOTO_MAX_SIZE', default=5242880, cast=int)  # 5MB
+TEACHER_PHOTO_ALLOWED_TYPES = config('TEACHER_PHOTO_ALLOWED_TYPES', default='jpg,jpeg,png', cast=Csv())
+
 # Email configuration (for notifications)
 EMAIL_BACKEND = config('EMAIL_BACKEND', default='django.core.mail.backends.console.EmailBackend')
 EMAIL_HOST = config('EMAIL_HOST', default='localhost')
