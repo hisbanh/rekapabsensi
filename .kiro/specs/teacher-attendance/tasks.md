@@ -265,7 +265,7 @@ Create all required models for teacher attendance system following the design do
   - Add Submit button
   - Use mobile-responsive design
 
-- [ ] Create `templates/teacher/attendance_admin_input.html`
+- [x] Create `templates/teacher/attendance_admin_input.html`
   - Teacher selection dropdown
   - Date picker (any past date)
   - Display selected teacher's schedule for that date

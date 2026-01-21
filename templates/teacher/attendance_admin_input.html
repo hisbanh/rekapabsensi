@@ -1,0 +1,559 @@
+{% extends 'manage/base_list.html' %}
+{% load static %}
+{% load attendance_extras %}
+
+{% block page_title %}Input Absensi Ustadz (Admin){% endblock %}
+
+{% block breadcrumb_items %}
+<li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+<li class="breadcrumb-item"><a href="{% url 'teacher_attendance_history' %}">Absensi Ustadz</a></li>
+<li class="breadcrumb-item active">Input Absensi</li>
+{% endblock %}
+
+{% block page_actions %}
+<div class="btn-group">
+    <a href="{% url 'teacher_attendance_history' %}" class="btn btn-outline-secondary btn-sm">
+        <i class="fas fa-history me-1"></i> Riwayat Absensi
+    </a>
+    <a href="{% url 'teacher_attendance_input' %}" class="btn btn-outline-primary btn-sm">
+        <i class="fas fa-user me-1"></i> Absensi Mandiri
+    </a>
+</div>
+{% endblock %}
+
+{% block stats_row %}
+<!-- Teacher & Date Selection Header -->
+<div class="admin-attendance-header">
+    <div class="selection-section">
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label for="teacherSelector" class="form-label">
+                    <i class="fas fa-user-tie me-1"></i> Pilih Ustadz/Ustadzah
+                </label>
+                <select id="teacherSelector" class="form-select">
+                    <option value="">-- Pilih Ustadz/Ustadzah --</option>
+                    {% for teacher in teachers %}
+                    <option value="{{ teacher.id }}" 
+                            {% if selected_teacher and selected_teacher.id == teacher.id %}selected{% endif %}>
+                        {{ teacher.full_name }} ({{ teacher.nip }})
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-6">
+                <label for="dateSelector" class="form-label">
+                    <i class="fas fa-calendar me-1"></i> Tanggal Absensi
+                </label>
+                <input type="date" 
+                       id="dateSelector" 
+                       class="form-control"
+                       value="{{ target_date|date:'Y-m-d' }}"
+                       max="{{ target_date|date:'Y-m-d' }}">
+            </div>
+        </div>
+    </div>
+    
+    {% if selected_teacher %}
+    <div class="teacher-info-card mt-3">
+        <div class="d-flex align-items-center gap-3">
+            {% if selected_teacher.photo %}
+            <img src="{{ selected_teacher.photo.url }}" 
+                 alt="{{ selected_teacher.full_name }}" 
+                 class="teacher-photo-lg">
+            {% else %}
+            <div class="teacher-avatar-lg">
+                {{ selected_teacher.full_name|slice:":1"|upper }}
+            </div>
+            {% endif %}
+            <div class="flex-grow-1">
+                <h5 class="mb-1">{{ selected_teacher.full_name }}</h5>
+                <p class="text-muted mb-1">
+                    <i class="fas fa-id-card me-1"></i>NIP: {{ selected_teacher.nip }}
+                </p>
+                <div class="teacher-subjects">
+                    {% for subject in selected_teacher.subjects.all %}
+                    <span class="badge bg-primary-subtle text-primary">{{ subject.name }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="text-end">
+                <div class="date-display">
+                    <div class="date-day">{{ target_date|date:"l" }}</div>
+                    <div class="date-full">{{ target_date|date:"d F Y" }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block filters %}
+<!-- Info Alert for Admin -->
+<div class="alert alert-info">
+    <div class="d-flex">
+        <div class="me-3">
+            <i class="fas fa-info-circle fa-2x"></i>
+        </div>
+        <div>
+            <h6 class="alert-heading mb-2">Petunjuk Input Absensi Admin</h6>
+            <ul class="mb-0 ps-3">
+                <li>Pilih ustadz/ustadzah dari dropdown</li>
+                <li>Pilih tanggal absensi (dapat memilih tanggal lampau tanpa batasan)</li>
+                <li>Jadwal mengajar akan ditampilkan otomatis sesuai hari yang dipilih</li>
+                <li>Pilih status kehadiran untuk setiap JP</li>
+                <li>Tambahkan catatan jika diperlukan</li>
+                <li>Klik <strong>"Simpan Absensi"</strong> untuk mencatat kehadiran</li>
+                <li><strong>Tidak diperlukan validasi lokasi</strong> untuk input admin</li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block list_content %}
+{% if selected_teacher %}
+    {% if schedule_data %}
+    <form method="post" id="attendanceForm">
+        {% csrf_token %}
+        
+        <!-- Hidden fields -->
+        <input type="hidden" name="teacher_id" value="{{ selected_teacher.id }}">
+        
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-calendar-check me-2"></i>
+                    Jadwal Mengajar - {{ target_date|date:"l, d F Y" }}
+                </h6>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover attendance-input-table mb-0">
+                        <thead>
+                            <tr>
+                                <th style="width: 80px;">JP</th>
+                                <th>Mata Pelajaran</th>
+                                <th>Kelas</th>
+                                <th style="width: 200px;">Status Kehadiran</th>
+                                <th style="width: 300px;">Catatan</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in schedule_data %}
+                            <tr class="attendance-row {% if item.existing_attendance %}has-attendance{% endif %}">
+                                <td class="jp-cell">
+                                    <div class="jp-badge">JP {{ item.jp_number }}</div>
+                                    <input type="hidden" name="jp_numbers" value="{{ item.jp_number }}">
+                                    <input type="hidden" name="schedule_ids" value="{{ item.schedule.id }}">
+                                </td>
+                                <td>
+                                    <div class="subject-info">
+                                        <i class="fas fa-book me-2 text-primary"></i>
+                                        <strong>{{ item.subject }}</strong>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="classroom-info">
+                                        <i class="fas fa-users me-2 text-secondary"></i>
+                                        {{ item.classroom }}
+                                    </div>
+                                </td>
+                                <td>
+                                    <select name="statuses" 
+                                            class="form-select form-select-sm status-select"
+                                            required>
+                                        {% for value, label in status_choices %}
+                                        <option value="{{ value }}" 
+                                                {% if item.status == value %}selected{% endif %}
+                                                {% if not item.status and value == 'HADIR' %}selected{% endif %}>
+                                            {{ label }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </td>
+                                <td>
+                                    <input type="text" 
+                                           name="notes" 
+                                           class="form-control form-control-sm"
+                                           placeholder="Catatan (opsional)"
+                                           value="{{ item.notes }}">
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card-footer">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="text-muted">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Total {{ schedule_data|length }} JP untuk hari ini
+                        {% if schedule_data.0.existing_attendance %}
+                        <span class="badge bg-success ms-2">
+                            <i class="fas fa-check me-1"></i>Sudah Ada Absensi
+                        </span>
+                        {% endif %}
+                    </div>
+                    <button type="submit" 
+                            class="btn btn-primary btn-lg"
+                            id="submitBtn">
+                        <i class="fas fa-save me-2"></i>
+                        Simpan Absensi
+                    </button>
+                </div>
+            </div>
+        </div>
+    </form>
+    
+    {% else %}
+    <!-- No Schedule -->
+    <div class="card">
+        <div class="card-body text-center py-5">
+            <i class="fas fa-calendar-times fa-4x text-muted mb-3"></i>
+            <h5>Tidak Ada Jadwal Mengajar</h5>
+            <p class="text-muted mb-4">
+                {{ selected_teacher.full_name }} tidak memiliki jadwal mengajar untuk tanggal {{ target_date|date:"l, d F Y" }}
+            </p>
+            <div class="alert alert-info d-inline-block">
+                <i class="fas fa-info-circle me-2"></i>
+                Silakan pilih tanggal lain atau periksa jadwal ustadz/ustadzah
+            </div>
+        </div>
+    </div>
+    {% endif %}
+{% else %}
+    <!-- No Teacher Selected -->
+    <div class="card">
+        <div class="card-body text-center py-5">
+            <i class="fas fa-user-tie fa-4x text-muted mb-3"></i>
+            <h5>Pilih Ustadz/Ustadzah</h5>
+            <p class="text-muted mb-0">
+                Silakan pilih ustadz/ustadzah dari dropdown di atas untuk menampilkan jadwal dan input absensi
+            </p>
+        </div>
+    </div>
+{% endif %}
+{% endblock %}
+
+{% block list_extra_css %}
+<style>
+    /* Admin Attendance Header */
+    .admin-attendance-header {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        margin-bottom: 1.5rem;
+    }
+    
+    .selection-section .form-label {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 0.5rem;
+    }
+    
+    .selection-section .form-select,
+    .selection-section .form-control {
+        font-size: 0.95rem;
+        padding: 0.625rem 0.875rem;
+        border: 2px solid var(--border-color);
+        border-radius: 8px;
+        transition: all 0.2s;
+    }
+    
+    .selection-section .form-select:focus,
+    .selection-section .form-control:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 0.2rem rgba(139, 115, 85, 0.15);
+    }
+    
+    /* Teacher Info Card */
+    .teacher-info-card {
+        background: linear-gradient(135deg, rgba(139, 115, 85, 0.05) 0%, rgba(139, 115, 85, 0.02) 100%);
+        border: 2px solid rgba(139, 115, 85, 0.1);
+        border-radius: 12px;
+        padding: 1.25rem;
+    }
+    
+    .teacher-photo-lg {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid var(--primary);
+    }
+    
+    .teacher-avatar-lg {
+        width: 80px;
+        height: 80px;
+        background: linear-gradient(135deg, var(--primary) 0%, #6b5344 100%);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        font-weight: 600;
+        border: 3px solid var(--primary);
+    }
+    
+    .teacher-subjects {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-top: 0.5rem;
+    }
+    
+    .teacher-subjects .badge {
+        font-size: 0.75rem;
+        font-weight: 500;
+        padding: 0.35rem 0.75rem;
+    }
+    
+    .date-display {
+        text-align: right;
+    }
+    
+    .date-day {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        font-weight: 500;
+        text-transform: uppercase;
+    }
+    
+    .date-full {
+        font-size: 1.1rem;
+        color: var(--text-primary);
+        font-weight: 600;
+        margin-top: 0.25rem;
+    }
+    
+    /* Attendance Input Table */
+    .attendance-input-table {
+        font-size: 0.9rem;
+    }
+    
+    .attendance-input-table thead th {
+        background: var(--bg-light);
+        font-weight: 600;
+        text-align: left;
+        padding: 1rem;
+        border-bottom: 2px solid var(--border-color);
+    }
+    
+    .attendance-input-table tbody td {
+        padding: 1rem;
+        vertical-align: middle;
+        border-bottom: 1px solid var(--border-light);
+    }
+    
+    .attendance-row.has-attendance {
+        background-color: rgba(76, 175, 80, 0.05);
+    }
+    
+    .jp-cell {
+        text-align: center;
+    }
+    
+    .jp-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 50px;
+        height: 50px;
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+        color: white;
+        border-radius: 10px;
+        font-weight: 700;
+        font-size: 0.9rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    .subject-info,
+    .classroom-info {
+        display: flex;
+        align-items: center;
+    }
+    
+    .status-select {
+        font-weight: 500;
+    }
+    
+    .status-select option[value="HADIR"] {
+        color: var(--status-hadir);
+    }
+    
+    .status-select option[value="SAKIT"] {
+        color: var(--status-sakit);
+    }
+    
+    .status-select option[value="IZIN"] {
+        color: var(--status-izin);
+    }
+    
+    .status-select option[value="CUTI"] {
+        color: var(--status-izin);
+    }
+    
+    .status-select option[value="DINAS"] {
+        color: var(--status-izin);
+    }
+    
+    .status-select option[value="ALPA"] {
+        color: var(--status-alpa);
+    }
+    
+    /* Info Alert */
+    .alert-info {
+        background-color: #E3F2FD;
+        border: 1px solid #90CAF9;
+        color: #0D47A1;
+    }
+    
+    .alert-info .alert-heading {
+        color: #0D47A1;
+        font-weight: 600;
+    }
+    
+    .alert-info ul {
+        font-size: 0.9rem;
+        line-height: 1.8;
+    }
+    
+    /* Mobile Responsive */
+    @media (max-width: 991.98px) {
+        .teacher-info-card .d-flex {
+            flex-direction: column;
+            text-align: center;
+        }
+        
+        .date-display {
+            text-align: center;
+            margin-top: 1rem;
+        }
+        
+        .attendance-input-table {
+            font-size: 0.8rem;
+        }
+        
+        .attendance-input-table thead th,
+        .attendance-input-table tbody td {
+            padding: 0.75rem 0.5rem;
+        }
+        
+        .jp-badge {
+            width: 40px;
+            height: 40px;
+            font-size: 0.8rem;
+        }
+        
+        .subject-info i,
+        .classroom-info i {
+            display: none;
+        }
+    }
+    
+    @media (max-width: 767.98px) {
+        .attendance-input-table {
+            display: block;
+            overflow-x: auto;
+        }
+        
+        .card-footer {
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .card-footer .text-muted {
+            text-align: center;
+        }
+        
+        #submitBtn {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block list_extra_js %}
+<script>
+/**
+ * Handle teacher selection change
+ */
+document.getElementById('teacherSelector').addEventListener('change', function() {
+    const teacherId = this.value;
+    const dateValue = document.getElementById('dateSelector').value;
+    
+    if (teacherId) {
+        // Redirect with teacher and date parameters
+        const url = new URL(window.location.href);
+        url.searchParams.set('teacher', teacherId);
+        url.searchParams.set('date', dateValue);
+        window.location.href = url.toString();
+    } else {
+        // Clear teacher parameter
+        const url = new URL(window.location.href);
+        url.searchParams.delete('teacher');
+        window.location.href = url.toString();
+    }
+});
+
+/**
+ * Handle date selector change
+ */
+document.getElementById('dateSelector').addEventListener('change', function() {
+    const selectedDate = this.value;
+    const teacherId = document.getElementById('teacherSelector').value;
+    
+    if (teacherId) {
+        // Redirect with teacher and date parameters
+        const url = new URL(window.location.href);
+        url.searchParams.set('teacher', teacherId);
+        url.searchParams.set('date', selectedDate);
+        window.location.href = url.toString();
+    }
+});
+
+/**
+ * Handle form submission
+ */
+const attendanceForm = document.getElementById('attendanceForm');
+if (attendanceForm) {
+    attendanceForm.addEventListener('submit', function(e) {
+        // Show loading state
+        const submitBtn = document.getElementById('submitBtn');
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Menyimpan...';
+        
+        return true;
+    });
+}
+
+/**
+ * Highlight status changes
+ */
+document.querySelectorAll('.status-select').forEach(function(select) {
+    select.addEventListener('change', function() {
+        const row = this.closest('tr');
+        const value = this.value;
+        
+        // Remove all status classes
+        row.classList.remove('status-hadir', 'status-sakit', 'status-izin', 'status-alpa');
+        
+        // Add appropriate class
+        if (value === 'HADIR') {
+            row.classList.add('status-hadir');
+        } else if (value === 'SAKIT') {
+            row.classList.add('status-sakit');
+        } else if (value === 'IZIN' || value === 'CUTI' || value === 'DINAS') {
+            row.classList.add('status-izin');
+        } else if (value === 'ALPA') {
+            row.classList.add('status-alpa');
+        }
+    });
+});
+</script>
+{% endblock %}
