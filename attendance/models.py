@@ -63,6 +63,92 @@ class BaseModel(models.Model):
         super().save(*args, **kwargs)
 
 
+class Subject(BaseModel):
+    """Subject/Mata Pelajaran model for teacher assignments"""
+    
+    CATEGORY_CHOICES = [
+        ('AGAMA', 'Pendidikan Agama'),
+        ('UMUM', 'Pendidikan Umum'),
+        ('KETERAMPILAN', 'Keterampilan'),
+        ('EKSTRAKURIKULER', 'Ekstrakurikuler'),
+    ]
+    
+    code = models.CharField(
+        max_length=10,
+        unique=True,
+        help_text='Unique subject code (uppercase alphanumeric)'
+    )
+    name = models.CharField(
+        max_length=100,
+        help_text='Subject name'
+    )
+    category = models.CharField(
+        max_length=20,
+        choices=CATEGORY_CHOICES,
+        help_text='Subject category'
+    )
+    description = models.TextField(
+        blank=True,
+        help_text='Subject description'
+    )
+    is_active = models.BooleanField(
+        default=True,
+        help_text='Whether this subject is currently active'
+    )
+    
+    class Meta:
+        ordering = ['category', 'name']
+        indexes = [
+            models.Index(fields=['code']),
+            models.Index(fields=['category']),
+            models.Index(fields=['is_active']),
+        ]
+        verbose_name = 'Subject'
+        verbose_name_plural = 'Subjects'
+    
+    def __str__(self):
+        return f"{self.code} - {self.name}"
+    
+    def clean(self):
+        """Custom validation"""
+        super().clean()
+        
+        # Validate code is uppercase alphanumeric
+        if self.code:
+            if not self.code.replace('_', '').replace('-', '').isalnum():
+                raise ValidationError({
+                    'code': 'Subject code must contain only alphanumeric characters (and optionally hyphens or underscores)'
+                })
+            
+            # Ensure code is uppercase
+            if self.code != self.code.upper():
+                raise ValidationError({
+                    'code': 'Subject code must be uppercase'
+                })
+        
+        # Validate category is valid
+        valid_categories = [choice[0] for choice in self.CATEGORY_CHOICES]
+        if self.category and self.category not in valid_categories:
+            raise ValidationError({
+                'category': f'Invalid category. Valid categories: {", ".join(valid_categories)}'
+            })
+    
+    def save(self, *args, **kwargs):
+        """Override save to ensure validation and uppercase code"""
+        # Auto-convert code to uppercase
+        if self.code:
+            self.code = self.code.upper()
+        
+        # Skip full_clean during migrations
+        import sys
+        is_migration = 'migrate' in sys.argv or 'makemigrations' in sys.argv
+        
+        if not is_migration:
+            self.full_clean()
+        
+        super().save(*args, **kwargs)
+
+
 class AcademicLevel(models.Model):
     """Academic level model (SMP, SMA, etc.)"""
     
