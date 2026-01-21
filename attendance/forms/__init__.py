@@ -13,6 +13,12 @@ from .attendance_forms import (
     AttendanceFilterForm,
 )
 
+# Import teacher attendance forms
+from .teacher_attendance_forms import (
+    TeacherAttendanceForm,
+    BulkAttendanceForm as TeacherBulkAttendanceForm,
+)
+
 # Import all other forms from the legacy forms.py file
 # We'll re-export them here for backwards compatibility
 import sys
@@ -56,6 +62,9 @@ __all__ = [
     'SubjectForm',
     'TeacherForm',
     'TeacherScheduleForm',
+    # Teacher attendance forms
+    'TeacherAttendanceForm',
+    'TeacherBulkAttendanceForm',
     # Attendance forms
     'AttendanceFilterForm',
     # Legacy forms from forms.py
