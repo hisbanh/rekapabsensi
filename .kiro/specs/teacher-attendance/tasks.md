@@ -102,7 +102,7 @@ Create all required models for teacher attendance system following the design do
   - Document command usage in migration or README
 
 ### 1.4 Update Admin Interface
-- [ ] Register new models in `attendance/admin.py`
+- [x] Register new models in `attendance/admin.py`
   - Register Subject with list_display, list_filter, search_fields
   - Register Teacher with list_display, list_filter, search_fields, photo preview
   - Register TeacherSchedule with list_display, list_filter, date_hierarchy

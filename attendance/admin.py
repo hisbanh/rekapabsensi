@@ -16,7 +16,8 @@ from django.template.response import TemplateResponse
 
 from .models import (
     AcademicLevel, Classroom, Student, AttendanceRecord, 
-    AttendanceSummary, AuditLog, AttendanceStatus
+    AttendanceSummary, AuditLog, AttendanceStatus,
+    Subject, Teacher, TeacherSchedule, TeacherAttendance, TeacherAttendanceSummary
 )
 
 
@@ -414,6 +415,478 @@ class AuditLogAdmin(admin.ModelAdmin):
         """Only superusers can delete audit logs"""
         return request.user.is_superuser
 
+
+# ============================================================================
+# TEACHER ATTENDANCE SYSTEM ADMIN
+# ============================================================================
+
+@admin.register(Subject)
+class SubjectAdmin(admin.ModelAdmin, ExportCsvMixin):
+    """Subject admin with comprehensive features"""
+    
+    list_display = [
+        'code', 'name', 'category', 'teacher_count', 'schedule_count', 'is_active'
+    ]
+    list_filter = ['category', 'is_active']
+    search_fields = ['code', 'name', 'description']
+    ordering = ['category', 'name']
+    
+    fieldsets = (
+        ('Basic Information', {
+            'fields': ('code', 'name', 'category', 'description')
+        }),
+        ('Status', {
+            'fields': ('is_active',)
+        }),
+        ('System Information', {
+            'fields': ('id', 'created_at', 'updated_at', 'created_by', 'updated_by'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    readonly_fields = ['id', 'created_at', 'updated_at', 'created_by', 'updated_by']
+    actions = ['export_as_csv', 'activate_subjects', 'deactivate_subjects']
+    
+    def teacher_count(self, obj):
+        """Display number of teachers teaching this subject"""
+        return obj.teachers.count()
+    teacher_count.short_description = 'Teachers'
+    
+    def schedule_count(self, obj):
+        """Display number of schedules for this subject"""
+        return obj.schedules.count()
+    schedule_count.short_description = 'Schedules'
+    
+    def activate_subjects(self, request, queryset):
+        """Bulk activate subjects"""
+        updated = queryset.update(is_active=True)
+        self.message_user(request, f'{updated} subjects activated.')
+    activate_subjects.short_description = "Activate selected subjects"
+    
+    def deactivate_subjects(self, request, queryset):
+        """Bulk deactivate subjects"""
+        updated = queryset.update(is_active=False)
+        self.message_user(request, f'{updated} subjects deactivated.')
+    deactivate_subjects.short_description = "Deactivate selected subjects"
+
+
+class TeacherScheduleInline(admin.TabularInline):
+    """Inline for teacher schedules"""
+    model = TeacherSchedule
+    extra = 0
+    fields = ['day_of_week', 'jp_start', 'jp_end', 'subject', 'classroom', 'room_number', 'is_active']
+    readonly_fields = []
+    
+    def get_queryset(self, request):
+        """Optimize queryset"""
+        return super().get_queryset(request).select_related('subject', 'classroom')
+
+
+@admin.register(Teacher)
+class TeacherAdmin(admin.ModelAdmin, ExportCsvMixin):
+    """Enhanced Teacher admin with comprehensive features"""
+    
+    list_display = [
+        'photo_preview', 'nip', 'full_name', 'subject_list_display', 
+        'employment_status_display', 'is_homeroom_teacher', 'is_active',
+        'teaching_load_display'
+    ]
+    list_filter = [
+        'employment_status', 'is_active', 'is_homeroom_teacher',
+        ('subjects', admin.RelatedOnlyFieldListFilter),
+        ('homeroom_class', admin.RelatedOnlyFieldListFilter),
+    ]
+    search_fields = ['nip', 'full_name', 'email', 'phone', 'subjects__name']
+    ordering = ['full_name']
+    readonly_fields = ['id', 'created_at', 'updated_at', 'created_by', 'updated_by', 'photo_preview_large']
+    
+    fieldsets = (
+        ('Basic Information', {
+            'fields': ('nip', 'full_name', 'user', 'photo', 'photo_preview_large')
+        }),
+        ('Contact Information', {
+            'fields': ('email', 'phone', 'address'),
+            'classes': ('collapse',)
+        }),
+        ('Employment Information', {
+            'fields': ('employment_date', 'employment_status')
+        }),
+        ('Teaching Information', {
+            'fields': ('subjects', 'is_homeroom_teacher', 'homeroom_class')
+        }),
+        ('Status', {
+            'fields': ('is_active',)
+        }),
+        ('System Information', {
+            'fields': ('id', 'created_at', 'updated_at', 'created_by', 'updated_by'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    filter_horizontal = ['subjects']
+    inlines = [TeacherScheduleInline]
+    actions = ['export_as_csv', 'activate_teachers', 'deactivate_teachers']
+    
+    def photo_preview(self, obj):
+        """Display small photo preview in list"""
+        if obj.photo:
+            return format_html(
+                '<img src="{}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;" />',
+                obj.photo.url
+            )
+        return format_html('<div style="width: 40px; height: 40px; border-radius: 50%; background: #e5e7eb; display: flex; align-items: center; justify-content: center; color: #6b7280;">👤</div>')
+    photo_preview.short_description = 'Photo'
+    
+    def photo_preview_large(self, obj):
+        """Display larger photo preview in detail view"""
+        if obj.photo:
+            return format_html(
+                '<img src="{}" style="max-width: 200px; max-height: 200px; border-radius: 8px; object-fit: cover;" />',
+                obj.photo.url
+            )
+        return format_html('<div style="width: 200px; height: 200px; border-radius: 8px; background: #e5e7eb; display: flex; align-items: center; justify-content: center; color: #6b7280; font-size: 48px;">👤</div>')
+    photo_preview_large.short_description = 'Photo Preview'
+    
+    def subject_list_display(self, obj):
+        """Display subjects as comma-separated list"""
+        subjects = obj.subjects.all()[:3]  # Limit to 3 for display
+        subject_names = [s.name for s in subjects]
+        if obj.subjects.count() > 3:
+            subject_names.append(f'... (+{obj.subjects.count() - 3})')
+        return ', '.join(subject_names) if subject_names else '-'
+    subject_list_display.short_description = 'Subjects'
+    
+    def employment_status_display(self, obj):
+        """Display employment status with color coding"""
+        colors = {
+            'ACTIVE': 'green',
+            'LEAVE': 'orange',
+            'INACTIVE': 'red'
+        }
+        color = colors.get(obj.employment_status, 'black')
+        return format_html(
+            '<span style="color: {}; font-weight: bold;">{}</span>',
+            color, obj.get_employment_status_display()
+        )
+    employment_status_display.short_description = 'Employment Status'
+    employment_status_display.admin_order_field = 'employment_status'
+    
+    def teaching_load_display(self, obj):
+        """Display teaching load (total JP per week)"""
+        load = obj.teaching_load
+        if load == 0:
+            color = 'gray'
+        elif load < 18:
+            color = 'orange'
+        else:
+            color = 'green'
+        return format_html(
+            '<span style="color: {};">{} JP/week</span>',
+            color, load
+        )
+    teaching_load_display.short_description = 'Teaching Load'
+    
+    def activate_teachers(self, request, queryset):
+        """Bulk activate teachers"""
+        updated = queryset.update(is_active=True)
+        self.message_user(request, f'{updated} teachers activated.')
+    activate_teachers.short_description = "Activate selected teachers"
+    
+    def deactivate_teachers(self, request, queryset):
+        """Bulk deactivate teachers"""
+        updated = queryset.update(is_active=False)
+        self.message_user(request, f'{updated} teachers deactivated.')
+    deactivate_teachers.short_description = "Deactivate selected teachers"
+    
+    def get_queryset(self, request):
+        """Optimize queryset with prefetch_related"""
+        return super().get_queryset(request).prefetch_related(
+            'subjects', 'schedules'
+        ).select_related('user', 'homeroom_class')
+
+
+@admin.register(TeacherSchedule)
+class TeacherScheduleAdmin(admin.ModelAdmin, ExportCsvMixin):
+    """Enhanced TeacherSchedule admin"""
+    
+    list_display = [
+        'teacher_link', 'subject', 'classroom', 'day_name_display', 
+        'jp_range_display', 'room_number', 'effective_date', 'is_active'
+    ]
+    list_filter = [
+        'day_of_week', 'is_active', 'effective_date',
+        ('teacher', admin.RelatedOnlyFieldListFilter),
+        ('subject', admin.RelatedOnlyFieldListFilter),
+        ('classroom', admin.RelatedOnlyFieldListFilter),
+        ('effective_date', admin.DateFieldListFilter),
+    ]
+    search_fields = [
+        'teacher__full_name', 'teacher__nip', 'subject__name', 
+        'classroom__name', 'room_number'
+    ]
+    date_hierarchy = 'effective_date'
+    ordering = ['day_of_week', 'jp_start', 'teacher__full_name']
+    readonly_fields = ['id', 'created_at', 'updated_at', 'created_by', 'updated_by', 'jp_count']
+    
+    fieldsets = (
+        ('Schedule Information', {
+            'fields': ('teacher', 'subject', 'classroom')
+        }),
+        ('Time Details', {
+            'fields': ('day_of_week', 'jp_start', 'jp_end', 'jp_count')
+        }),
+        ('Location & Notes', {
+            'fields': ('room_number', 'notes')
+        }),
+        ('Validity Period', {
+            'fields': ('effective_date', 'end_date', 'is_active')
+        }),
+        ('System Information', {
+            'fields': ('id', 'created_at', 'updated_at', 'created_by', 'updated_by'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    actions = ['export_as_csv', 'activate_schedules', 'deactivate_schedules']
+    
+    def teacher_link(self, obj):
+        """Create link to teacher detail"""
+        url = reverse('admin:attendance_teacher_change', args=[obj.teacher.pk])
+        return format_html('<a href="{}">{}</a>', url, obj.teacher.full_name)
+    teacher_link.short_description = 'Teacher'
+    teacher_link.admin_order_field = 'teacher__full_name'
+    
+    def day_name_display(self, obj):
+        """Display day name"""
+        return obj.day_name
+    day_name_display.short_description = 'Day'
+    day_name_display.admin_order_field = 'day_of_week'
+    
+    def jp_range_display(self, obj):
+        """Display JP range"""
+        return f"JP {obj.jp_start}-{obj.jp_end} ({obj.jp_count} JP)"
+    jp_range_display.short_description = 'JP Range'
+    
+    def activate_schedules(self, request, queryset):
+        """Bulk activate schedules"""
+        updated = queryset.update(is_active=True)
+        self.message_user(request, f'{updated} schedules activated.')
+    activate_schedules.short_description = "Activate selected schedules"
+    
+    def deactivate_schedules(self, request, queryset):
+        """Bulk deactivate schedules"""
+        updated = queryset.update(is_active=False)
+        self.message_user(request, f'{updated} schedules deactivated.')
+    deactivate_schedules.short_description = "Deactivate selected schedules"
+    
+    def get_queryset(self, request):
+        """Optimize queryset"""
+        return super().get_queryset(request).select_related(
+            'teacher', 'subject', 'classroom', 'classroom__academic_level'
+        )
+
+
+@admin.register(TeacherAttendance)
+class TeacherAttendanceAdmin(admin.ModelAdmin, ExportCsvMixin):
+    """Enhanced TeacherAttendance admin"""
+    
+    list_display = [
+        'teacher_link', 'date', 'jp_number', 'status_display', 
+        'schedule_display', 'is_substitute', 'location_status', 
+        'recorded_by', 'recorded_at'
+    ]
+    list_filter = [
+        'status', 'is_substitute', 'is_location_valid', 
+        ('date', admin.DateFieldListFilter),
+        ('teacher', admin.RelatedOnlyFieldListFilter),
+        ('recorded_by', admin.RelatedOnlyFieldListFilter),
+    ]
+    search_fields = [
+        'teacher__full_name', 'teacher__nip', 'notes',
+        'recorded_by__username', 'recorded_by__first_name', 'recorded_by__last_name'
+    ]
+    date_hierarchy = 'date'
+    ordering = ['-date', 'jp_number', 'teacher__full_name']
+    readonly_fields = [
+        'id', 'created_at', 'updated_at', 'created_by', 'updated_by', 
+        'recorded_at', 'location_display'
+    ]
+    
+    fieldsets = (
+        ('Attendance Information', {
+            'fields': ('teacher', 'date', 'jp_number', 'status', 'schedule')
+        }),
+        ('Substitute Information', {
+            'fields': ('is_substitute', 'substitute_for'),
+            'classes': ('collapse',)
+        }),
+        ('Additional Details', {
+            'fields': ('notes', 'recorded_by')
+        }),
+        ('Location Validation', {
+            'fields': ('latitude', 'longitude', 'is_location_valid', 'location_display'),
+            'classes': ('collapse',)
+        }),
+        ('System Information', {
+            'fields': ('id', 'created_at', 'updated_at', 'created_by', 'updated_by', 'recorded_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    actions = ['export_as_csv', 'mark_as_present', 'mark_as_absent']
+    
+    def teacher_link(self, obj):
+        """Create link to teacher detail"""
+        url = reverse('admin:attendance_teacher_change', args=[obj.teacher.pk])
+        return format_html('<a href="{}">{}</a>', url, obj.teacher.full_name)
+    teacher_link.short_description = 'Teacher'
+    teacher_link.admin_order_field = 'teacher__full_name'
+    
+    def status_display(self, obj):
+        """Display status with color coding"""
+        colors = {
+            'HADIR': 'green',
+            'SAKIT': 'orange',
+            'IZIN': 'blue',
+            'CUTI': 'purple',
+            'DINAS': 'teal',
+            'ALPA': 'red'
+        }
+        color = colors.get(obj.status, 'black')
+        status_text = dict(obj.STATUS_CHOICES).get(obj.status, obj.status)
+        return format_html(
+            '<span style="color: {}; font-weight: bold;">{}</span>',
+            color, status_text
+        )
+    status_display.short_description = 'Status'
+    status_display.admin_order_field = 'status'
+    
+    def schedule_display(self, obj):
+        """Display associated schedule"""
+        if obj.schedule:
+            return f"{obj.schedule.subject.name} - {obj.schedule.classroom.name}"
+        return '-'
+    schedule_display.short_description = 'Schedule'
+    
+    def location_status(self, obj):
+        """Display location validation status"""
+        if obj.latitude and obj.longitude:
+            if obj.is_location_valid:
+                return format_html('<span style="color: green;">✓ Valid</span>')
+            else:
+                return format_html('<span style="color: red;">✗ Invalid</span>')
+        return '-'
+    location_status.short_description = 'Location'
+    
+    def location_display(self, obj):
+        """Display location coordinates"""
+        if obj.latitude and obj.longitude:
+            return format_html(
+                'Lat: {}, Lon: {}<br>Status: {}',
+                obj.latitude, obj.longitude,
+                'Valid' if obj.is_location_valid else 'Invalid'
+            )
+        return 'No location data'
+    location_display.short_description = 'Location Details'
+    
+    def mark_as_present(self, request, queryset):
+        """Bulk mark as present"""
+        updated = queryset.update(status='HADIR')
+        self.message_user(request, f'{updated} records marked as present.')
+    mark_as_present.short_description = "Mark selected as Present (Hadir)"
+    
+    def mark_as_absent(self, request, queryset):
+        """Bulk mark as absent"""
+        updated = queryset.update(status='ALPA')
+        self.message_user(request, f'{updated} records marked as absent.')
+    mark_as_absent.short_description = "Mark selected as Absent (Alpa)"
+    
+    def get_queryset(self, request):
+        """Optimize queryset"""
+        return super().get_queryset(request).select_related(
+            'teacher', 'schedule', 'schedule__subject', 'schedule__classroom',
+            'substitute_for', 'recorded_by'
+        )
+
+
+@admin.register(TeacherAttendanceSummary)
+class TeacherAttendanceSummaryAdmin(admin.ModelAdmin, ExportCsvMixin):
+    """TeacherAttendanceSummary admin"""
+    
+    list_display = [
+        'teacher_link', 'year', 'month', 'total_jp_scheduled',
+        'total_hadir', 'total_sakit', 'total_izin', 'total_cuti',
+        'total_dinas', 'total_alpa', 'attendance_percentage_display'
+    ]
+    list_filter = [
+        'year', 'month',
+        ('teacher', admin.RelatedOnlyFieldListFilter),
+    ]
+    search_fields = ['teacher__full_name', 'teacher__nip']
+    ordering = ['-year', '-month', 'teacher__full_name']
+    readonly_fields = ['id', 'created_at', 'updated_at', 'attendance_percentage']
+    
+    fieldsets = (
+        ('Period Information', {
+            'fields': ('teacher', 'year', 'month')
+        }),
+        ('Attendance Counts', {
+            'fields': (
+                'total_jp_scheduled', 'total_hadir', 'total_sakit', 
+                'total_izin', 'total_cuti', 'total_dinas', 'total_alpa'
+            )
+        }),
+        ('Calculated Fields', {
+            'fields': ('attendance_percentage',)
+        }),
+        ('System Information', {
+            'fields': ('id', 'created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    actions = ['export_as_csv', 'recalculate_percentages']
+    
+    def teacher_link(self, obj):
+        """Create link to teacher detail"""
+        url = reverse('admin:attendance_teacher_change', args=[obj.teacher.pk])
+        return format_html('<a href="{}">{}</a>', url, obj.teacher.full_name)
+    teacher_link.short_description = 'Teacher'
+    teacher_link.admin_order_field = 'teacher__full_name'
+    
+    def attendance_percentage_display(self, obj):
+        """Display percentage with color coding"""
+        percentage = obj.attendance_percentage
+        if percentage >= 90:
+            color = 'green'
+        elif percentage >= 75:
+            color = 'orange'
+        else:
+            color = 'red'
+        
+        return format_html(
+            '<span style="color: {}; font-weight: bold;">{:.1f}%</span>',
+            color, percentage
+        )
+    attendance_percentage_display.short_description = 'Attendance %'
+    attendance_percentage_display.admin_order_field = 'attendance_percentage'
+    
+    def recalculate_percentages(self, request, queryset):
+        """Recalculate attendance percentages"""
+        for summary in queryset:
+            summary.calculate_percentage()
+            summary.save()
+        self.message_user(request, f'Recalculated {queryset.count()} summaries.')
+    recalculate_percentages.short_description = "Recalculate percentages"
+    
+    def get_queryset(self, request):
+        """Optimize queryset"""
+        return super().get_queryset(request).select_related('teacher')
+
+
+# ============================================================================
+# SITE CUSTOMIZATION
+# ============================================================================
 
 # Customize the default admin site
 admin.site.site_header = "SIPA Beta  Administration"
