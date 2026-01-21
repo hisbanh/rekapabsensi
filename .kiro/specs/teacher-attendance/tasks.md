@@ -212,7 +212,7 @@ Create all required models for teacher attendance system following the design do
   - Add "Add Teacher" button (admin only)
   - Use consistent styling with student system (Inter font, indigo theme)
 
-- [ ] Create `templates/teacher/teacher_form.html`
+- [x] Create `templates/teacher/teacher_form.html`
   - Form for creating/editing teacher
   - Photo upload with preview
   - Subject selection (multi-select)
@@ -220,7 +220,7 @@ Create all required models for teacher attendance system following the design do
   - Form validation and error display
   - Cancel and Save buttons
 
-- [ ] Create `templates/teacher/teacher_detail.html`
+- [x] Create `templates/teacher/teacher_detail.html`
   - Display complete teacher profile
   - Show photo, personal info, employment info
   - Display assigned subjects

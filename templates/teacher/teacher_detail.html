@@ -1,0 +1,766 @@
+{% extends 'manage/base_list.html' %}
+{% load static %}
+{% load attendance_extras %}
+
+{% block page_title %}Detail Ustadz - {{ teacher.full_name }}{% endblock %}
+
+{% block breadcrumb_items %}
+<li class="breadcrumb-item"><a href="{% url 'teacher_list' %}">Data Ustadz</a></li>
+<li class="breadcrumb-item active">{{ teacher.full_name }}</li>
+{% endblock %}
+
+{% block page_actions %}
+<div class="btn-group">
+    <a href="{% url 'teacher_list' %}" class="btn btn-outline-secondary btn-sm">
+        <i class="fas fa-arrow-left me-1"></i> Kembali
+    </a>
+    {% if user.is_superuser %}
+    <a href="{% url 'teacher_update' teacher.pk %}" class="btn btn-primary btn-sm">
+        <i class="fas fa-edit me-1"></i> Edit
+    </a>
+    <button type="button" 
+            class="btn btn-danger btn-sm" 
+            data-bs-toggle="modal" 
+            data-bs-target="#deleteModal"
+            data-delete-id="{{ teacher.pk }}"
+            data-delete-name="{{ teacher.full_name }}"
+            data-delete-url="{% url 'teacher_delete' teacher.pk %}">
+        <i class="fas fa-trash me-1"></i> Hapus
+    </button>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block stats_row %}
+<!-- Teacher Profile Header -->
+<div class="teacher-profile-header">
+    <div class="teacher-photo-section">
+        {% if teacher.photo %}
+        <img src="{{ teacher.photo.url }}" 
+             alt="{{ teacher.full_name }}" 
+             class="teacher-photo-large">
+        {% else %}
+        <div class="teacher-avatar-large">
+            {{ teacher.full_name|slice:":1"|upper }}
+        </div>
+        {% endif %}
+    </div>
+    <div class="teacher-info-section">
+        <h3 class="teacher-name">{{ teacher.full_name }}</h3>
+        <div class="teacher-meta">
+            <span class="meta-item">
+                <i class="fas fa-id-card me-1"></i>
+                <strong>NIP:</strong> {{ teacher.nip }}
+            </span>
+            {% if teacher.email %}
+            <span class="meta-item">
+                <i class="fas fa-envelope me-1"></i>
+                {{ teacher.email }}
+            </span>
+            {% endif %}
+            {% if teacher.phone %}
+            <span class="meta-item">
+                <i class="fas fa-phone me-1"></i>
+                {{ teacher.phone }}
+            </span>
+            {% endif %}
+        </div>
+        <div class="teacher-badges">
+            {% if teacher.is_active %}
+                {% if teacher.employment_status == 'ACTIVE' %}
+                <span class="status-badge status-hadir">
+                    <i class="fas fa-check-circle me-1"></i>Aktif
+                </span>
+                {% elif teacher.employment_status == 'LEAVE' %}
+                <span class="status-badge status-izin">
+                    <i class="fas fa-calendar-times me-1"></i>Cuti
+                </span>
+                {% else %}
+                <span class="status-badge status-alpa">
+                    <i class="fas fa-times-circle me-1"></i>Tidak Aktif
+                </span>
+                {% endif %}
+            {% else %}
+            <span class="status-badge status-alpa">
+                <i class="fas fa-ban me-1"></i>Nonaktif
+            </span>
+            {% endif %}
+            
+            {% if teacher.is_homeroom_teacher and teacher.homeroom_class %}
+            <span class="badge bg-warning text-dark">
+                <i class="fas fa-home me-1"></i>Wali Kelas {{ teacher.homeroom_class.name }}
+            </span>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block filters %}
+<!-- Attendance Statistics Cards -->
+<div class="stats-row mb-4">
+    <div class="stat-card">
+        <div class="stat-icon success">
+            <i class="fas fa-check-circle"></i>
+        </div>
+        <div>
+            <div class="stat-value">{{ stats.attendance_percentage|floatformat:1 }}%</div>
+            <div class="stat-label">Kehadiran</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon primary">
+            <i class="fas fa-calendar-check"></i>
+        </div>
+        <div>
+            <div class="stat-value">{{ stats.total_hadir }}</div>
+            <div class="stat-label">Hadir (JP)</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon warning">
+            <i class="fas fa-notes-medical"></i>
+        </div>
+        <div>
+            <div class="stat-value">{{ stats.total_sakit }}</div>
+            <div class="stat-label">Sakit (JP)</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon info">
+            <i class="fas fa-file-signature"></i>
+        </div>
+        <div>
+            <div class="stat-value">{{ stats.total_izin }}</div>
+            <div class="stat-label">Izin (JP)</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon danger">
+            <i class="fas fa-exclamation-circle"></i>
+        </div>
+        <div>
+            <div class="stat-value">{{ stats.total_alpa }}</div>
+            <div class="stat-label">Alpa (JP)</div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block list_content %}
+<div class="row">
+    <!-- Left Column: Personal & Employment Info -->
+    <div class="col-lg-4 mb-4">
+        <!-- Personal Information -->
+        <div class="card mb-3">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-user me-2"></i>Informasi Pribadi
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="info-group">
+                    <label>Nama Lengkap</label>
+                    <p>{{ teacher.full_name }}</p>
+                </div>
+                <div class="info-group">
+                    <label>NIP</label>
+                    <p>{{ teacher.nip }}</p>
+                </div>
+                {% if teacher.email %}
+                <div class="info-group">
+                    <label>Email</label>
+                    <p>{{ teacher.email }}</p>
+                </div>
+                {% endif %}
+                {% if teacher.phone %}
+                <div class="info-group">
+                    <label>Telepon</label>
+                    <p>{{ teacher.phone }}</p>
+                </div>
+                {% endif %}
+                {% if teacher.address %}
+                <div class="info-group">
+                    <label>Alamat</label>
+                    <p>{{ teacher.address }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Employment Information -->
+        <div class="card mb-3">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-briefcase me-2"></i>Informasi Kepegawaian
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="info-group">
+                    <label>Tanggal Mulai Kerja</label>
+                    <p>{{ teacher.employment_date|date:"d M Y" }}</p>
+                </div>
+                <div class="info-group">
+                    <label>Status Kepegawaian</label>
+                    <p>
+                        {% if teacher.employment_status == 'ACTIVE' %}
+                        <span class="badge bg-success">Aktif</span>
+                        {% elif teacher.employment_status == 'LEAVE' %}
+                        <span class="badge bg-warning text-dark">Cuti</span>
+                        {% else %}
+                        <span class="badge bg-secondary">Tidak Aktif</span>
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="info-group">
+                    <label>Status Sistem</label>
+                    <p>
+                        {% if teacher.is_active %}
+                        <span class="badge bg-success">Aktif</span>
+                        {% else %}
+                        <span class="badge bg-danger">Nonaktif</span>
+                        {% endif %}
+                    </p>
+                </div>
+                {% if teacher.is_homeroom_teacher %}
+                <div class="info-group">
+                    <label>Wali Kelas</label>
+                    <p>
+                        {% if teacher.homeroom_class %}
+                        <span class="badge bg-warning text-dark">
+                            <i class="fas fa-home me-1"></i>{{ teacher.homeroom_class.name }}
+                        </span>
+                        {% else %}
+                        <span class="text-muted">Belum ditentukan</span>
+                        {% endif %}
+                    </p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Assigned Subjects -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-book me-2"></i>Mata Pelajaran
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if subjects %}
+                <div class="subject-list">
+                    {% for subject in subjects %}
+                    <div class="subject-item">
+                        <span class="badge bg-secondary">{{ subject.name }}</span>
+                        <span class="text-muted small">{{ subject.get_category_display }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted mb-0">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Belum ada mata pelajaran yang ditugaskan
+                </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Right Column: Schedule & Statistics -->
+    <div class="col-lg-8">
+        <!-- Weekly Schedule -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">
+                    <i class="fas fa-calendar-week me-2"></i>Jadwal Mengajar Mingguan
+                </h6>
+                <span class="badge bg-primary">{{ teaching_load }} JP/Minggu</span>
+            </div>
+            <div class="card-body">
+                {% if total_schedules > 0 %}
+                <div class="schedule-grid">
+                    <div class="table-responsive">
+                        <table class="table table-bordered schedule-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 80px;">JP</th>
+                                    <th>Senin</th>
+                                    <th>Selasa</th>
+                                    <th>Rabu</th>
+                                    <th>Kamis</th>
+                                    <th>Jumat</th>
+                                    <th>Sabtu</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for jp in "12345678910"|make_list %}
+                                <tr>
+                                    <td class="jp-label">JP {{ jp }}</td>
+                                    {% for day in "0123456"|make_list %}
+                                    <td class="schedule-cell">
+                                        {% for schedule in weekly_schedule|get_item:day %}
+                                            {% if schedule.jp_start|stringformat:"s" <= jp and schedule.jp_end|stringformat:"s" >= jp %}
+                                            <div class="schedule-item">
+                                                <div class="schedule-subject">{{ schedule.subject.name }}</div>
+                                                <div class="schedule-class">{{ schedule.classroom.name }}</div>
+                                                {% if schedule.room_number %}
+                                                <div class="schedule-room">Ruang {{ schedule.room_number }}</div>
+                                                {% endif %}
+                                            </div>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </td>
+                                    {% endfor %}
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="mt-3 text-center">
+                    <a href="{% url 'teacher_schedule' teacher.pk %}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-calendar-alt me-1"></i> Lihat Jadwal Lengkap
+                    </a>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+                    <h6 class="text-muted">Belum ada jadwal mengajar</h6>
+                    <p class="text-muted small mb-0">Jadwal mengajar belum ditambahkan untuk ustadz ini</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Attendance Statistics Detail -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-chart-bar me-2"></i>Statistik Kehadiran Bulan Ini
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if stats.total_jp_scheduled > 0 %}
+                <div class="row">
+                    <div class="col-md-6">
+                        <canvas id="attendanceChart" height="200"></canvas>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="attendance-breakdown">
+                            <div class="breakdown-item">
+                                <div class="breakdown-label">
+                                    <span class="color-indicator" style="background: #28a745;"></span>
+                                    Hadir
+                                </div>
+                                <div class="breakdown-value">{{ stats.total_hadir }} JP</div>
+                            </div>
+                            <div class="breakdown-item">
+                                <div class="breakdown-label">
+                                    <span class="color-indicator" style="background: #ffc107;"></span>
+                                    Sakit
+                                </div>
+                                <div class="breakdown-value">{{ stats.total_sakit }} JP</div>
+                            </div>
+                            <div class="breakdown-item">
+                                <div class="breakdown-label">
+                                    <span class="color-indicator" style="background: #17a2b8;"></span>
+                                    Izin
+                                </div>
+                                <div class="breakdown-value">{{ stats.total_izin }} JP</div>
+                            </div>
+                            <div class="breakdown-item">
+                                <div class="breakdown-label">
+                                    <span class="color-indicator" style="background: #6c757d;"></span>
+                                    Cuti
+                                </div>
+                                <div class="breakdown-value">{{ stats.total_cuti }} JP</div>
+                            </div>
+                            <div class="breakdown-item">
+                                <div class="breakdown-label">
+                                    <span class="color-indicator" style="background: #007bff;"></span>
+                                    Dinas
+                                </div>
+                                <div class="breakdown-value">{{ stats.total_dinas }} JP</div>
+                            </div>
+                            <div class="breakdown-item">
+                                <div class="breakdown-label">
+                                    <span class="color-indicator" style="background: #dc3545;"></span>
+                                    Alpa
+                                </div>
+                                <div class="breakdown-value">{{ stats.total_alpa }} JP</div>
+                            </div>
+                            <div class="breakdown-item total">
+                                <div class="breakdown-label">
+                                    <strong>Total Dijadwalkan</strong>
+                                </div>
+                                <div class="breakdown-value">
+                                    <strong>{{ stats.total_jp_scheduled }} JP</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
+                    <h6 class="text-muted">Belum ada data kehadiran</h6>
+                    <p class="text-muted small mb-0">Data kehadiran untuk bulan ini belum tersedia</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block list_extra_css %}
+<style>
+    /* Teacher Profile Header */
+    .teacher-profile-header {
+        display: flex;
+        align-items: center;
+        gap: 2rem;
+        background: white;
+        padding: 2rem;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        margin-bottom: 1.5rem;
+    }
+    
+    .teacher-photo-section {
+        flex-shrink: 0;
+    }
+    
+    .teacher-photo-large {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 4px solid var(--primary);
+        box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
+    }
+    
+    .teacher-avatar-large {
+        width: 120px;
+        height: 120px;
+        background: linear-gradient(135deg, var(--primary) 0%, #6b5344 100%);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 3rem;
+        font-weight: 600;
+        border: 4px solid var(--primary);
+        box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
+    }
+    
+    .teacher-info-section {
+        flex: 1;
+    }
+    
+    .teacher-name {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 0.5rem;
+    }
+    
+    .teacher-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1.5rem;
+        margin-bottom: 1rem;
+        color: var(--text-secondary);
+        font-size: 0.95rem;
+    }
+    
+    .meta-item {
+        display: flex;
+        align-items: center;
+    }
+    
+    .meta-item i {
+        color: var(--primary);
+    }
+    
+    .teacher-badges {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    
+    /* Info Groups */
+    .info-group {
+        margin-bottom: 1rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid var(--border-light);
+    }
+    
+    .info-group:last-child {
+        margin-bottom: 0;
+        padding-bottom: 0;
+        border-bottom: none;
+    }
+    
+    .info-group label {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        margin-bottom: 0.25rem;
+        display: block;
+    }
+    
+    .info-group p {
+        margin: 0;
+        color: var(--text-primary);
+        font-size: 0.95rem;
+    }
+    
+    /* Subject List */
+    .subject-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    
+    .subject-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem;
+        background: var(--bg-light);
+        border-radius: 6px;
+    }
+    
+    .subject-item .badge {
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+    
+    /* Schedule Grid */
+    .schedule-table {
+        font-size: 0.85rem;
+        margin-bottom: 0;
+    }
+    
+    .schedule-table thead th {
+        background: var(--bg-light);
+        font-weight: 600;
+        text-align: center;
+        padding: 0.75rem 0.5rem;
+        border: 1px solid var(--border-color);
+    }
+    
+    .schedule-table .jp-label {
+        background: var(--bg-light);
+        font-weight: 600;
+        text-align: center;
+        vertical-align: middle;
+    }
+    
+    .schedule-cell {
+        padding: 0.5rem;
+        vertical-align: top;
+        min-height: 60px;
+        border: 1px solid var(--border-color);
+    }
+    
+    .schedule-item {
+        background: linear-gradient(135deg, var(--primary) 0%, #6366f1 100%);
+        color: white;
+        padding: 0.5rem;
+        border-radius: 6px;
+        margin-bottom: 0.25rem;
+        font-size: 0.75rem;
+    }
+    
+    .schedule-item:last-child {
+        margin-bottom: 0;
+    }
+    
+    .schedule-subject {
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+    }
+    
+    .schedule-class,
+    .schedule-room {
+        font-size: 0.7rem;
+        opacity: 0.9;
+    }
+    
+    /* Attendance Breakdown */
+    .attendance-breakdown {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    
+    .breakdown-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem;
+        background: var(--bg-light);
+        border-radius: 6px;
+    }
+    
+    .breakdown-item.total {
+        background: var(--primary-light);
+        border: 2px solid var(--primary);
+    }
+    
+    .breakdown-label {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.9rem;
+    }
+    
+    .color-indicator {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        display: inline-block;
+    }
+    
+    .breakdown-value {
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+    
+    /* Mobile Responsive */
+    @media (max-width: 767.98px) {
+        .teacher-profile-header {
+            flex-direction: column;
+            text-align: center;
+            padding: 1.5rem;
+        }
+        
+        .teacher-photo-large,
+        .teacher-avatar-large {
+            width: 100px;
+            height: 100px;
+            font-size: 2.5rem;
+        }
+        
+        .teacher-name {
+            font-size: 1.5rem;
+        }
+        
+        .teacher-meta {
+            flex-direction: column;
+            gap: 0.5rem;
+            align-items: center;
+        }
+        
+        .teacher-badges {
+            justify-content: center;
+        }
+        
+        .schedule-table {
+            font-size: 0.7rem;
+        }
+        
+        .schedule-table thead th,
+        .schedule-table .jp-label {
+            padding: 0.5rem 0.25rem;
+        }
+        
+        .schedule-cell {
+            padding: 0.25rem;
+            min-height: 50px;
+        }
+        
+        .schedule-item {
+            padding: 0.25rem;
+            font-size: 0.65rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block list_extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Attendance Chart
+    const chartCanvas = document.getElementById('attendanceChart');
+    
+    if (chartCanvas && {{ stats.total_jp_scheduled }} > 0) {
+        const ctx = chartCanvas.getContext('2d');
+        const attendanceChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Hadir', 'Sakit', 'Izin', 'Cuti', 'Dinas', 'Alpa'],
+                datasets: [{
+                    data: [
+                        {{ stats.total_hadir }},
+                        {{ stats.total_sakit }},
+                        {{ stats.total_izin }},
+                        {{ stats.total_cuti }},
+                        {{ stats.total_dinas }},
+                        {{ stats.total_alpa }}
+                    ],
+                    backgroundColor: [
+                        'rgba(40, 167, 69, 0.8)',
+                        'rgba(255, 193, 7, 0.8)',
+                        'rgba(23, 162, 184, 0.8)',
+                        'rgba(108, 117, 125, 0.8)',
+                        'rgba(0, 123, 255, 0.8)',
+                        'rgba(220, 53, 69, 0.8)'
+                    ],
+                    borderColor: [
+                        'rgba(40, 167, 69, 1)',
+                        'rgba(255, 193, 7, 1)',
+                        'rgba(23, 162, 184, 1)',
+                        'rgba(108, 117, 125, 1)',
+                        'rgba(0, 123, 255, 1)',
+                        'rgba(220, 53, 69, 1)'
+                    ],
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 15,
+                            font: {
+                                size: 12
+                            }
+                        }
+                    },
+                    title: {
+                        display: true,
+                        text: 'Distribusi Kehadiran',
+                        font: {
+                            size: 14,
+                            weight: 'bold'
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.parsed || 0;
+                                const total = {{ stats.total_jp_scheduled }};
+                                const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                return `${label}: ${value} JP (${percentage}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+});
+</script>
+
+<!-- Delete Modal -->
+{% include 'components/_delete_modal.html' with modal_id='deleteModal' %}
+{% endblock %}

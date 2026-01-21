@@ -1,0 +1,512 @@
+{% extends 'manage/base_form.html' %}
+{% load static %}
+
+{% block page_title %}{% if is_edit %}Edit Ustadz/Ustadzah{% else %}Tambah Ustadz/Ustadzah{% endif %}{% endblock %}
+
+{% block breadcrumb_items %}
+<li class="breadcrumb-item"><a href="{% url 'teacher_list' %}">Data Ustadz</a></li>
+<li class="breadcrumb-item active">{% if is_edit %}Edit{% else %}Tambah{% endif %}</li>
+{% endblock %}
+
+{% block form_title %}{% if is_edit %}Edit Ustadz/Ustadzah{% else %}Tambah Ustadz/Ustadzah Baru{% endif %}{% endblock %}
+
+{% block form_subtitle %}
+{% if is_edit %}
+Perbarui informasi ustadz/ustadzah {{ teacher.full_name }}
+{% else %}
+Isi form berikut untuk menambahkan ustadz/ustadzah baru
+{% endif %}
+{% endblock %}
+
+{% block cancel_url %}{% url 'teacher_list' %}{% endblock %}
+
+{% block submit_text %}{% if is_edit %}Perbarui{% else %}Simpan{% endif %}{% endblock %}
+
+{% block form_extra_css %}
+<style>
+    .photo-upload-container {
+        display: flex;
+        align-items: start;
+        gap: 1.5rem;
+    }
+    
+    .photo-preview {
+        flex-shrink: 0;
+    }
+    
+    .photo-preview-box {
+        width: 150px;
+        height: 150px;
+        border: 2px dashed var(--border-color);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        background: var(--bg-light);
+        position: relative;
+    }
+    
+    .photo-preview-box img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .photo-preview-placeholder {
+        text-align: center;
+        color: var(--text-muted);
+    }
+    
+    .photo-preview-placeholder i {
+        font-size: 3rem;
+        margin-bottom: 0.5rem;
+        opacity: 0.3;
+    }
+    
+    .photo-preview-placeholder p {
+        font-size: 0.75rem;
+        margin: 0;
+    }
+    
+    .photo-upload-controls {
+        flex: 1;
+    }
+    
+    .photo-upload-info {
+        background: var(--status-izin-bg);
+        border-radius: 8px;
+        padding: 0.75rem;
+        margin-top: 0.75rem;
+    }
+    
+    .photo-upload-info p {
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+        margin: 0;
+    }
+    
+    .photo-upload-info i {
+        color: var(--status-izin);
+        margin-right: 0.5rem;
+    }
+    
+    .subject-select-container {
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 0.75rem;
+        background: var(--bg-white);
+    }
+    
+    .subject-select-container select {
+        border: 1px solid var(--border-light);
+        border-radius: 6px;
+    }
+    
+    .subject-select-help {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        margin-top: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .subject-select-help i {
+        color: var(--status-izin);
+    }
+    
+    .homeroom-section {
+        background: var(--bg-light);
+        border-radius: 8px;
+        padding: 1rem;
+        margin-top: 0.5rem;
+        display: none;
+    }
+    
+    .homeroom-section.show {
+        display: block;
+    }
+    
+    @media (max-width: 767.98px) {
+        .photo-upload-container {
+            flex-direction: column;
+        }
+        
+        .photo-preview-box {
+            width: 120px;
+            height: 120px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block form_content %}
+<!-- Basic Information Section -->
+<div class="form-section">
+    <h6 class="form-section-title">
+        <i class="fas fa-user me-2"></i>Informasi Dasar
+    </h6>
+    <div class="form-row">
+        <div class="mb-3">
+            <label for="id_nip" class="form-label">
+                NIP <span class="text-danger">*</span>
+            </label>
+            {{ form.nip }}
+            {% if form.nip.errors %}
+            <div class="invalid-feedback d-block">{{ form.nip.errors.0 }}</div>
+            {% endif %}
+            <div class="form-text">Nomor Induk Pegawai (unik, huruf besar dan angka)</div>
+        </div>
+        <div class="mb-3">
+            <label for="id_full_name" class="form-label">
+                Nama Lengkap <span class="text-danger">*</span>
+            </label>
+            {{ form.full_name }}
+            {% if form.full_name.errors %}
+            <div class="invalid-feedback d-block">{{ form.full_name.errors.0 }}</div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Photo Upload with Preview -->
+    <div class="mb-3">
+        <label class="form-label">Foto</label>
+        <div class="photo-upload-container">
+            <div class="photo-preview">
+                <div class="photo-preview-box" id="photoPreviewBox">
+                    {% if is_edit and teacher.photo %}
+                    <img src="{{ teacher.photo.url }}" alt="{{ teacher.full_name }}" id="photoPreviewImage">
+                    {% else %}
+                    <div class="photo-preview-placeholder" id="photoPreviewPlaceholder">
+                        <i class="fas fa-user-circle"></i>
+                        <p>Belum ada foto</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="photo-upload-controls">
+                {{ form.photo }}
+                {% if form.photo.errors %}
+                <div class="invalid-feedback d-block">{{ form.photo.errors.0 }}</div>
+                {% endif %}
+                <div class="photo-upload-info">
+                    <p>
+                        <i class="fas fa-info-circle"></i>
+                        Format: JPG, PNG | Ukuran maksimal: 5MB
+                    </p>
+                </div>
+                {% if is_edit and teacher.photo %}
+                <div class="form-check mt-2">
+                    <input type="checkbox" class="form-check-input" id="clearPhoto" name="photo-clear">
+                    <label class="form-check-label" for="clearPhoto">
+                        Hapus foto yang ada
+                    </label>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Contact Information Section -->
+<div class="form-section">
+    <h6 class="form-section-title">
+        <i class="fas fa-address-book me-2"></i>Informasi Kontak
+    </h6>
+    <div class="form-row">
+        <div class="mb-3">
+            <label for="id_email" class="form-label">Email</label>
+            {{ form.email }}
+            {% if form.email.errors %}
+            <div class="invalid-feedback d-block">{{ form.email.errors.0 }}</div>
+            {% endif %}
+        </div>
+        <div class="mb-3">
+            <label for="id_phone" class="form-label">Nomor Telepon</label>
+            {{ form.phone }}
+            {% if form.phone.errors %}
+            <div class="invalid-feedback d-block">{{ form.phone.errors.0 }}</div>
+            {% endif %}
+            <div class="form-text">Format: 08xxxxxxxxxx (10-15 digit)</div>
+        </div>
+    </div>
+    <div class="form-row single">
+        <div class="mb-3">
+            <label for="id_address" class="form-label">Alamat</label>
+            {{ form.address }}
+            {% if form.address.errors %}
+            <div class="invalid-feedback d-block">{{ form.address.errors.0 }}</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Employment Information Section -->
+<div class="form-section">
+    <h6 class="form-section-title">
+        <i class="fas fa-briefcase me-2"></i>Informasi Kepegawaian
+    </h6>
+    <div class="form-row">
+        <div class="mb-3">
+            <label for="id_employment_date" class="form-label">
+                Tanggal Mulai Kerja <span class="text-danger">*</span>
+            </label>
+            {{ form.employment_date }}
+            {% if form.employment_date.errors %}
+            <div class="invalid-feedback d-block">{{ form.employment_date.errors.0 }}</div>
+            {% endif %}
+        </div>
+        <div class="mb-3">
+            <label for="id_employment_status" class="form-label">
+                Status Kepegawaian <span class="text-danger">*</span>
+            </label>
+            {{ form.employment_status }}
+            {% if form.employment_status.errors %}
+            <div class="invalid-feedback d-block">{{ form.employment_status.errors.0 }}</div>
+            {% endif %}
+        </div>
+    </div>
+    <div class="form-row single">
+        <div class="mb-3">
+            <label class="form-label">Status Aktif</label>
+            <div class="form-check form-switch mt-2">
+                {{ form.is_active }}
+                <label class="form-check-label" for="id_is_active">
+                    Ustadz/Ustadzah Aktif
+                </label>
+            </div>
+            {% if form.is_active.errors %}
+            <div class="invalid-feedback d-block">{{ form.is_active.errors.0 }}</div>
+            {% endif %}
+            <div class="form-text">Ustadz/Ustadzah nonaktif tidak akan muncul dalam jadwal</div>
+        </div>
+    </div>
+</div>
+
+<!-- Teaching Information Section -->
+<div class="form-section">
+    <h6 class="form-section-title">
+        <i class="fas fa-chalkboard-teacher me-2"></i>Informasi Mengajar
+    </h6>
+    <div class="form-row single">
+        <div class="mb-3">
+            <label for="id_subject_ids" class="form-label">
+                Mata Pelajaran yang Diajarkan
+            </label>
+            <div class="subject-select-container">
+                {{ form.subject_ids }}
+                {% if form.subject_ids.errors %}
+                <div class="invalid-feedback d-block">{{ form.subject_ids.errors.0 }}</div>
+                {% endif %}
+                <div class="subject-select-help">
+                    <i class="fas fa-info-circle"></i>
+                    <span>Tahan tombol Ctrl (Windows) atau Cmd (Mac) untuk memilih beberapa mata pelajaran</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Homeroom Teacher Section -->
+    <div class="form-row single">
+        <div class="mb-3">
+            <div class="form-check form-switch">
+                {{ form.is_homeroom_teacher }}
+                <label class="form-check-label" for="id_is_homeroom_teacher">
+                    <strong>Wali Kelas</strong>
+                </label>
+            </div>
+            {% if form.is_homeroom_teacher.errors %}
+            <div class="invalid-feedback d-block">{{ form.is_homeroom_teacher.errors.0 }}</div>
+            {% endif %}
+            
+            <div class="homeroom-section {% if form.is_homeroom_teacher.value %}show{% endif %}" id="homeroomSection">
+                <label for="id_homeroom_class" class="form-label">
+                    Kelas yang Diampu <span class="text-danger">*</span>
+                </label>
+                {{ form.homeroom_class }}
+                {% if form.homeroom_class.errors %}
+                <div class="invalid-feedback d-block">{{ form.homeroom_class.errors.0 }}</div>
+                {% endif %}
+                <div class="form-text">Pilih kelas yang menjadi tanggung jawab wali kelas</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if is_edit and teacher.created_at %}
+<div class="form-section">
+    <h6 class="form-section-title">
+        <i class="fas fa-history me-2"></i>Informasi Sistem
+    </h6>
+    <div class="row">
+        <div class="col-md-6">
+            <p class="mb-1 text-muted small">Ditambahkan</p>
+            <p class="mb-0">{{ teacher.created_at|date:"d M Y H:i" }}</p>
+        </div>
+        <div class="col-md-6">
+            <p class="mb-1 text-muted small">Terakhir Diperbarui</p>
+            <p class="mb-0">{{ teacher.updated_at|date:"d M Y H:i" }}</p>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block form_extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Photo preview functionality
+    const photoInput = document.getElementById('id_photo');
+    const photoPreviewBox = document.getElementById('photoPreviewBox');
+    const photoPreviewImage = document.getElementById('photoPreviewImage');
+    const photoPreviewPlaceholder = document.getElementById('photoPreviewPlaceholder');
+    const clearPhotoCheckbox = document.getElementById('clearPhoto');
+    
+    if (photoInput) {
+        photoInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            
+            if (file) {
+                // Validate file type
+                const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+                if (!validTypes.includes(file.type)) {
+                    alert('Format file harus JPG atau PNG');
+                    photoInput.value = '';
+                    return;
+                }
+                
+                // Validate file size (5MB)
+                const maxSize = 5 * 1024 * 1024;
+                if (file.size > maxSize) {
+                    alert('Ukuran file maksimal 5MB');
+                    photoInput.value = '';
+                    return;
+                }
+                
+                // Show preview
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    // Remove placeholder if exists
+                    if (photoPreviewPlaceholder) {
+                        photoPreviewPlaceholder.remove();
+                    }
+                    
+                    // Create or update image
+                    if (photoPreviewImage) {
+                        photoPreviewImage.src = e.target.result;
+                    } else {
+                        const img = document.createElement('img');
+                        img.id = 'photoPreviewImage';
+                        img.src = e.target.result;
+                        img.alt = 'Preview';
+                        photoPreviewBox.appendChild(img);
+                    }
+                    
+                    // Uncheck clear photo if checked
+                    if (clearPhotoCheckbox) {
+                        clearPhotoCheckbox.checked = false;
+                    }
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+    
+    // Clear photo checkbox handler
+    if (clearPhotoCheckbox) {
+        clearPhotoCheckbox.addEventListener('change', function() {
+            if (this.checked) {
+                // Show placeholder
+                if (photoPreviewImage) {
+                    photoPreviewImage.style.display = 'none';
+                }
+                
+                if (!photoPreviewPlaceholder) {
+                    const placeholder = document.createElement('div');
+                    placeholder.id = 'photoPreviewPlaceholder';
+                    placeholder.className = 'photo-preview-placeholder';
+                    placeholder.innerHTML = `
+                        <i class="fas fa-user-circle"></i>
+                        <p>Foto akan dihapus</p>
+                    `;
+                    photoPreviewBox.appendChild(placeholder);
+                }
+                
+                // Clear file input
+                photoInput.value = '';
+            } else {
+                // Restore image
+                if (photoPreviewImage) {
+                    photoPreviewImage.style.display = 'block';
+                }
+                
+                const placeholder = document.getElementById('photoPreviewPlaceholder');
+                if (placeholder) {
+                    placeholder.remove();
+                }
+            }
+        });
+    }
+    
+    // Homeroom teacher toggle
+    const homeroomCheckbox = document.getElementById('id_is_homeroom_teacher');
+    const homeroomSection = document.getElementById('homeroomSection');
+    const homeroomClassSelect = document.getElementById('id_homeroom_class');
+    
+    if (homeroomCheckbox && homeroomSection) {
+        homeroomCheckbox.addEventListener('change', function() {
+            if (this.checked) {
+                homeroomSection.classList.add('show');
+                homeroomClassSelect.required = true;
+            } else {
+                homeroomSection.classList.remove('show');
+                homeroomClassSelect.required = false;
+                homeroomClassSelect.value = '';
+            }
+        });
+    }
+    
+    // Subject selection helper
+    const subjectSelect = document.getElementById('id_subject_ids');
+    if (subjectSelect) {
+        // Add visual feedback for selected items
+        subjectSelect.addEventListener('change', function() {
+            const selectedCount = this.selectedOptions.length;
+            const helpText = this.parentElement.querySelector('.subject-select-help span');
+            
+            if (selectedCount > 0) {
+                helpText.textContent = `${selectedCount} mata pelajaran dipilih`;
+                helpText.style.color = 'var(--status-hadir)';
+                helpText.style.fontWeight = '600';
+            } else {
+                helpText.textContent = 'Tahan tombol Ctrl (Windows) atau Cmd (Mac) untuk memilih beberapa mata pelajaran';
+                helpText.style.color = '';
+                helpText.style.fontWeight = '';
+            }
+        });
+        
+        // Trigger on load if there are selected items
+        if (subjectSelect.selectedOptions.length > 0) {
+            subjectSelect.dispatchEvent(new Event('change'));
+        }
+    }
+    
+    // Form validation enhancement
+    const form = document.getElementById('mainForm');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            const homeroomChecked = homeroomCheckbox && homeroomCheckbox.checked;
+            const homeroomClassValue = homeroomClassSelect && homeroomClassSelect.value;
+            
+            if (homeroomChecked && !homeroomClassValue) {
+                e.preventDefault();
+                alert('Silakan pilih kelas yang diampu untuk wali kelas');
+                homeroomClassSelect.focus();
+                return false;
+            }
+        });
+    }
+});
+</script>
+{% endblock %}
