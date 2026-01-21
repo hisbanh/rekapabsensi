@@ -195,7 +195,7 @@ Create all required models for teacher attendance system following the design do
   - Add search and filter functionality
 
 ### 3.2 Create Teacher Forms
-- [ ] Create `attendance/forms/teacher_forms.py`
+- [x] Create `attendance/forms/teacher_forms.py`
   - Create `TeacherForm` (ModelForm for Teacher)
   - Create `SubjectForm` (ModelForm for Subject)
   - Create `TeacherScheduleForm` (ModelForm for TeacherSchedule)
