@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import path, include
 from . import views
 from . import teacher_views
 from . import teacher_attendance_views
@@ -6,6 +6,9 @@ from . import teacher_dashboard_views
 from . import teacher_report_views
 
 urlpatterns = [
+    # Teacher API endpoints
+    path('api/', include('attendance.api.urls')),
+    
     path('', views.dashboard, name='dashboard'),
     path('students/', views.student_list, name='student_list'),
     path('students/new/', views.student_list_new, name='student_list_new'),

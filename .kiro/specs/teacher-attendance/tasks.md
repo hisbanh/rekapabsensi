@@ -369,7 +369,7 @@ Create all required models for teacher attendance system following the design do
 ## Phase 5: API Endpoints (Optional - Week 9)
 
 ### 5.1 Create Teacher API Endpoints
-- [ ] Create `attendance/api/teacher_api.py`
+- [x] Create `attendance/api/teacher_api.py`
   - Implement `GET /api/teachers/` (list teachers)
   - Implement `POST /api/teachers/` (create teacher)
   - Implement `GET /api/teachers/{id}/` (get teacher detail)
@@ -382,7 +382,7 @@ Create all required models for teacher attendance system following the design do
   - Add response serialization
 
 ### 5.2 Create Schedule API Endpoints
-- [ ] Create `attendance/api/schedule_api.py`
+- [x] Create `attendance/api/schedule_api.py`
   - Implement `GET /api/schedules/` (list schedules)
   - Implement `POST /api/schedules/` (create schedule)
   - Implement `GET /api/schedules/{id}/` (get schedule detail)
