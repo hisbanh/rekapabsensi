@@ -1,0 +1,679 @@
+{% extends 'manage/base_list.html' %}
+{% load static %}
+{% load attendance_extras %}
+
+{% block page_title %}Absensi Ustadz - {{ teacher.full_name }}{% endblock %}
+
+{% block breadcrumb_items %}
+<li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+<li class="breadcrumb-item active">Absensi Ustadz</li>
+{% endblock %}
+
+{% block page_actions %}
+<div class="btn-group">
+    <a href="{% url 'teacher_attendance_history' %}" class="btn btn-outline-secondary btn-sm">
+        <i class="fas fa-history me-1"></i> Riwayat Absensi
+    </a>
+</div>
+{% endblock %}
+
+{% block stats_row %}
+<!-- Teacher Info Header -->
+<div class="teacher-attendance-header">
+    <div class="teacher-info">
+        {% if teacher.photo %}
+        <img src="{{ teacher.photo.url }}" 
+             alt="{{ teacher.full_name }}" 
+             class="teacher-photo-md">
+        {% else %}
+        <div class="teacher-avatar-md">
+            {{ teacher.full_name|slice:":1"|upper }}
+        </div>
+        {% endif %}
+        <div>
+            <h5 class="mb-1">{{ teacher.full_name }}</h5>
+            <p class="text-muted mb-0">
+                <i class="fas fa-id-card me-1"></i>NIP: {{ teacher.nip }}
+            </p>
+        </div>
+    </div>
+    <div class="date-selector">
+        <label for="dateSelector" class="form-label mb-1">Tanggal Absensi:</label>
+        <input type="date" 
+               id="dateSelector" 
+               class="form-control"
+               value="{{ target_date|date:'Y-m-d' }}"
+               min="{{ min_date|date:'Y-m-d' }}"
+               max="{{ max_date|date:'Y-m-d' }}">
+    </div>
+</div>
+{% endblock %}
+
+{% block filters %}
+<!-- Location Status Card -->
+<div class="card mb-3">
+    <div class="card-body py-3">
+        <div class="d-flex align-items-center justify-content-between">
+            <div class="location-status" id="locationStatus">
+                <i class="fas fa-map-marker-alt me-2 text-muted"></i>
+                <span class="text-muted">Lokasi belum terdeteksi</span>
+            </div>
+            <button type="button" 
+                    class="btn btn-primary btn-sm" 
+                    id="detectLocationBtn"
+                    onclick="detectLocation()">
+                <i class="fas fa-crosshairs me-1"></i> Deteksi Lokasi
+            </button>
+        </div>
+        <div class="progress mt-2" style="height: 4px; display: none;" id="locationProgress">
+            <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                 role="progressbar" 
+                 style="width: 100%"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block list_content %}
+{% if schedule_data %}
+<form method="post" id="attendanceForm">
+    {% csrf_token %}
+    
+    <!-- Hidden location fields -->
+    <input type="hidden" name="latitude" id="latitude">
+    <input type="hidden" name="longitude" id="longitude">
+    
+    <div class="card">
+        <div class="card-header">
+            <h6 class="mb-0">
+                <i class="fas fa-calendar-check me-2"></i>
+                Jadwal Mengajar - {{ target_date|date:"l, d F Y" }}
+            </h6>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover attendance-input-table mb-0">
+                    <thead>
+                        <tr>
+                            <th style="width: 80px;">JP</th>
+                            <th>Mata Pelajaran</th>
+                            <th>Kelas</th>
+                            <th style="width: 200px;">Status Kehadiran</th>
+                            <th style="width: 250px;">Catatan</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in schedule_data %}
+                        <tr class="attendance-row {% if item.existing_attendance %}has-attendance{% endif %}">
+                            <td class="jp-cell">
+                                <div class="jp-badge">JP {{ item.jp_number }}</div>
+                                <input type="hidden" name="jp_numbers" value="{{ item.jp_number }}">
+                                <input type="hidden" name="schedule_ids" value="{{ item.schedule.id }}">
+                            </td>
+                            <td>
+                                <div class="subject-info">
+                                    <i class="fas fa-book me-2 text-primary"></i>
+                                    <strong>{{ item.subject }}</strong>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="classroom-info">
+                                    <i class="fas fa-users me-2 text-secondary"></i>
+                                    {{ item.classroom }}
+                                </div>
+                            </td>
+                            <td>
+                                <select name="statuses" 
+                                        class="form-select form-select-sm status-select"
+                                        required>
+                                    {% for value, label in status_choices %}
+                                    <option value="{{ value }}" 
+                                            {% if item.status == value %}selected{% endif %}
+                                            {% if not item.status and value == 'HADIR' %}selected{% endif %}>
+                                        {{ label }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+                            <td>
+                                <input type="text" 
+                                       name="notes" 
+                                       class="form-control form-control-sm"
+                                       placeholder="Catatan (opsional)"
+                                       value="{{ item.notes }}">
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card-footer">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="text-muted">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Total {{ schedule_data|length }} JP untuk hari ini
+                </div>
+                <button type="submit" 
+                        class="btn btn-primary btn-lg"
+                        id="submitBtn"
+                        disabled>
+                    <i class="fas fa-save me-2"></i>
+                    Simpan Absensi
+                </button>
+            </div>
+        </div>
+    </div>
+</form>
+
+<!-- Info Alert -->
+<div class="alert alert-info mt-3">
+    <div class="d-flex">
+        <div class="me-3">
+            <i class="fas fa-lightbulb fa-2x"></i>
+        </div>
+        <div>
+            <h6 class="alert-heading mb-2">Petunjuk Pengisian Absensi</h6>
+            <ul class="mb-0 ps-3">
+                <li>Klik tombol <strong>"Deteksi Lokasi"</strong> untuk mengaktifkan validasi lokasi</li>
+                <li>Pastikan Anda berada di dalam area sekolah (radius 150m)</li>
+                <li>Pilih status kehadiran untuk setiap JP yang Anda ajar</li>
+                <li>Tambahkan catatan jika diperlukan (opsional)</li>
+                <li>Klik <strong>"Simpan Absensi"</strong> untuk mencatat kehadiran</li>
+                <li>Anda dapat mengisi absensi untuk 7 hari terakhir</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+{% else %}
+<!-- No Schedule -->
+<div class="card">
+    <div class="card-body text-center py-5">
+        <i class="fas fa-calendar-times fa-4x text-muted mb-3"></i>
+        <h5>Tidak Ada Jadwal Mengajar</h5>
+        <p class="text-muted mb-4">
+            Tidak ada jadwal mengajar untuk tanggal {{ target_date|date:"l, d F Y" }}
+        </p>
+        <div class="alert alert-info d-inline-block">
+            <i class="fas fa-info-circle me-2"></i>
+            Silakan pilih tanggal lain atau hubungi admin jika jadwal belum diatur
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block list_extra_css %}
+<style>
+    /* Teacher Attendance Header */
+    .teacher-attendance-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: white;
+        padding: 1.5rem;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        margin-bottom: 1.5rem;
+        gap: 2rem;
+    }
+    
+    .teacher-info {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+    
+    .teacher-photo-md {
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid var(--primary);
+    }
+    
+    .teacher-avatar-md {
+        width: 70px;
+        height: 70px;
+        background: linear-gradient(135deg, var(--primary) 0%, #6b5344 100%);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.75rem;
+        font-weight: 600;
+        border: 3px solid var(--primary);
+    }
+    
+    .date-selector {
+        min-width: 200px;
+    }
+    
+    .date-selector .form-label {
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: var(--text-secondary);
+    }
+    
+    /* Location Status */
+    .location-status {
+        display: flex;
+        align-items: center;
+        font-size: 0.95rem;
+    }
+    
+    .location-status.valid {
+        color: var(--status-hadir);
+    }
+    
+    .location-status.valid i {
+        color: var(--status-hadir);
+    }
+    
+    .location-status.invalid {
+        color: var(--status-alpa);
+    }
+    
+    .location-status.invalid i {
+        color: var(--status-alpa);
+    }
+    
+    .location-status.detecting {
+        color: var(--status-izin);
+    }
+    
+    .location-status.detecting i {
+        color: var(--status-izin);
+        animation: pulse 1.5s infinite;
+    }
+    
+    @keyframes pulse {
+        0%, 100% {
+            opacity: 1;
+        }
+        50% {
+            opacity: 0.5;
+        }
+    }
+    
+    /* Attendance Input Table */
+    .attendance-input-table {
+        font-size: 0.9rem;
+    }
+    
+    .attendance-input-table thead th {
+        background: var(--bg-light);
+        font-weight: 600;
+        text-align: left;
+        padding: 1rem;
+        border-bottom: 2px solid var(--border-color);
+    }
+    
+    .attendance-input-table tbody td {
+        padding: 1rem;
+        vertical-align: middle;
+        border-bottom: 1px solid var(--border-light);
+    }
+    
+    .attendance-row.has-attendance {
+        background-color: rgba(76, 175, 80, 0.05);
+    }
+    
+    .jp-cell {
+        text-align: center;
+    }
+    
+    .jp-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 50px;
+        height: 50px;
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+        color: white;
+        border-radius: 10px;
+        font-weight: 700;
+        font-size: 0.9rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    .subject-info,
+    .classroom-info {
+        display: flex;
+        align-items: center;
+    }
+    
+    .status-select {
+        font-weight: 500;
+    }
+    
+    .status-select option[value="HADIR"] {
+        color: var(--status-hadir);
+    }
+    
+    .status-select option[value="SAKIT"] {
+        color: var(--status-sakit);
+    }
+    
+    .status-select option[value="IZIN"] {
+        color: var(--status-izin);
+    }
+    
+    .status-select option[value="CUTI"] {
+        color: var(--status-izin);
+    }
+    
+    .status-select option[value="DINAS"] {
+        color: var(--status-izin);
+    }
+    
+    .status-select option[value="ALPA"] {
+        color: var(--status-alpa);
+    }
+    
+    /* Submit Button */
+    #submitBtn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+    
+    /* Info Alert */
+    .alert-info {
+        background-color: #E3F2FD;
+        border: 1px solid #90CAF9;
+        color: #0D47A1;
+    }
+    
+    .alert-info .alert-heading {
+        color: #0D47A1;
+        font-weight: 600;
+    }
+    
+    .alert-info ul {
+        font-size: 0.9rem;
+        line-height: 1.8;
+    }
+    
+    /* Mobile Responsive */
+    @media (max-width: 991.98px) {
+        .teacher-attendance-header {
+            flex-direction: column;
+            text-align: center;
+            gap: 1rem;
+        }
+        
+        .teacher-info {
+            flex-direction: column;
+        }
+        
+        .date-selector {
+            width: 100%;
+        }
+        
+        .attendance-input-table {
+            font-size: 0.8rem;
+        }
+        
+        .attendance-input-table thead th,
+        .attendance-input-table tbody td {
+            padding: 0.75rem 0.5rem;
+        }
+        
+        .jp-badge {
+            width: 40px;
+            height: 40px;
+            font-size: 0.8rem;
+        }
+        
+        .subject-info i,
+        .classroom-info i {
+            display: none;
+        }
+    }
+    
+    @media (max-width: 767.98px) {
+        .attendance-input-table {
+            display: block;
+            overflow-x: auto;
+        }
+        
+        .card-footer {
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .card-footer .text-muted {
+            text-align: center;
+        }
+        
+        #submitBtn {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block list_extra_js %}
+<script>
+// Configuration
+const SCHOOL_LATITUDE = {{ settings.SCHOOL_LATITUDE|default:"-7.7956" }};
+const SCHOOL_LONGITUDE = {{ settings.SCHOOL_LONGITUDE|default:"110.3695" }};
+const SCHOOL_RADIUS_METERS = {{ settings.SCHOOL_RADIUS_METERS|default:"150" }};
+
+// State
+let locationDetected = false;
+let locationValid = false;
+
+/**
+ * Detect user's current location using Geolocation API
+ */
+function detectLocation() {
+    if (!navigator.geolocation) {
+        showLocationStatus('error', 'Browser Anda tidak mendukung deteksi lokasi');
+        return;
+    }
+    
+    // Show loading state
+    showLocationStatus('detecting', 'Mendeteksi lokasi...');
+    document.getElementById('locationProgress').style.display = 'block';
+    document.getElementById('detectLocationBtn').disabled = true;
+    
+    // Get current position
+    navigator.geolocation.getCurrentPosition(
+        onLocationSuccess,
+        onLocationError,
+        {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0
+        }
+    );
+}
+
+/**
+ * Handle successful location detection
+ */
+function onLocationSuccess(position) {
+    const latitude = position.coords.latitude;
+    const longitude = position.coords.longitude;
+    const accuracy = position.coords.accuracy;
+    
+    console.log('Location detected:', { latitude, longitude, accuracy });
+    
+    // Store coordinates in hidden fields
+    document.getElementById('latitude').value = latitude;
+    document.getElementById('longitude').value = longitude;
+    
+    // Validate location against school coordinates
+    const distance = calculateDistance(
+        latitude, longitude,
+        SCHOOL_LATITUDE, SCHOOL_LONGITUDE
+    );
+    
+    console.log('Distance from school:', distance, 'meters');
+    
+    locationDetected = true;
+    locationValid = distance <= SCHOOL_RADIUS_METERS;
+    
+    // Update UI
+    document.getElementById('locationProgress').style.display = 'none';
+    document.getElementById('detectLocationBtn').disabled = false;
+    
+    if (locationValid) {
+        showLocationStatus(
+            'valid',
+            `Lokasi terdeteksi dan valid (${Math.round(distance)}m dari sekolah) ✓`
+        );
+        // Enable submit button
+        document.getElementById('submitBtn').disabled = false;
+    } else {
+        showLocationStatus(
+            'invalid',
+            `Lokasi terdeteksi tetapi di luar area sekolah (${Math.round(distance)}m dari sekolah) ✗`
+        );
+        // Still allow submission but warn user
+        document.getElementById('submitBtn').disabled = false;
+    }
+}
+
+/**
+ * Handle location detection error
+ */
+function onLocationError(error) {
+    console.error('Location error:', error);
+    
+    document.getElementById('locationProgress').style.display = 'none';
+    document.getElementById('detectLocationBtn').disabled = false;
+    
+    let message = 'Gagal mendeteksi lokasi';
+    
+    switch(error.code) {
+        case error.PERMISSION_DENIED:
+            message = 'Akses lokasi ditolak. Izinkan akses lokasi di browser Anda';
+            break;
+        case error.POSITION_UNAVAILABLE:
+            message = 'Informasi lokasi tidak tersedia';
+            break;
+        case error.TIMEOUT:
+            message = 'Waktu deteksi lokasi habis. Coba lagi';
+            break;
+    }
+    
+    showLocationStatus('error', message);
+}
+
+/**
+ * Calculate distance between two coordinates using Haversine formula
+ * Returns distance in meters
+ */
+function calculateDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371000; // Earth's radius in meters
+    const dLat = toRadians(lat2 - lat1);
+    const dLon = toRadians(lon2 - lon1);
+    
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+              Math.cos(toRadians(lat1)) * Math.cos(toRadians(lat2)) *
+              Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const distance = R * c;
+    
+    return distance;
+}
+
+/**
+ * Convert degrees to radians
+ */
+function toRadians(degrees) {
+    return degrees * (Math.PI / 180);
+}
+
+/**
+ * Update location status display
+ */
+function showLocationStatus(type, message) {
+    const statusEl = document.getElementById('locationStatus');
+    
+    // Remove all status classes
+    statusEl.classList.remove('valid', 'invalid', 'detecting');
+    
+    // Add appropriate class
+    if (type !== 'error') {
+        statusEl.classList.add(type);
+    }
+    
+    // Update icon and message
+    let icon = 'fa-map-marker-alt';
+    if (type === 'valid') {
+        icon = 'fa-check-circle';
+    } else if (type === 'invalid') {
+        icon = 'fa-exclamation-circle';
+    } else if (type === 'detecting') {
+        icon = 'fa-spinner fa-spin';
+    } else if (type === 'error') {
+        icon = 'fa-times-circle';
+        statusEl.style.color = 'var(--status-alpa)';
+    }
+    
+    statusEl.innerHTML = `
+        <i class="fas ${icon} me-2"></i>
+        <span>${message}</span>
+    `;
+}
+
+/**
+ * Handle date selector change
+ */
+document.getElementById('dateSelector').addEventListener('change', function() {
+    const selectedDate = this.value;
+    const currentUrl = new URL(window.location.href);
+    currentUrl.searchParams.set('date', selectedDate);
+    window.location.href = currentUrl.toString();
+});
+
+/**
+ * Handle form submission
+ */
+document.getElementById('attendanceForm').addEventListener('submit', function(e) {
+    // Check if location is detected
+    if (!locationDetected) {
+        e.preventDefault();
+        alert('Silakan deteksi lokasi terlebih dahulu sebelum menyimpan absensi');
+        return false;
+    }
+    
+    // Warn if location is invalid but allow submission
+    if (!locationValid) {
+        const confirmed = confirm(
+            'Lokasi Anda berada di luar area sekolah. ' +
+            'Absensi akan tetap dicatat tetapi ditandai sebagai lokasi tidak valid. ' +
+            'Lanjutkan?'
+        );
+        
+        if (!confirmed) {
+            e.preventDefault();
+            return false;
+        }
+    }
+    
+    // Show loading state
+    const submitBtn = document.getElementById('submitBtn');
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Menyimpan...';
+    
+    return true;
+});
+
+// Auto-detect location on page load if today's date
+{% if is_today %}
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-detect location after 1 second
+    setTimeout(function() {
+        detectLocation();
+    }, 1000);
+});
+{% endif %}
+</script>
+{% endblock %}
