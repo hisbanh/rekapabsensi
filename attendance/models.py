@@ -1156,6 +1156,225 @@ class TeacherSchedule(BaseModel):
         return dict(self.DAY_CHOICES).get(self.day_of_week, 'Unknown')
 
 
+class TeacherAttendance(BaseModel):
+    """Teacher attendance record per JP"""
+    
+    STATUS_CHOICES = [
+        ('HADIR', 'Hadir'),
+        ('SAKIT', 'Sakit'),
+        ('IZIN', 'Izin'),
+        ('CUTI', 'Cuti'),
+        ('DINAS', 'Dinas Luar'),
+        ('ALPA', 'Alpa'),
+    ]
+    
+    # Foreign keys
+    teacher = models.ForeignKey(
+        Teacher,
+        on_delete=models.CASCADE,
+        related_name='attendances',
+        help_text='Teacher for this attendance record'
+    )
+    schedule = models.ForeignKey(
+        TeacherSchedule,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='attendances',
+        help_text='Associated teaching schedule (optional)'
+    )
+    substitute_for = models.ForeignKey(
+        Teacher,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='substituted_by',
+        help_text='Teacher being substituted (if applicable)'
+    )
+    
+    # Attendance fields
+    date = models.DateField(
+        help_text='Date of attendance'
+    )
+    jp_number = models.PositiveIntegerField(
+        validators=[
+            MinValueValidator(1, message='JP number must be at least 1'),
+            MaxValueValidator(10, message='JP number cannot exceed 10')
+        ],
+        help_text='JP number (1-10)'
+    )
+    status = models.CharField(
+        max_length=10,
+        choices=STATUS_CHOICES,
+        help_text='Attendance status'
+    )
+    
+    # Additional information
+    notes = models.TextField(
+        blank=True,
+        help_text='Additional notes about the attendance'
+    )
+    is_substitute = models.BooleanField(
+        default=False,
+        help_text='Whether this is substitute teaching'
+    )
+    
+    # Recording metadata
+    recorded_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='teacher_attendances_recorded',
+        help_text='User who recorded this attendance'
+    )
+    recorded_at = models.DateTimeField(
+        auto_now_add=True,
+        help_text='Timestamp when attendance was recorded'
+    )
+    
+    # Location validation
+    latitude = models.DecimalField(
+        max_digits=9,
+        decimal_places=6,
+        null=True,
+        blank=True,
+        validators=[
+            MinValueValidator(-90, message='Latitude must be between -90 and 90'),
+            MaxValueValidator(90, message='Latitude must be between -90 and 90')
+        ],
+        help_text='Latitude coordinate for location validation'
+    )
+    longitude = models.DecimalField(
+        max_digits=9,
+        decimal_places=6,
+        null=True,
+        blank=True,
+        validators=[
+            MinValueValidator(-180, message='Longitude must be between -180 and 180'),
+            MaxValueValidator(180, message='Longitude must be between -180 and 180')
+        ],
+        help_text='Longitude coordinate for location validation'
+    )
+    is_location_valid = models.BooleanField(
+        default=False,
+        help_text='Whether the location is within school premises'
+    )
+    
+    class Meta:
+        ordering = ['-date', 'jp_number', 'teacher__full_name']
+        indexes = [
+            models.Index(fields=['teacher', 'date', 'jp_number']),
+            models.Index(fields=['date']),
+            models.Index(fields=['status']),
+            models.Index(fields=['is_substitute']),
+            models.Index(fields=['recorded_by']),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=['teacher', 'date', 'jp_number'],
+                name='unique_teacher_attendance'
+            )
+        ]
+        verbose_name = 'Teacher Attendance'
+        verbose_name_plural = 'Teacher Attendances'
+    
+    def __str__(self):
+        status_display = dict(self.STATUS_CHOICES).get(self.status, self.status)
+        return f"{self.teacher.full_name} - {self.date} - JP{self.jp_number} - {status_display}"
+    
+    def clean(self):
+        """Custom validation logic"""
+        super().clean()
+        
+        # Validate jp_number range
+        if self.jp_number is not None:
+            if self.jp_number < 1 or self.jp_number > 10:
+                raise ValidationError({
+                    'jp_number': 'JP number must be between 1 and 10'
+                })
+        
+        # Validate latitude range
+        if self.latitude is not None:
+            if self.latitude < -90 or self.latitude > 90:
+                raise ValidationError({
+                    'latitude': 'Latitude must be between -90 and 90'
+                })
+        
+        # Validate longitude range
+        if self.longitude is not None:
+            if self.longitude < -180 or self.longitude > 180:
+                raise ValidationError({
+                    'longitude': 'Longitude must be between -180 and 180'
+                })
+        
+        # Skip date validation during migrations
+        import sys
+        is_migration = 'migrate' in sys.argv or 'makemigrations' in sys.argv
+        
+        if not is_migration and self.date:
+            # Validate date not more than 7 days in the past (for teachers)
+            # Note: Admin users can input any past date, this validation is for self-service
+            # This will be enforced in the service layer based on user role
+            days_past = (timezone.now().date() - self.date).days
+            
+            # Only validate if recorded_by is set and is not staff
+            if self.recorded_by and not self.recorded_by.is_staff:
+                if days_past > 7:
+                    raise ValidationError({
+                        'date': 'Teachers can only record attendance for dates within the last 7 days'
+                    })
+            
+            # Validate date is not in the future
+            if self.date > timezone.now().date():
+                raise ValidationError({
+                    'date': 'Attendance date cannot be in the future'
+                })
+        
+        # Validate status is valid
+        valid_statuses = [choice[0] for choice in self.STATUS_CHOICES]
+        if self.status and self.status not in valid_statuses:
+            raise ValidationError({
+                'status': f'Invalid status. Valid statuses: {", ".join(valid_statuses)}'
+            })
+        
+        # Validate substitute logic
+        if self.is_substitute and not self.substitute_for:
+            raise ValidationError({
+                'substitute_for': 'Substitute teacher must be specified when is_substitute is True'
+            })
+        
+        if self.substitute_for and not self.is_substitute:
+            raise ValidationError({
+                'is_substitute': 'is_substitute must be True when substitute_for is specified'
+            })
+        
+        # Validate teacher is active
+        if self.teacher and not self.teacher.is_active:
+            raise ValidationError({
+                'teacher': 'Cannot record attendance for inactive teacher'
+            })
+    
+    def save(self, *args, **kwargs):
+        """Override save to ensure validation"""
+        # Skip full_clean during migrations to avoid validation issues
+        import sys
+        is_migration = 'migrate' in sys.argv or 'makemigrations' in sys.argv
+        
+        if not is_migration:
+            self.full_clean()
+        super().save(*args, **kwargs)
+    
+    @property
+    def is_present(self):
+        """Check if teacher was present"""
+        return self.status == 'HADIR'
+    
+    @property
+    def is_absent(self):
+        """Check if teacher was absent (any non-present status)"""
+        return self.status != 'HADIR'
+
+
 class AuditLog(models.Model):
     """Audit log for tracking important system events"""
     

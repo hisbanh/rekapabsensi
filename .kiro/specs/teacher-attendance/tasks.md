@@ -54,7 +54,7 @@ Create all required models for teacher attendance system following the design do
   - Add clean() method for conflict detection
 
 #### 1.1.4 Create TeacherAttendance Model
-- [ ] Create `TeacherAttendance` model extending `BaseModel`
+- [x] Create `TeacherAttendance` model extending `BaseModel`
   - Foreign keys: teacher, schedule (nullable), substitute_for (nullable)
   - Attendance fields: date, jp_number (1-10), status
   - Add STATUS_CHOICES: HADIR, SAKIT, IZIN, CUTI, DINAS, ALPA
