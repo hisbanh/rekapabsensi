@@ -789,6 +789,373 @@ class Holiday(BaseModel):
         return self.classrooms.filter(pk=classroom.pk).exists()
 
 
+class Teacher(BaseModel):
+    """Teacher/Ustadz model with complete profile"""
+    
+    EMPLOYMENT_STATUS_CHOICES = [
+        ('ACTIVE', 'Aktif'),
+        ('LEAVE', 'Cuti'),
+        ('INACTIVE', 'Tidak Aktif'),
+    ]
+    
+    # NIP validator (max 20 characters)
+    nip_validator = RegexValidator(
+        regex=r'^[0-9A-Z]{1,20}$',
+        message='NIP must be 1-20 characters long and contain only numbers and uppercase letters'
+    )
+    
+    # Core identification
+    nip = models.CharField(
+        max_length=20,
+        unique=True,
+        validators=[nip_validator],
+        help_text='Nomor Induk Pegawai (unique, max 20 characters)'
+    )
+    user = models.OneToOneField(
+        User,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='teacher_profile',
+        help_text='Associated user account for self-attendance'
+    )
+    
+    # Personal information
+    full_name = models.CharField(
+        max_length=100,
+        validators=[MinLengthValidator(3)],
+        help_text='Full name of the teacher'
+    )
+    photo = models.ImageField(
+        upload_to='teachers/',
+        null=True,
+        blank=True,
+        help_text='Teacher photo'
+    )
+    email = models.EmailField(
+        blank=True,
+        help_text='Email address'
+    )
+    phone = models.CharField(
+        max_length=15,
+        blank=True,
+        help_text='Phone number'
+    )
+    address = models.TextField(
+        blank=True,
+        help_text='Home address'
+    )
+    
+    # Employment information
+    employment_date = models.DateField(
+        help_text='Date when teacher started employment'
+    )
+    employment_status = models.CharField(
+        max_length=10,
+        choices=EMPLOYMENT_STATUS_CHOICES,
+        default='ACTIVE',
+        help_text='Current employment status'
+    )
+    
+    # Teaching information
+    subjects = models.ManyToManyField(
+        'Subject',
+        related_name='teachers',
+        blank=True,
+        help_text='Subjects taught by this teacher'
+    )
+    is_homeroom_teacher = models.BooleanField(
+        default=False,
+        help_text='Whether this teacher is a homeroom teacher'
+    )
+    homeroom_class = models.ForeignKey(
+        Classroom,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='homeroom_teachers',
+        help_text='Homeroom class if applicable'
+    )
+    
+    # Status
+    is_active = models.BooleanField(
+        default=True,
+        help_text='Whether this teacher is currently active'
+    )
+    
+    class Meta:
+        ordering = ['full_name']
+        indexes = [
+            models.Index(fields=['nip']),
+            models.Index(fields=['user']),
+            models.Index(fields=['is_active']),
+            models.Index(fields=['employment_status']),
+        ]
+        verbose_name = 'Teacher'
+        verbose_name_plural = 'Teachers'
+    
+    def __str__(self):
+        return f"{self.full_name} ({self.nip})"
+    
+    def clean(self):
+        """Custom validation logic"""
+        super().clean()
+        
+        # Validate full_name doesn't contain numbers
+        if self.full_name and any(char.isdigit() for char in self.full_name):
+            raise ValidationError({
+                'full_name': 'Teacher name should not contain numbers'
+            })
+        
+        # Validate employment_date cannot be in the future
+        import sys
+        is_migration = 'migrate' in sys.argv or 'makemigrations' in sys.argv
+        
+        if not is_migration and self.employment_date and self.employment_date > timezone.now().date():
+            raise ValidationError({
+                'employment_date': 'Employment date cannot be in the future'
+            })
+        
+        # Validate employment_status is valid
+        valid_statuses = [choice[0] for choice in self.EMPLOYMENT_STATUS_CHOICES]
+        if self.employment_status and self.employment_status not in valid_statuses:
+            raise ValidationError({
+                'employment_status': f'Invalid employment status. Valid statuses: {", ".join(valid_statuses)}'
+            })
+        
+        # Validate homeroom_class is set if is_homeroom_teacher is True
+        if self.is_homeroom_teacher and not self.homeroom_class:
+            raise ValidationError({
+                'homeroom_class': 'Homeroom class must be specified if teacher is a homeroom teacher'
+            })
+    
+    def save(self, *args, **kwargs):
+        """Override save to ensure validation"""
+        # Skip full_clean during migrations to avoid validation issues
+        import sys
+        is_migration = 'migrate' in sys.argv or 'makemigrations' in sys.argv
+        
+        if not is_migration:
+            self.full_clean()
+        super().save(*args, **kwargs)
+    
+    @property
+    def subject_list(self):
+        """Get comma-separated list of subjects"""
+        return ", ".join([subject.name for subject in self.subjects.all()])
+    
+    @property
+    def teaching_load(self):
+        """Get total number of JP per week from schedules"""
+        total_jp = 0
+        for schedule in self.schedules.filter(is_active=True):
+            total_jp += schedule.jp_count
+        return total_jp
+
+
+class TeacherSchedule(BaseModel):
+    """Weekly teaching schedule for teachers"""
+    
+    DAY_CHOICES = [
+        (0, 'Senin'),
+        (1, 'Selasa'),
+        (2, 'Rabu'),
+        (3, 'Kamis'),
+        (4, 'Jumat'),
+        (5, 'Sabtu'),
+        (6, 'Minggu'),
+    ]
+    
+    # Foreign keys
+    teacher = models.ForeignKey(
+        Teacher,
+        on_delete=models.CASCADE,
+        related_name='schedules',
+        help_text='Teacher assigned to this schedule'
+    )
+    subject = models.ForeignKey(
+        Subject,
+        on_delete=models.CASCADE,
+        related_name='schedules',
+        help_text='Subject being taught'
+    )
+    classroom = models.ForeignKey(
+        Classroom,
+        on_delete=models.CASCADE,
+        related_name='teacher_schedules',
+        help_text='Classroom where teaching occurs'
+    )
+    
+    # Schedule fields
+    day_of_week = models.IntegerField(
+        choices=DAY_CHOICES,
+        help_text='Day of week (0=Senin, 6=Minggu)'
+    )
+    jp_start = models.PositiveIntegerField(
+        validators=[
+            MinValueValidator(1, message='JP start must be at least 1'),
+            MaxValueValidator(10, message='JP start cannot exceed 10')
+        ],
+        help_text='Starting JP (1-10)'
+    )
+    jp_end = models.PositiveIntegerField(
+        validators=[
+            MinValueValidator(1, message='JP end must be at least 1'),
+            MaxValueValidator(10, message='JP end cannot exceed 10')
+        ],
+        help_text='Ending JP (1-10)'
+    )
+    
+    # Additional information
+    room_number = models.CharField(
+        max_length=20,
+        blank=True,
+        help_text='Room number where class is held'
+    )
+    notes = models.TextField(
+        blank=True,
+        help_text='Additional notes about the schedule'
+    )
+    
+    # Validity period
+    effective_date = models.DateField(
+        help_text='Date when this schedule becomes effective'
+    )
+    end_date = models.DateField(
+        null=True,
+        blank=True,
+        help_text='Date when this schedule ends (optional)'
+    )
+    is_active = models.BooleanField(
+        default=True,
+        help_text='Whether this schedule is currently active'
+    )
+    
+    class Meta:
+        ordering = ['day_of_week', 'jp_start', 'teacher__full_name']
+        indexes = [
+            models.Index(fields=['teacher', 'day_of_week', 'jp_start']),
+            models.Index(fields=['classroom', 'day_of_week', 'jp_start']),
+            models.Index(fields=['is_active']),
+            models.Index(fields=['effective_date']),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=['teacher', 'day_of_week', 'jp_start', 'jp_end', 'effective_date'],
+                name='unique_teacher_schedule'
+            )
+        ]
+        verbose_name = 'Teacher Schedule'
+        verbose_name_plural = 'Teacher Schedules'
+    
+    def __str__(self):
+        day_name = dict(self.DAY_CHOICES).get(self.day_of_week, 'Unknown')
+        return f"{self.teacher.full_name} - {self.subject.name} - {day_name} JP{self.jp_start}-{self.jp_end}"
+    
+    def clean(self):
+        """Custom validation logic with conflict detection"""
+        super().clean()
+        
+        # Validate jp_start and jp_end range
+        if self.jp_start is not None:
+            if self.jp_start < 1 or self.jp_start > 10:
+                raise ValidationError({
+                    'jp_start': 'JP start must be between 1 and 10'
+                })
+        
+        if self.jp_end is not None:
+            if self.jp_end < 1 or self.jp_end > 10:
+                raise ValidationError({
+                    'jp_end': 'JP end must be between 1 and 10'
+                })
+        
+        # Validate jp_end >= jp_start
+        if self.jp_start is not None and self.jp_end is not None:
+            if self.jp_end < self.jp_start:
+                raise ValidationError({
+                    'jp_end': 'JP end must be greater than or equal to JP start'
+                })
+        
+        # Validate effective_date <= end_date
+        if self.effective_date and self.end_date:
+            if self.effective_date > self.end_date:
+                raise ValidationError({
+                    'end_date': 'End date must be greater than or equal to effective date'
+                })
+        
+        # Skip conflict detection during migrations
+        import sys
+        is_migration = 'migrate' in sys.argv or 'makemigrations' in sys.argv
+        
+        if not is_migration and self.teacher_id and self.day_of_week is not None and self.jp_start and self.jp_end:
+            # Detect teacher scheduling conflicts
+            teacher_conflicts = TeacherSchedule.objects.filter(
+                teacher=self.teacher,
+                day_of_week=self.day_of_week,
+                is_active=True,
+                effective_date__lte=self.effective_date if self.effective_date else timezone.now().date(),
+            ).exclude(pk=self.pk if self.pk else None)
+            
+            # Check if end_date is set and filter accordingly
+            if self.end_date:
+                teacher_conflicts = teacher_conflicts.filter(
+                    models.Q(end_date__isnull=True) | models.Q(end_date__gte=self.effective_date)
+                )
+            
+            # Check for JP overlap
+            for conflict in teacher_conflicts:
+                # Check if JP ranges overlap
+                if not (self.jp_end < conflict.jp_start or self.jp_start > conflict.jp_end):
+                    raise ValidationError({
+                        'jp_start': f'Teacher {self.teacher.full_name} already has a schedule on {dict(self.DAY_CHOICES).get(self.day_of_week)} '
+                                   f'from JP {conflict.jp_start} to {conflict.jp_end} ({conflict.subject.name})'
+                    })
+            
+            # Detect classroom scheduling conflicts
+            if self.classroom_id:
+                classroom_conflicts = TeacherSchedule.objects.filter(
+                    classroom=self.classroom,
+                    day_of_week=self.day_of_week,
+                    is_active=True,
+                    effective_date__lte=self.effective_date if self.effective_date else timezone.now().date(),
+                ).exclude(pk=self.pk if self.pk else None)
+                
+                # Check if end_date is set and filter accordingly
+                if self.end_date:
+                    classroom_conflicts = classroom_conflicts.filter(
+                        models.Q(end_date__isnull=True) | models.Q(end_date__gte=self.effective_date)
+                    )
+                
+                # Check for JP overlap
+                for conflict in classroom_conflicts:
+                    # Check if JP ranges overlap
+                    if not (self.jp_end < conflict.jp_start or self.jp_start > conflict.jp_end):
+                        raise ValidationError({
+                            'classroom': f'Classroom {self.classroom.name} is already scheduled on {dict(self.DAY_CHOICES).get(self.day_of_week)} '
+                                        f'from JP {conflict.jp_start} to {conflict.jp_end} with {conflict.teacher.full_name} ({conflict.subject.name})'
+                        })
+    
+    def save(self, *args, **kwargs):
+        """Override save to ensure validation"""
+        # Skip full_clean during migrations to avoid validation issues
+        import sys
+        is_migration = 'migrate' in sys.argv or 'makemigrations' in sys.argv
+        
+        if not is_migration:
+            self.full_clean()
+        super().save(*args, **kwargs)
+    
+    @property
+    def jp_count(self):
+        """Get total number of JP for this schedule"""
+        return self.jp_end - self.jp_start + 1
+    
+    @property
+    def day_name(self):
+        """Get day name in Indonesian"""
+        return dict(self.DAY_CHOICES).get(self.day_of_week, 'Unknown')
+
+
 class AuditLog(models.Model):
     """Audit log for tracking important system events"""
     

@@ -25,7 +25,7 @@ Create all required models for teacher attendance system following the design do
   - Add clean() method for validation
 
 #### 1.1.2 Create Teacher Model
-- [ ] Create `Teacher` model extending `BaseModel`
+- [x] Create `Teacher` model extending `BaseModel`
   - Core fields: nip (unique), user (OneToOne, nullable), full_name, photo, email, phone, address
   - Employment fields: employment_date, employment_status (ACTIVE/LEAVE/INACTIVE)
   - Teaching fields: subjects (ManyToMany), is_homeroom_teacher, homeroom_class (FK to Classroom)
@@ -39,7 +39,7 @@ Create all required models for teacher attendance system following the design do
   - Add clean() method for validation
 
 #### 1.1.3 Create TeacherSchedule Model
-- [ ] Create `TeacherSchedule` model extending `BaseModel`
+- [x] Create `TeacherSchedule` model extending `BaseModel`
   - Foreign keys: teacher, subject, classroom
   - Schedule fields: day_of_week (0-6), jp_start (1-10), jp_end (1-10)
   - Additional: room_number, notes
