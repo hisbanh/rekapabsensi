@@ -83,7 +83,7 @@ Create all required models for teacher attendance system following the design do
   - Override save() to calculate percentage
 
 ### 1.2 Create Database Migrations
-- [ ] Generate initial migration for all teacher models
+- [x] Generate initial migration for all teacher models
   - Run `python manage.py makemigrations attendance`
   - Review migration file for correctness
   - Test migration on clean database
