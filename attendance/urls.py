@@ -3,6 +3,7 @@ from . import views
 from . import teacher_views
 from . import teacher_attendance_views
 from . import teacher_dashboard_views
+from . import teacher_report_views
 
 urlpatterns = [
     path('', views.dashboard, name='dashboard'),
@@ -90,4 +91,11 @@ urlpatterns = [
     # Teacher Dashboard URLs
     path('teacher-dashboard/', teacher_dashboard_views.teacher_dashboard, name='teacher_dashboard'),
     path('api/teacher-dashboard/', teacher_dashboard_views.teacher_dashboard_api, name='teacher_dashboard_api'),
+    
+    # Teacher Report URLs
+    path('teacher-reports/', teacher_report_views.teacher_report, name='teacher_report'),
+    path('teacher-reports/pdf/<uuid:teacher_id>/', teacher_report_views.teacher_report_pdf, name='teacher_report_pdf'),
+    path('teacher-reports/excel/', teacher_report_views.teacher_report_excel, name='teacher_report_excel'),
+    path('teacher-analytics/', teacher_report_views.teacher_analytics, name='teacher_analytics'),
+    path('api/teacher-report-data/', teacher_report_views.api_teacher_report_data, name='api_teacher_report_data'),
 ]
