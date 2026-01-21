@@ -8,6 +8,7 @@ from .schedule_service import ScheduleService
 from .holiday_service import HolidayService
 from .pdf_service import PDFService
 from .teacher_service import TeacherService
+from .teacher_attendance_service import TeacherAttendanceService
 
 __all__ = [
     'AttendanceService',
@@ -17,4 +18,5 @@ __all__ = [
     'HolidayService',
     'PDFService',
     'TeacherService',
+    'TeacherAttendanceService',
 ]
