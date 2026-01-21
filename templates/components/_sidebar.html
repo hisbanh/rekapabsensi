@@ -48,6 +48,44 @@
             </div>
         </div>
         
+        <!-- Teacher Section -->
+        {% if user.is_superuser or user.is_staff %}
+        <div class="nav-section">
+            <div class="nav-section-title">Absensi Ustadz</div>
+            
+            <div class="nav-item">
+                <a href="{% url 'teacher_dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'teacher_dashboard' %}active{% endif %}">
+                    <i class="fas fa-chalkboard-teacher"></i>
+                    <span>Dashboard Ustadz</span>
+                    {% if notification_count and notification_count > 0 %}
+                    <span class="badge bg-danger ms-auto">{{ notification_count }}</span>
+                    {% endif %}
+                </a>
+            </div>
+            
+            <div class="nav-item">
+                <a href="{% url 'teacher_list' %}" class="nav-link {% if 'teacher_list' in request.resolver_match.url_name or 'teacher_detail' in request.resolver_match.url_name %}active{% endif %}">
+                    <i class="fas fa-user-tie"></i>
+                    <span>Data Ustadz</span>
+                </a>
+            </div>
+            
+            <div class="nav-item">
+                <a href="{% url 'teacher_attendance_input' %}" class="nav-link {% if 'teacher_attendance_input' in request.resolver_match.url_name %}active{% endif %}">
+                    <i class="fas fa-clipboard-check"></i>
+                    <span>Input Absensi Ustadz</span>
+                </a>
+            </div>
+            
+            <div class="nav-item">
+                <a href="{% url 'teacher_report' %}" class="nav-link {% if 'teacher_report' in request.resolver_match.url_name or 'teacher_analytics' in request.resolver_match.url_name %}active{% endif %}">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Laporan Ustadz</span>
+                </a>
+            </div>
+        </div>
+        {% endif %}
+        
         <!-- Management Section -->
         <div class="nav-section">
             <div class="nav-section-title">Manajemen</div>

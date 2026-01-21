@@ -356,7 +356,7 @@ Create all required models for teacher attendance system following the design do
   - Freeze header row and first column
 
 ### 4.7 Create Notification System
-- [ ] Create `attendance/services/notification_service.py`
+- [x] Create `attendance/services/notification_service.py`
   - Implement `get_absent_teachers_notification(date: date) -> list`
   - Implement `get_scheduling_conflicts_notification() -> list`
   - Implement `get_missing_attendance_notification(date: date) -> list`

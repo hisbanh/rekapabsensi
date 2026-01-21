@@ -76,6 +76,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'attendance.context_processors.app_context',  # Custom context processor
+                'attendance.context_processors.notification_context',  # Notification count
             ],
         },
     },

@@ -26,6 +26,7 @@ from .services.teacher_attendance_service import (
     TeacherAttendanceServiceError
 )
 from .services.schedule_service import ScheduleService
+from .services.notification_service import NotificationService, NotificationServiceError
 from .decorators import admin_required, guru_or_admin_required
 
 logger = logging.getLogger(__name__)
@@ -363,9 +364,11 @@ def _get_dashboard_notifications() -> list:
     """
     Get dashboard notifications for missing attendance and conflicts.
     
+    Uses the NotificationService to get comprehensive notifications.
+    
     Returns:
         List of dictionaries containing:
-        - type: Notification type ('missing_attendance', 'conflict', 'info')
+        - type: Notification type ('missing_attendance', 'conflict', 'absent', 'info')
         - message: Notification message
         - priority: Priority level ('high', 'medium', 'low')
         - date: Related date (if applicable)
@@ -373,18 +376,58 @@ def _get_dashboard_notifications() -> list:
     notifications = []
     today = timezone.now().date()
     
-    # Check for missing attendance today
+    try:
+        # Get all notifications from NotificationService
+        all_notifs = NotificationService.get_all_notifications(today)
+        
+        # Convert to dashboard format
+        for notif in all_notifs['all_notifications']:
+            notifications.append({
+                'type': notif['type'],
+                'message': notif['message'],
+                'priority': notif['priority'],
+                'date': notif.get('date'),
+            })
+        
+        # Add summary notification if there are high priority items
+        if all_notifs['high_priority_count'] > 0:
+            notifications.insert(0, {
+                'type': NotificationService.TYPE_WARNING,
+                'message': f'{all_notifs["high_priority_count"]} notifikasi prioritas tinggi memerlukan perhatian',
+                'priority': NotificationService.PRIORITY_HIGH,
+                'date': today,
+            })
+        
+    except NotificationServiceError as e:
+        logger.error(f"Error getting notifications from NotificationService: {str(e)}")
+        # Fallback to basic notifications
+        notifications = _get_basic_notifications(today)
+    except Exception as e:
+        logger.error(f"Unexpected error getting notifications: {str(e)}")
+        notifications = []
+    
+    return notifications
+
+
+def _get_basic_notifications(today: date) -> list:
+    """
+    Fallback method for basic notifications if NotificationService fails.
+    
+    Returns:
+        List of basic notification dictionaries
+    """
+    notifications = []
     day_of_week = today.weekday()
     
-    # Get teachers with schedules today
+    # Check for missing attendance today
     teachers_with_schedules = Teacher.objects.filter(
         is_active=True,
-        teacher_schedules__day_of_week=day_of_week,
-        teacher_schedules__is_active=True,
-        teacher_schedules__effective_date__lte=today
+        schedules__day_of_week=day_of_week,
+        schedules__is_active=True,
+        schedules__effective_date__lte=today
     ).filter(
-        Q(teacher_schedules__end_date__isnull=True) | 
-        Q(teacher_schedules__end_date__gte=today)
+        Q(schedules__end_date__isnull=True) | 
+        Q(schedules__end_date__gte=today)
     ).distinct().count()
     
     # Get teachers who have recorded attendance today
@@ -400,16 +443,6 @@ def _get_dashboard_notifications() -> list:
             'message': f'{missing_count} ustadz belum mencatat absensi hari ini',
             'priority': 'high',
             'date': today,
-        })
-    
-    # Check for scheduling conflicts
-    conflicts = _check_scheduling_conflicts()
-    if conflicts:
-        notifications.append({
-            'type': 'conflict',
-            'message': f'{len(conflicts)} konflik jadwal ditemukan',
-            'priority': 'medium',
-            'date': None,
         })
     
     # Check for teachers on leave today
