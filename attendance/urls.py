@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from . import teacher_views
 
 urlpatterns = [
     path('', views.dashboard, name='dashboard'),
@@ -63,4 +64,13 @@ urlpatterns = [
     path('export/excel/class/', views.export_excel_class, name='export_excel_class'),
     path('export/excel/all/', views.export_excel_all, name='export_excel_all'),
     path('api/students-by-classroom/', views.api_get_students_by_classroom, name='api_students_by_classroom'),
+    
+    # Teacher Management URLs
+    path('teachers/', teacher_views.teacher_list, name='teacher_list'),
+    path('teachers/create/', teacher_views.teacher_create, name='teacher_create'),
+    path('teachers/<uuid:pk>/', teacher_views.teacher_detail, name='teacher_detail'),
+    path('teachers/<uuid:pk>/edit/', teacher_views.teacher_update, name='teacher_update'),
+    path('teachers/<uuid:pk>/delete/', teacher_views.teacher_delete, name='teacher_delete'),
+    path('teachers/<uuid:pk>/schedule/', teacher_views.teacher_schedule, name='teacher_schedule'),
+    path('api/teachers/inline-edit/', teacher_views.api_teacher_inline_edit, name='api_teacher_inline_edit'),
 ]
