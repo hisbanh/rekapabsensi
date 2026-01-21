@@ -2,6 +2,7 @@ from django.urls import path
 from . import views
 from . import teacher_views
 from . import teacher_attendance_views
+from . import teacher_dashboard_views
 
 urlpatterns = [
     path('', views.dashboard, name='dashboard'),
@@ -85,4 +86,8 @@ urlpatterns = [
     # Teacher Attendance API URLs
     path('api/teacher-attendance/validate-location/', teacher_attendance_views.api_validate_location, name='api_validate_location'),
     path('api/teacher-attendance/schedule/', teacher_attendance_views.api_teacher_schedule, name='api_teacher_schedule'),
+    
+    # Teacher Dashboard URLs
+    path('teacher-dashboard/', teacher_dashboard_views.teacher_dashboard, name='teacher_dashboard'),
+    path('api/teacher-dashboard/', teacher_dashboard_views.teacher_dashboard_api, name='teacher_dashboard_api'),
 ]
