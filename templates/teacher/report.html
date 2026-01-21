@@ -1,0 +1,506 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Laporan Absensi Ustadz{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'teacher_dashboard' %}">Dashboard Ustadz</a></li>
+        <li class="breadcrumb-item active">Laporan Absensi</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<!-- Filter Section -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h6 class="m-0 font-weight-bold text-primary">
+            <i class="fas fa-filter me-2"></i>
+            Filter Laporan
+        </h6>
+    </div>
+    <div class="card-body">
+        <form method="get" action="{% url 'teacher_report' %}" id="reportFilterForm">
+            <div class="row">
+                <!-- Teacher Selection -->
+                <div class="col-md-4 mb-3">
+                    <label for="teacher_id" class="form-label">Pilih Ustadz</label>
+                    <select name="teacher_id" id="teacher_id" class="form-select" required>
+                        <option value="">-- Pilih Ustadz --</option>
+                        {% for teacher in teachers %}
+                        <option value="{{ teacher.id }}" {% if selected_teacher and selected_teacher.id == teacher.id %}selected{% endif %}>
+                            {{ teacher.full_name }} ({{ teacher.nip }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Date Range Picker -->
+                <div class="col-md-3 mb-3">
+                    <label for="start_date" class="form-label">Dari Tanggal</label>
+                    <input type="date" 
+                           name="start_date" 
+                           id="start_date" 
+                           class="form-control" 
+                           value="{{ start_date|date:'Y-m-d' }}"
+                           max="{{ today|date:'Y-m-d' }}"
+                           required>
+                </div>
+
+                <div class="col-md-3 mb-3">
+                    <label for="end_date" class="form-label">Sampai Tanggal</label>
+                    <input type="date" 
+                           name="end_date" 
+                           id="end_date" 
+                           class="form-control" 
+                           value="{{ end_date|date:'Y-m-d' }}"
+                           max="{{ today|date:'Y-m-d' }}"
+                           required>
+                </div>
+
+                <!-- Report Type Selection -->
+                <div class="col-md-2 mb-3">
+                    <label for="report_type" class="form-label">Jenis Laporan</label>
+                    <select name="report_type" id="report_type" class="form-select">
+                        <option value="summary" {% if report_type == 'summary' %}selected{% endif %}>Ringkasan</option>
+                        <option value="detailed" {% if report_type == 'detailed' %}selected{% endif %}>Detail</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="d-flex gap-2 mt-3">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-search me-2"></i>
+                    Generate Report
+                </button>
+                
+                {% if report_data %}
+                <a href="{% url 'teacher_report_pdf' selected_teacher.id %}?start_date={{ start_date|date:'Y-m-d' }}&end_date={{ end_date|date:'Y-m-d' }}" 
+                   class="btn btn-danger" 
+                   target="_blank">
+                    <i class="fas fa-file-pdf me-2"></i>
+                    Export PDF
+                </a>
+                
+                {% if user.is_superuser %}
+                <a href="{% url 'teacher_report_excel' %}?start_date={{ start_date|date:'Y-m-d' }}&end_date={{ end_date|date:'Y-m-d' }}" 
+                   class="btn btn-success">
+                    <i class="fas fa-file-excel me-2"></i>
+                    Export Excel
+                </a>
+                {% endif %}
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Report Preview Section -->
+{% if report_data %}
+<div class="row mb-4">
+    <!-- Summary Statistics Cards -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-primary shadow">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            Total JP
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            {{ report_data.total_jp }}
+                        </div>
+                        <small class="text-muted">Jam Pelajaran</small>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-calendar-alt fa-2x text-primary"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-success shadow">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            Hadir
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            {{ report_data.total_hadir }}
+                        </div>
+                        <small class="text-muted">{{ report_data.attendance_percentage }}%</small>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-check-circle fa-2x text-success"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-warning shadow">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                            Sakit/Izin
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            {{ report_data.total_sakit|add:report_data.total_izin }}
+                        </div>
+                        <small class="text-muted">S: {{ report_data.total_sakit }}, I: {{ report_data.total_izin }}</small>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-exclamation-triangle fa-2x text-warning"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-danger shadow">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                            Alpa
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            {{ report_data.total_alpa }}
+                        </div>
+                        <small class="text-muted">Tanpa Keterangan</small>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-times-circle fa-2x text-danger"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Attendance Breakdown Chart -->
+<div class="row mb-4">
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-chart-pie me-2"></i>
+                    Breakdown Status Kehadiran
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="chart-container" style="position: relative; height: 300px;">
+                    <canvas id="attendanceBreakdownChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Informasi Ustadz
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 text-center mb-3">
+                        {% if report_data.teacher.photo %}
+                        <img src="{{ report_data.teacher.photo.url }}" 
+                             alt="{{ report_data.teacher.full_name }}" 
+                             class="rounded-circle"
+                             style="width: 100px; height: 100px; object-fit: cover;">
+                        {% else %}
+                        <div class="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center"
+                             style="width: 100px; height: 100px; font-size: 2rem; font-weight: 600;">
+                            {{ report_data.teacher.full_name|slice:":1"|upper }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-8">
+                        <table class="table table-sm table-borderless">
+                            <tr>
+                                <td class="text-muted" style="width: 100px;">NIP</td>
+                                <td class="font-weight-bold">{{ report_data.teacher.nip }}</td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Nama</td>
+                                <td class="font-weight-bold">{{ report_data.teacher.full_name }}</td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Periode</td>
+                                <td class="font-weight-bold">
+                                    {{ report_data.start_date|date:"d M Y" }} - {{ report_data.end_date|date:"d M Y" }}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Mata Pelajaran</td>
+                                <td>
+                                    {% for subject in report_data.teacher.subjects.all %}
+                                    <span class="badge bg-primary me-1">{{ subject.name }}</span>
+                                    {% endfor %}
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Detailed Attendance Records -->
+<div class="card shadow">
+    <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">
+            <i class="fas fa-list me-2"></i>
+            Detail Absensi ({{ report_data.attendances|length }} dari {{ report_data.total_jp }} JP)
+        </h6>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover table-sm">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 50px;">No</th>
+                        <th style="width: 120px;">Tanggal</th>
+                        <th style="width: 80px;">JP</th>
+                        <th>Mata Pelajaran</th>
+                        <th>Kelas</th>
+                        <th style="width: 100px;">Status</th>
+                        <th>Keterangan</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for attendance in report_data.attendances %}
+                    <tr>
+                        <td class="text-center">{{ forloop.counter }}</td>
+                        <td>{{ attendance.date|date:"d/m/Y" }}</td>
+                        <td class="text-center">
+                            <span class="badge bg-secondary">JP {{ attendance.jp_number }}</span>
+                        </td>
+                        <td>
+                            {% if attendance.schedule %}
+                            {{ attendance.schedule.subject.name }}
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if attendance.schedule %}
+                            {{ attendance.schedule.classroom.name }}
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if attendance.status == 'HADIR' %}
+                            <span class="badge bg-success">
+                                <i class="fas fa-check me-1"></i>Hadir
+                            </span>
+                            {% elif attendance.status == 'SAKIT' %}
+                            <span class="badge bg-warning">
+                                <i class="fas fa-thermometer-half me-1"></i>Sakit
+                            </span>
+                            {% elif attendance.status == 'IZIN' %}
+                            <span class="badge bg-info">
+                                <i class="fas fa-file-alt me-1"></i>Izin
+                            </span>
+                            {% elif attendance.status == 'CUTI' %}
+                            <span class="badge bg-primary">
+                                <i class="fas fa-calendar-times me-1"></i>Cuti
+                            </span>
+                            {% elif attendance.status == 'DINAS' %}
+                            <span class="badge bg-secondary">
+                                <i class="fas fa-briefcase me-1"></i>Dinas
+                            </span>
+                            {% elif attendance.status == 'ALPA' %}
+                            <span class="badge bg-danger">
+                                <i class="fas fa-times me-1"></i>Alpa
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if attendance.notes %}
+                            <small class="text-muted">{{ attendance.notes|truncatewords:10 }}</small>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-4">
+                            <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                            <p class="text-muted mb-0">Tidak ada data absensi untuk periode ini</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if report_data.total_jp > 50 %}
+        <div class="alert alert-info mt-3 mb-0">
+            <i class="fas fa-info-circle me-2"></i>
+            Menampilkan 50 data pertama dari {{ report_data.total_jp }} total JP. 
+            Silakan export ke PDF atau Excel untuk melihat semua data.
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% else %}
+<!-- Empty State -->
+<div class="card shadow">
+    <div class="card-body text-center py-5">
+        <i class="fas fa-chart-bar fa-4x text-muted mb-4"></i>
+        <h4 class="text-muted mb-3">Belum Ada Laporan</h4>
+        <p class="text-muted mb-4">
+            Pilih ustadz dan rentang tanggal di atas, kemudian klik "Generate Report" untuk melihat laporan absensi.
+        </p>
+        <div class="text-muted">
+            <small>
+                <i class="fas fa-lightbulb me-2"></i>
+                Tips: Gunakan rentang tanggal yang tidak terlalu panjang untuk hasil yang lebih cepat
+            </small>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+{% if report_data %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Attendance Breakdown Pie Chart
+    const ctx = document.getElementById('attendanceBreakdownChart');
+    if (ctx) {
+        const data = {
+            labels: ['Hadir', 'Sakit', 'Izin', 'Cuti', 'Dinas', 'Alpa'],
+            datasets: [{
+                data: [
+                    {{ report_data.total_hadir }},
+                    {{ report_data.total_sakit }},
+                    {{ report_data.total_izin }},
+                    {{ report_data.total_cuti }},
+                    {{ report_data.total_dinas }},
+                    {{ report_data.total_alpa }}
+                ],
+                backgroundColor: [
+                    'rgba(76, 175, 80, 0.8)',   // Hadir - Green
+                    'rgba(255, 152, 0, 0.8)',   // Sakit - Orange
+                    'rgba(33, 150, 243, 0.8)',  // Izin - Blue
+                    'rgba(156, 39, 176, 0.8)',  // Cuti - Purple
+                    'rgba(96, 125, 139, 0.8)',  // Dinas - Gray
+                    'rgba(244, 67, 54, 0.8)'    // Alpa - Red
+                ],
+                borderColor: [
+                    'rgba(76, 175, 80, 1)',
+                    'rgba(255, 152, 0, 1)',
+                    'rgba(33, 150, 243, 1)',
+                    'rgba(156, 39, 176, 1)',
+                    'rgba(96, 125, 139, 1)',
+                    'rgba(244, 67, 54, 1)'
+                ],
+                borderWidth: 2
+            }]
+        };
+
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: data,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            usePointStyle: true,
+                            padding: 15,
+                            font: {
+                                family: 'Inter',
+                                size: 12
+                            },
+                            generateLabels: function(chart) {
+                                const data = chart.data;
+                                if (data.labels.length && data.datasets.length) {
+                                    return data.labels.map((label, i) => {
+                                        const value = data.datasets[0].data[i];
+                                        const total = data.datasets[0].data.reduce((a, b) => a + b, 0);
+                                        const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                        return {
+                                            text: `${label}: ${value} (${percentage}%)`,
+                                            fillStyle: data.datasets[0].backgroundColor[i],
+                                            hidden: false,
+                                            index: i
+                                        };
+                                    });
+                                }
+                                return [];
+                            }
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        padding: 12,
+                        titleFont: {
+                            family: 'Inter',
+                            size: 13,
+                            weight: 'bold'
+                        },
+                        bodyFont: {
+                            family: 'Inter',
+                            size: 12
+                        },
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.parsed || 0;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                return `${label}: ${value} JP (${percentage}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Date validation
+    const startDateInput = document.getElementById('start_date');
+    const endDateInput = document.getElementById('end_date');
+    
+    if (startDateInput && endDateInput) {
+        startDateInput.addEventListener('change', function() {
+            endDateInput.min = this.value;
+            if (endDateInput.value && endDateInput.value < this.value) {
+                endDateInput.value = this.value;
+            }
+        });
+        
+        endDateInput.addEventListener('change', function() {
+            startDateInput.max = this.value;
+            if (startDateInput.value && startDateInput.value > this.value) {
+                startDateInput.value = this.value;
+            }
+        });
+    }
+});
+</script>
+{% endif %}
+{% endblock %}
