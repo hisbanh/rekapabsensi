@@ -1,0 +1,767 @@
+{% extends 'manage/base_list.html' %}
+{% load static %}
+{% load attendance_extras %}
+
+{% block page_title %}Jadwal Mengajar - {{ teacher.full_name }}{% endblock %}
+
+{% block breadcrumb_items %}
+<li class="breadcrumb-item"><a href="{% url 'teacher_list' %}">Data Ustadz</a></li>
+<li class="breadcrumb-item"><a href="{% url 'teacher_detail' teacher.pk %}">{{ teacher.full_name }}</a></li>
+<li class="breadcrumb-item active">Jadwal Mengajar</li>
+{% endblock %}
+
+{% block page_actions %}
+<div class="btn-group">
+    <a href="{% url 'teacher_detail' teacher.pk %}" class="btn btn-outline-secondary btn-sm">
+        <i class="fas fa-arrow-left me-1"></i> Kembali
+    </a>
+    {% if user.is_superuser %}
+    <button type="button" 
+            class="btn btn-primary btn-sm" 
+            data-bs-toggle="modal" 
+            data-bs-target="#addScheduleModal">
+        <i class="fas fa-plus me-1"></i> Tambah Jadwal
+    </button>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block stats_row %}
+<!-- Teacher Info Header -->
+<div class="teacher-schedule-header">
+    <div class="teacher-info">
+        {% if teacher.photo %}
+        <img src="{{ teacher.photo.url }}" 
+             alt="{{ teacher.full_name }}" 
+             class="teacher-photo-sm">
+        {% else %}
+        <div class="teacher-avatar-sm">
+            {{ teacher.full_name|slice:":1"|upper }}
+        </div>
+        {% endif %}
+        <div>
+            <h5 class="mb-1">{{ teacher.full_name }}</h5>
+            <p class="text-muted mb-0">
+                <i class="fas fa-id-card me-1"></i>NIP: {{ teacher.nip }}
+            </p>
+        </div>
+    </div>
+    <div class="schedule-stats">
+        <div class="stat-item">
+            <div class="stat-value">{{ total_jp }}</div>
+            <div class="stat-label">Total JP/Minggu</div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block filters %}
+<!-- No filters needed for schedule view -->
+{% endblock %}
+
+{% block list_content %}
+<div class="card">
+    <div class="card-header">
+        <h6 class="mb-0">
+            <i class="fas fa-calendar-week me-2"></i>Jadwal Mengajar Mingguan
+        </h6>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-bordered schedule-table mb-0">
+                <thead>
+                    <tr>
+                        <th class="jp-header">JP</th>
+                        <th>Senin</th>
+                        <th>Selasa</th>
+                        <th>Rabu</th>
+                        <th>Kamis</th>
+                        <th>Jumat</th>
+                        <th>Sabtu</th>
+                        <th>Minggu</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for jp in 10|make_list %}
+                    <tr>
+                        <td class="jp-label">JP {{ jp }}</td>
+                        {% for day_num in 7|make_list %}
+                        {% with day=day_num|add:"-1" %}
+                        <td class="schedule-cell" data-day="{{ day }}" data-jp="{{ jp }}">
+                            {% for schedule in weekly_schedule|get_item:day %}
+                                {% if schedule.jp_start <= jp and schedule.jp_end >= jp %}
+                                    {% if schedule.jp_start == jp %}
+                                    <!-- Only show schedule card at the start JP -->
+                                    <div class="schedule-item {% if schedule.has_conflict %}conflict{% endif %}" 
+                                         data-schedule-id="{{ schedule.id }}"
+                                         data-jp-count="{{ schedule.jp_count }}">
+                                        <div class="schedule-subject">
+                                            <i class="fas fa-book me-1"></i>{{ schedule.subject.name }}
+                                        </div>
+                                        <div class="schedule-class">
+                                            <i class="fas fa-users me-1"></i>{{ schedule.classroom.name }}
+                                        </div>
+                                        {% if schedule.room_number %}
+                                        <div class="schedule-room">
+                                            <i class="fas fa-door-open me-1"></i>Ruang {{ schedule.room_number }}
+                                        </div>
+                                        {% endif %}
+                                        <div class="schedule-time">
+                                            JP {{ schedule.jp_start }}-{{ schedule.jp_end }}
+                                        </div>
+                                        {% if user.is_superuser %}
+                                        <div class="schedule-actions">
+                                            <button type="button" 
+                                                    class="btn-schedule-action btn-edit" 
+                                                    title="Edit"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#editScheduleModal"
+                                                    data-schedule-id="{{ schedule.id }}"
+                                                    data-subject-id="{{ schedule.subject.id }}"
+                                                    data-classroom-id="{{ schedule.classroom.id }}"
+                                                    data-day="{{ schedule.day_of_week }}"
+                                                    data-jp-start="{{ schedule.jp_start }}"
+                                                    data-jp-end="{{ schedule.jp_end }}"
+                                                    data-room="{{ schedule.room_number }}"
+                                                    data-notes="{{ schedule.notes }}">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button type="button" 
+                                                    class="btn-schedule-action btn-delete" 
+                                                    title="Hapus"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#deleteScheduleModal"
+                                                    data-schedule-id="{{ schedule.id }}"
+                                                    data-schedule-info="{{ schedule.subject.name }} - {{ schedule.classroom.name }} ({{ schedule.day_name }} JP{{ schedule.jp_start }}-{{ schedule.jp_end }})">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    {% endif %}
+                                {% endif %}
+                            {% endfor %}
+                        </td>
+                        {% endwith %}
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Schedule Legend -->
+<div class="card mt-3">
+    <div class="card-body">
+        <h6 class="mb-3">
+            <i class="fas fa-info-circle me-2"></i>Keterangan
+        </h6>
+        <div class="legend-items">
+            <div class="legend-item">
+                <div class="legend-box schedule-normal"></div>
+                <span>Jadwal Normal</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-box schedule-conflict"></div>
+                <span>Konflik Jadwal</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block list_extra_css %}
+<style>
+    /* Teacher Schedule Header */
+    .teacher-schedule-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: white;
+        padding: 1.5rem;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        margin-bottom: 1.5rem;
+    }
+    
+    .teacher-info {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+    
+    .teacher-photo-sm {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid var(--primary);
+    }
+    
+    .teacher-avatar-sm {
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(135deg, var(--primary) 0%, #6b5344 100%);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        font-weight: 600;
+        border: 3px solid var(--primary);
+    }
+    
+    .schedule-stats {
+        text-align: right;
+    }
+    
+    .stat-item {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+        color: white;
+        padding: 1rem 1.5rem;
+        border-radius: 10px;
+    }
+    
+    .stat-value {
+        font-size: 2rem;
+        font-weight: 700;
+        line-height: 1;
+        margin-bottom: 0.25rem;
+    }
+    
+    .stat-label {
+        font-size: 0.85rem;
+        opacity: 0.9;
+    }
+    
+    /* Schedule Table */
+    .schedule-table {
+        font-size: 0.85rem;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+    
+    .schedule-table thead th {
+        background: var(--bg-light);
+        font-weight: 600;
+        text-align: center;
+        padding: 0.875rem 0.5rem;
+        border: 1px solid var(--border-color);
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+    
+    .schedule-table .jp-header {
+        width: 60px;
+        background: var(--primary);
+        color: white;
+    }
+    
+    .schedule-table .jp-label {
+        background: var(--bg-light);
+        font-weight: 600;
+        text-align: center;
+        vertical-align: middle;
+        border: 1px solid var(--border-color);
+        padding: 0.75rem 0.5rem;
+    }
+    
+    .schedule-cell {
+        padding: 0.5rem;
+        vertical-align: top;
+        min-height: 80px;
+        height: 80px;
+        border: 1px solid var(--border-color);
+        background: white;
+        position: relative;
+    }
+    
+    .schedule-cell:hover {
+        background: var(--bg-light);
+    }
+    
+    /* Schedule Item */
+    .schedule-item {
+        background: linear-gradient(135deg, var(--primary) 0%, #6366f1 100%);
+        color: white;
+        padding: 0.625rem;
+        border-radius: 8px;
+        font-size: 0.75rem;
+        position: relative;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        transition: all 0.2s ease;
+    }
+    
+    .schedule-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    }
+    
+    /* Conflict Styling */
+    .schedule-item.conflict {
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        border: 2px solid #bd2130;
+        animation: pulse-conflict 2s infinite;
+    }
+    
+    @keyframes pulse-conflict {
+        0%, 100% {
+            box-shadow: 0 2px 4px rgba(220, 53, 69, 0.3);
+        }
+        50% {
+            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.6);
+        }
+    }
+    
+    .schedule-subject {
+        font-weight: 600;
+        margin-bottom: 0.375rem;
+        font-size: 0.8rem;
+    }
+    
+    .schedule-class,
+    .schedule-room,
+    .schedule-time {
+        font-size: 0.7rem;
+        opacity: 0.95;
+        margin-bottom: 0.25rem;
+    }
+    
+    .schedule-time {
+        font-weight: 500;
+        margin-top: 0.375rem;
+        padding-top: 0.375rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.3);
+    }
+    
+    /* Schedule Actions */
+    .schedule-actions {
+        display: flex;
+        gap: 0.25rem;
+        margin-top: 0.5rem;
+        padding-top: 0.5rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.3);
+    }
+    
+    .btn-schedule-action {
+        background: rgba(255, 255, 255, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        color: white;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.7rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        flex: 1;
+    }
+    
+    .btn-schedule-action:hover {
+        background: rgba(255, 255, 255, 0.3);
+        border-color: rgba(255, 255, 255, 0.5);
+    }
+    
+    .btn-schedule-action.btn-delete:hover {
+        background: rgba(220, 53, 69, 0.8);
+        border-color: #dc3545;
+    }
+    
+    /* Legend */
+    .legend-items {
+        display: flex;
+        gap: 2rem;
+        flex-wrap: wrap;
+    }
+    
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .legend-box {
+        width: 40px;
+        height: 30px;
+        border-radius: 6px;
+        border: 1px solid var(--border-color);
+    }
+    
+    .schedule-normal {
+        background: linear-gradient(135deg, var(--primary) 0%, #6366f1 100%);
+    }
+    
+    .schedule-conflict {
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        border: 2px solid #bd2130;
+    }
+    
+    /* Mobile Responsive */
+    @media (max-width: 991.98px) {
+        .teacher-schedule-header {
+            flex-direction: column;
+            text-align: center;
+            gap: 1rem;
+        }
+        
+        .teacher-info {
+            flex-direction: column;
+        }
+        
+        .schedule-stats {
+            text-align: center;
+        }
+        
+        .schedule-table {
+            font-size: 0.7rem;
+        }
+        
+        .schedule-table thead th {
+            padding: 0.5rem 0.25rem;
+            font-size: 0.7rem;
+        }
+        
+        .schedule-cell {
+            padding: 0.25rem;
+            min-height: 60px;
+            height: 60px;
+        }
+        
+        .schedule-item {
+            padding: 0.375rem;
+            font-size: 0.65rem;
+        }
+        
+        .schedule-subject {
+            font-size: 0.7rem;
+        }
+        
+        .schedule-class,
+        .schedule-room,
+        .schedule-time {
+            font-size: 0.6rem;
+        }
+        
+        .btn-schedule-action {
+            padding: 0.2rem 0.4rem;
+            font-size: 0.65rem;
+        }
+    }
+    
+    @media (max-width: 767.98px) {
+        .schedule-table {
+            display: block;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+        
+        .schedule-table thead,
+        .schedule-table tbody,
+        .schedule-table tr {
+            display: table;
+            width: 100%;
+            table-layout: fixed;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block list_extra_js %}
+<!-- Add Schedule Modal -->
+{% if user.is_superuser %}
+<div class="modal fade" id="addScheduleModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-plus me-2"></i>Tambah Jadwal Mengajar
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{% url 'schedule_create' teacher.pk %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="subject" class="form-label">Mata Pelajaran *</label>
+                        <select class="form-select" id="subject" name="subject" required>
+                            <option value="">Pilih Mata Pelajaran</option>
+                            {% for subject in subjects %}
+                            <option value="{{ subject.id }}">{{ subject.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="classroom" class="form-label">Kelas *</label>
+                        <select class="form-select" id="classroom" name="classroom" required>
+                            <option value="">Pilih Kelas</option>
+                            {% for classroom in classrooms %}
+                            <option value="{{ classroom.id }}">{{ classroom.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="day_of_week" class="form-label">Hari *</label>
+                        <select class="form-select" id="day_of_week" name="day_of_week" required>
+                            <option value="">Pilih Hari</option>
+                            {% for day in days %}
+                            <option value="{{ day.value }}">{{ day.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="jp_start" class="form-label">JP Mulai *</label>
+                            <select class="form-select" id="jp_start" name="jp_start" required>
+                                <option value="">Pilih JP</option>
+                                {% for jp in 10|make_list %}
+                                <option value="{{ jp }}">JP {{ jp }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="jp_end" class="form-label">JP Selesai *</label>
+                            <select class="form-select" id="jp_end" name="jp_end" required>
+                                <option value="">Pilih JP</option>
+                                {% for jp in 10|make_list %}
+                                <option value="{{ jp }}">JP {{ jp }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="room_number" class="form-label">Nomor Ruangan</label>
+                        <input type="text" class="form-control" id="room_number" name="room_number" placeholder="Contoh: A101">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">Catatan</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="2" placeholder="Catatan tambahan (opsional)"></textarea>
+                    </div>
+                    
+                    <div class="alert alert-info mb-0">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <small>Sistem akan otomatis mendeteksi konflik jadwal</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i>Simpan
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Schedule Modal -->
+<div class="modal fade" id="editScheduleModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-edit me-2"></i>Edit Jadwal Mengajar
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" id="editScheduleForm">
+                {% csrf_token %}
+                <input type="hidden" id="edit_schedule_id" name="schedule_id">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="edit_subject" class="form-label">Mata Pelajaran *</label>
+                        <select class="form-select" id="edit_subject" name="subject" required>
+                            <option value="">Pilih Mata Pelajaran</option>
+                            {% for subject in subjects %}
+                            <option value="{{ subject.id }}">{{ subject.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="edit_classroom" class="form-label">Kelas *</label>
+                        <select class="form-select" id="edit_classroom" name="classroom" required>
+                            <option value="">Pilih Kelas</option>
+                            {% for classroom in classrooms %}
+                            <option value="{{ classroom.id }}">{{ classroom.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="edit_day_of_week" class="form-label">Hari *</label>
+                        <select class="form-select" id="edit_day_of_week" name="day_of_week" required>
+                            <option value="">Pilih Hari</option>
+                            {% for day in days %}
+                            <option value="{{ day.value }}">{{ day.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="edit_jp_start" class="form-label">JP Mulai *</label>
+                            <select class="form-select" id="edit_jp_start" name="jp_start" required>
+                                <option value="">Pilih JP</option>
+                                {% for jp in 10|make_list %}
+                                <option value="{{ jp }}">JP {{ jp }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="edit_jp_end" class="form-label">JP Selesai *</label>
+                            <select class="form-select" id="edit_jp_end" name="jp_end" required>
+                                <option value="">Pilih JP</option>
+                                {% for jp in 10|make_list %}
+                                <option value="{{ jp }}">JP {{ jp }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="edit_room_number" class="form-label">Nomor Ruangan</label>
+                        <input type="text" class="form-control" id="edit_room_number" name="room_number" placeholder="Contoh: A101">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="edit_notes" class="form-label">Catatan</label>
+                        <textarea class="form-control" id="edit_notes" name="notes" rows="2" placeholder="Catatan tambahan (opsional)"></textarea>
+                    </div>
+                    
+                    <div class="alert alert-info mb-0">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <small>Sistem akan otomatis mendeteksi konflik jadwal</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i>Simpan Perubahan
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Schedule Modal -->
+<div class="modal fade" id="deleteScheduleModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-trash me-2"></i>Hapus Jadwal
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" id="deleteScheduleForm">
+                {% csrf_token %}
+                <input type="hidden" id="delete_schedule_id" name="schedule_id">
+                <div class="modal-body">
+                    <p>Apakah Anda yakin ingin menghapus jadwal berikut?</p>
+                    <div class="alert alert-warning">
+                        <strong id="delete_schedule_info"></strong>
+                    </div>
+                    <p class="text-muted mb-0">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Jadwal akan dinonaktifkan dan tidak akan muncul di daftar jadwal aktif.
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash me-1"></i>Hapus
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Edit Schedule Modal
+    const editModal = document.getElementById('editScheduleModal');
+    if (editModal) {
+        editModal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            const scheduleId = button.getAttribute('data-schedule-id');
+            const subjectId = button.getAttribute('data-subject-id');
+            const classroomId = button.getAttribute('data-classroom-id');
+            const day = button.getAttribute('data-day');
+            const jpStart = button.getAttribute('data-jp-start');
+            const jpEnd = button.getAttribute('data-jp-end');
+            const room = button.getAttribute('data-room');
+            const notes = button.getAttribute('data-notes');
+            
+            // Set form action
+            const form = document.getElementById('editScheduleForm');
+            form.action = `/attendance/teacher-schedule/${scheduleId}/update/`;
+            
+            // Populate form fields
+            document.getElementById('edit_schedule_id').value = scheduleId;
+            document.getElementById('edit_subject').value = subjectId;
+            document.getElementById('edit_classroom').value = classroomId;
+            document.getElementById('edit_day_of_week').value = day;
+            document.getElementById('edit_jp_start').value = jpStart;
+            document.getElementById('edit_jp_end').value = jpEnd;
+            document.getElementById('edit_room_number').value = room || '';
+            document.getElementById('edit_notes').value = notes || '';
+        });
+    }
+    
+    // Delete Schedule Modal
+    const deleteModal = document.getElementById('deleteScheduleModal');
+    if (deleteModal) {
+        deleteModal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            const scheduleId = button.getAttribute('data-schedule-id');
+            const scheduleInfo = button.getAttribute('data-schedule-info');
+            
+            // Set form action
+            const form = document.getElementById('deleteScheduleForm');
+            form.action = `/attendance/teacher-schedule/${scheduleId}/delete/`;
+            
+            // Set schedule info
+            document.getElementById('delete_schedule_id').value = scheduleId;
+            document.getElementById('delete_schedule_info').textContent = scheduleInfo;
+        });
+    }
+    
+    // JP validation - ensure jp_end >= jp_start
+    const jpStartSelects = document.querySelectorAll('#jp_start, #edit_jp_start');
+    const jpEndSelects = document.querySelectorAll('#jp_end, #edit_jp_end');
+    
+    jpStartSelects.forEach((jpStart, index) => {
+        jpStart.addEventListener('change', function() {
+            const jpEnd = jpEndSelects[index];
+            const startValue = parseInt(this.value);
+            
+            if (jpEnd.value && parseInt(jpEnd.value) < startValue) {
+                jpEnd.value = this.value;
+            }
+        });
+    });
+    
+    jpEndSelects.forEach((jpEnd, index) => {
+        jpEnd.addEventListener('change', function() {
+            const jpStart = jpStartSelects[index];
+            const endValue = parseInt(this.value);
+            
+            if (jpStart.value && parseInt(jpStart.value) > endValue) {
+                alert('JP Selesai harus lebih besar atau sama dengan JP Mulai');
+                this.value = jpStart.value;
+            }
+        });
+    });
+});
+</script>
+{% endif %}
+{% endblock %}

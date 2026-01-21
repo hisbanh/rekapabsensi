@@ -228,7 +228,7 @@ Create all required models for teacher attendance system following the design do
   - Display attendance statistics
   - Add Edit and Delete buttons (admin only)
 
-- [ ] Create `templates/teacher/teacher_schedule.html`
+- [x] Create `templates/teacher/teacher_schedule.html`
   - Weekly schedule grid (JP rows, days columns)
   - Display subject and classroom for each slot
   - Highlight conflicts in red
