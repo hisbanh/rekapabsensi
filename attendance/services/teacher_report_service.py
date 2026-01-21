@@ -2,6 +2,7 @@
 Teacher Report Service Layer
 Handles all business logic related to teacher attendance reporting, analytics, and exports
 """
+import os
 from typing import List, Dict, Optional
 from uuid import UUID
 from datetime import date, timedelta
@@ -16,9 +17,11 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import cm
 from reportlab.platypus import (
-    SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+    SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image
 )
 from reportlab.lib.enums import TA_CENTER, TA_LEFT
+from reportlab.graphics.shapes import Drawing
+from reportlab.graphics.charts.barcharts import VerticalBarChart
 
 from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
@@ -62,54 +65,34 @@ class TeacherReportService:
         end_date: date
     ) -> bytes:
         """
-        Generate comprehensive PDF report for a teacher's attendance.
-        
-        Creates an A4 format PDF with:
-        - Teacher profile information (photo, NIP, name, subjects)
-        - Attendance summary table with totals and percentages
-        - Detailed attendance records table
-        - Attendance breakdown chart visualization
-        
-        Args:
-            teacher_id: UUID of the teacher
-            start_date: Start date of the report period (inclusive)
-            end_date: End date of the report period (inclusive)
-            
-        Returns:
-            bytes: PDF file content
-            
-        Raises:
-            TeacherReportServiceError: If teacher not found or invalid date range
-            
-        Example:
-            >>> from datetime import date
-            >>> from uuid import UUID
-            >>> teacher_id = UUID('...')
-            >>> pdf_bytes = TeacherReportService.generate_teacher_report_pdf(
-            ...     teacher_id,
-            ...     date(2024, 1, 1),
-            ...     date(2024, 1, 31)
-            ... )
-            >>> with open('teacher_report.pdf', 'wb') as f:
-            ...     f.write(pdf_bytes)
+        Generate comprehensive PDF report for a teacher's attendance with all enhancements.
+    
+        Features:
+        - School logo and header
+        - Teacher photo
+        - Attendance summary table
+        - Bar chart visualization
+        - Detailed attendance records
+        - Page numbers and footer
+        - Professional indigo styling
         """
         # Validate teacher exists
         try:
             teacher = Teacher.objects.select_related('homeroom_class').prefetch_related('subjects').get(id=teacher_id)
         except Teacher.DoesNotExist:
             raise TeacherReportServiceError(f"Teacher with ID '{teacher_id}' not found")
-        
+    
         # Validate date range
         if start_date > end_date:
             raise TeacherReportServiceError("Start date must be before or equal to end date")
-        
+    
         # Get attendance data
         attendances = TeacherAttendance.objects.filter(
             teacher=teacher,
             date__gte=start_date,
             date__lte=end_date
         ).select_related('schedule', 'schedule__subject', 'schedule__classroom', 'recorded_by').order_by('date', 'jp_number')
-        
+    
         # Calculate summary statistics
         total_hadir = attendances.filter(status='HADIR').count()
         total_sakit = attendances.filter(status='SAKIT').count()
@@ -118,11 +101,38 @@ class TeacherReportService:
         total_dinas = attendances.filter(status='DINAS').count()
         total_alpa = attendances.filter(status='ALPA').count()
         total_jp = attendances.count()
-        
+    
         attendance_percentage = round((total_hadir / total_jp * 100), 2) if total_jp > 0 else 0.0
-        
+    
         # Create PDF buffer
         buffer = BytesIO()
+    
+        # Custom page template with header and footer
+        def add_page_number(canvas_obj, doc):
+            """Add page numbers and footer to each page"""
+            canvas_obj.saveState()
+        
+            # Footer with page number
+            page_num = canvas_obj.getPageNumber()
+            footer_text = f"Halaman {page_num}"
+            canvas_obj.setFont('Helvetica', 9)
+            canvas_obj.setFillColor(TeacherReportService.COLORS['text_muted'])
+            canvas_obj.drawRightString(
+                A4[0] - 1.5*cm,
+                1*cm,
+                footer_text
+            )
+        
+            # Generation timestamp
+            timestamp_text = f"Dibuat: {timezone.now().strftime('%d/%m/%Y %H:%M')}"
+            canvas_obj.drawString(
+                1.5*cm,
+                1*cm,
+                timestamp_text
+            )
+        
+            canvas_obj.restoreState()
+    
         doc = SimpleDocTemplate(
             buffer,
             pagesize=A4,
@@ -131,71 +141,152 @@ class TeacherReportService:
             topMargin=2*cm,
             bottomMargin=2*cm,
         )
-        
+    
         # Build document elements
         elements = []
         styles = getSampleStyleSheet()
-        
+    
         # Add custom styles
         styles.add(ParagraphStyle(
             name='ReportTitle',
             parent=styles['Heading1'],
-            fontSize=16,
+            fontSize=18,
             textColor=TeacherReportService.COLORS['primary_dark'],
             alignment=TA_CENTER,
-            spaceAfter=12,
+            spaceAfter=6,
+            fontName='Helvetica-Bold',
         ))
-        
+    
         styles.add(ParagraphStyle(
             name='ReportSubtitle',
             parent=styles['Normal'],
             fontSize=11,
             textColor=TeacherReportService.COLORS['text_muted'],
             alignment=TA_CENTER,
-            spaceAfter=20,
+            spaceAfter=12,
         ))
-        
+    
         styles.add(ParagraphStyle(
             name='SectionHeader',
             parent=styles['Heading2'],
-            fontSize=12,
+            fontSize=13,
             textColor=TeacherReportService.COLORS['primary'],
             spaceBefore=15,
-            spaceAfter=8,
+            spaceAfter=10,
+            fontName='Helvetica-Bold',
         ))
-        
-        # Title
-        title = Paragraph("Laporan Absensi Ustadz", styles['ReportTitle'])
-        elements.append(title)
-        
-        # Teacher info
-        teacher_info = Paragraph(
-            f"<b>{teacher.full_name}</b><br/>"
-            f"NIP: {teacher.nip} | "
-            f"Status: {teacher.get_employment_status_display()}",
-            styles['ReportSubtitle']
+    
+        # Header with school logo (if available) and title
+        header_data = []
+        header_row = []
+    
+        # Try to add school logo if it exists
+        try:
+            logo_path = os.path.join(settings.BASE_DIR, 'static', 'images', 'logo.png')
+            if os.path.exists(logo_path):
+                logo = Image(logo_path, width=2*cm, height=2*cm)
+                header_row.append(logo)
+            else:
+                # Placeholder for logo
+                header_row.append(Paragraph("", styles['Normal']))
+        except:
+            header_row.append(Paragraph("", styles['Normal']))
+    
+        # School name and report title
+        school_info = Paragraph(
+            "<b>PESANTREN YAUMI YOGYAKARTA</b><br/>"
+            "<font size=14 color='#4F46E5'><b>LAPORAN ABSENSI USTADZ</b></font>",
+            ParagraphStyle(
+                name='SchoolHeader',
+                parent=styles['Normal'],
+                fontSize=12,
+                alignment=TA_CENTER,
+                textColor=TeacherReportService.COLORS['text'],
+            )
         )
-        elements.append(teacher_info)
+        header_row.append(school_info)
+        header_row.append(Paragraph("", styles['Normal']))  # Balance the layout
+    
+        header_data.append(header_row)
+    
+        header_table = Table(header_data, colWidths=[3*cm, 11*cm, 3*cm])
+        header_table.setStyle(TableStyle([
+            ('ALIGN', (0, 0), (0, 0), 'LEFT'),
+            ('ALIGN', (1, 0), (1, 0), 'CENTER'),
+            ('ALIGN', (2, 0), (2, 0), 'RIGHT'),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ]))
+        elements.append(header_table)
+        elements.append(Spacer(1, 15))
+    
+        # Teacher info section with photo
+        teacher_info_data = []
+    
+        # Try to add teacher photo if available
+        teacher_photo = None
+        if teacher.photo:
+            try:
+                photo_path = teacher.photo.path
+                if os.path.exists(photo_path):
+                    teacher_photo = Image(photo_path, width=3*cm, height=3*cm)
+            except:
+                pass
+    
+        if teacher_photo:
+            # Layout with photo
+            info_text = Paragraph(
+                f"<b>Nama:</b> {teacher.full_name}<br/>"
+                f"<b>NIP:</b> {teacher.nip}<br/>"
+                f"<b>Status:</b> {teacher.get_employment_status_display()}<br/>"
+                f"<b>Periode:</b> {start_date.strftime('%d/%m/%Y')} - {end_date.strftime('%d/%m/%Y')}",
+                styles['Normal']
+            )
+            teacher_info_data.append([teacher_photo, info_text])
         
+            teacher_info_table = Table(teacher_info_data, colWidths=[3.5*cm, 13.5*cm])
+            teacher_info_table.setStyle(TableStyle([
+                ('ALIGN', (0, 0), (0, 0), 'CENTER'),
+                ('ALIGN', (1, 0), (1, 0), 'LEFT'),
+                ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+                ('BOX', (0, 0), (-1, -1), 1, TeacherReportService.COLORS['border']),
+                ('BACKGROUND', (0, 0), (-1, -1), TeacherReportService.COLORS['header_bg']),
+                ('TOPPADDING', (0, 0), (-1, -1), 10),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 10),
+                ('LEFTPADDING', (0, 0), (-1, -1), 10),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 10),
+            ]))
+            elements.append(teacher_info_table)
+        else:
+            # Layout without photo
+            teacher_info = Paragraph(
+                f"<b>Nama:</b> {teacher.full_name} | "
+                f"<b>NIP:</b> {teacher.nip} | "
+                f"<b>Status:</b> {teacher.get_employment_status_display()}",
+                styles['ReportSubtitle']
+            )
+            elements.append(teacher_info)
+        
+            # Date range
+            date_range = Paragraph(
+                f"<b>Periode:</b> {start_date.strftime('%d/%m/%Y')} - {end_date.strftime('%d/%m/%Y')}",
+                styles['ReportSubtitle']
+            )
+            elements.append(date_range)
+    
         # Subjects taught
         subjects_list = ", ".join([s.name for s in teacher.subjects.filter(is_active=True)])
         if subjects_list:
             subjects_info = Paragraph(
-                f"Mata Pelajaran: {subjects_list}",
+                f"<b>Mata Pelajaran:</b> {subjects_list}",
                 styles['ReportSubtitle']
             )
             elements.append(subjects_info)
-        
-        # Date range
-        date_range = Paragraph(
-            f"Periode: {start_date.strftime('%d/%m/%Y')} - {end_date.strftime('%d/%m/%Y')}",
-            styles['ReportSubtitle']
-        )
-        elements.append(date_range)
-        
+    
+        elements.append(Spacer(1, 10))
+    
         # Summary section
         elements.append(Paragraph("Ringkasan Kehadiran", styles['SectionHeader']))
-        
+    
         summary_data = [
             ['Status', 'Jumlah', 'Persentase'],
             ['Hadir', str(total_hadir), f"{attendance_percentage:.2f}%"],
@@ -206,7 +297,7 @@ class TeacherReportService:
             ['Alpa', str(total_alpa), f"{(total_alpa/total_jp*100):.2f}%" if total_jp > 0 else "0%"],
             ['Total JP', str(total_jp), '100%'],
         ]
-        
+    
         summary_table = Table(summary_data, colWidths=[5*cm, 3*cm, 3*cm])
         summary_table.setStyle(TableStyle([
             ('BACKGROUND', (0, 0), (-1, 0), TeacherReportService.COLORS['primary']),
@@ -230,18 +321,64 @@ class TeacherReportService:
             ('RIGHTPADDING', (0, 0), (-1, -1), 8),
         ]))
         elements.append(summary_table)
-        
+    
+        # Add attendance chart (bar chart)
+        elements.append(Spacer(1, 15))
+        elements.append(Paragraph("Grafik Kehadiran", styles['SectionHeader']))
+    
+        # Create bar chart
+        drawing = Drawing(400, 200)
+        chart = VerticalBarChart()
+        chart.x = 50
+        chart.y = 50
+        chart.height = 125
+        chart.width = 300
+    
+        # Chart data
+        chart.data = [[total_hadir, total_sakit, total_izin, total_cuti, total_dinas, total_alpa]]
+        chart.categoryAxis.categoryNames = ['Hadir', 'Sakit', 'Izin', 'Cuti', 'Dinas', 'Alpa']
+    
+        # Chart styling with individual colors
+        chart.bars[0].fillColor = TeacherReportService.COLORS['hadir']
+        if len(chart.bars) > 1:
+            chart.bars[1].fillColor = TeacherReportService.COLORS['sakit']
+        if len(chart.bars) > 2:
+            chart.bars[2].fillColor = TeacherReportService.COLORS['izin']
+        if len(chart.bars) > 3:
+            chart.bars[3].fillColor = TeacherReportService.COLORS['cuti']
+        if len(chart.bars) > 4:
+            chart.bars[4].fillColor = TeacherReportService.COLORS['dinas']
+        if len(chart.bars) > 5:
+            chart.bars[5].fillColor = TeacherReportService.COLORS['alpa']
+    
+        # Axis styling
+        chart.valueAxis.valueMin = 0
+        max_value = max(total_hadir, total_sakit, total_izin, total_cuti, total_dinas, total_alpa, 1)
+        chart.valueAxis.valueMax = max_value * 1.2
+        chart.valueAxis.valueStep = max(1, int(chart.valueAxis.valueMax / 5))
+    
+        chart.categoryAxis.labels.boxAnchor = 'ne'
+        chart.categoryAxis.labels.dx = -5
+        chart.categoryAxis.labels.dy = -5
+        chart.categoryAxis.labels.angle = 30
+        chart.categoryAxis.labels.fontSize = 8
+    
+        chart.valueAxis.labels.fontSize = 8
+    
+        drawing.add(chart)
+        elements.append(drawing)
+    
         # Detailed attendance records
         elements.append(Spacer(1, 20))
         elements.append(Paragraph("Detail Kehadiran", styles['SectionHeader']))
-        
+    
         if attendances.exists():
             detail_data = [['No', 'Tanggal', 'JP', 'Status', 'Mata Pelajaran', 'Kelas', 'Keterangan']]
-            
+        
             for idx, att in enumerate(attendances, 1):
                 subject_name = att.schedule.subject.name if att.schedule else '-'
                 classroom_name = att.schedule.classroom.name if att.schedule else '-'
-                
+            
                 detail_data.append([
                     str(idx),
                     att.date.strftime('%d/%m/%Y'),
@@ -249,9 +386,9 @@ class TeacherReportService:
                     att.get_status_display(),
                     subject_name[:15] + '...' if len(subject_name) > 15 else subject_name,
                     classroom_name[:10] + '...' if len(classroom_name) > 10 else classroom_name,
-                    att.notes[:20] + '...' if len(att.notes) > 20 else att.notes or '-',
+                    att.notes[:20] + '...' if att.notes and len(att.notes) > 20 else att.notes or '-',
                 ])
-            
+        
             detail_table = Table(detail_data, colWidths=[0.8*cm, 2.2*cm, 1*cm, 2*cm, 3*cm, 2.5*cm, 3.5*cm])
             detail_table.setStyle(TableStyle([
                 ('BACKGROUND', (0, 0), (-1, 0), TeacherReportService.COLORS['primary']),
@@ -274,24 +411,15 @@ class TeacherReportService:
             elements.append(detail_table)
         else:
             elements.append(Paragraph("Tidak ada data kehadiran untuk periode ini.", styles['Normal']))
-        
-        # Footer
-        elements.append(Spacer(1, 20))
-        footer = Paragraph(
-            f"<i>Laporan dibuat pada: {timezone.now().strftime('%d/%m/%Y %H:%M:%S')}</i>",
-            styles['Normal']
-        )
-        elements.append(footer)
-        
-        # Build PDF
-        doc.build(elements)
-        
+    
+        # Build PDF with page numbers
+        doc.build(elements, onFirstPage=add_page_number, onLaterPages=add_page_number)
+    
         # Get PDF content
         pdf_content = buffer.getvalue()
         buffer.close()
-        
-        return pdf_content
     
+        return pdf_content
     @staticmethod
     def get_attendance_analytics(
         start_date: date,
