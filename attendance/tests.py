@@ -576,3 +576,306 @@ class MissingAttendanceTests(TestCase):
         # Should have 4 missing days (Mon, Tue, Thu, Fri - Wed is holiday)
         self.assertEqual(len(missing), 4)
         self.assertNotIn(date(2026, 3, 4), missing)
+
+
+
+# ============================================================================
+# Teacher Schedule Service Tests (Task 2.2)
+# ============================================================================
+
+from .models import Teacher, Subject, TeacherSchedule
+from .services.schedule_service import TeacherScheduleService
+
+
+class TeacherScheduleServiceTests(TestCase):
+    """Tests for TeacherScheduleService (Task 2.2)"""
+    
+    def setUp(self):
+        """Set up test data"""
+        # Create a user for audit fields
+        self.user = User.objects.create_user(
+            username='testadmin',
+            password='testpass123'
+        )
+        
+        # Create academic level and classroom
+        self.academic_level = AcademicLevel.objects.create(
+            code='TEST_SMP',
+            name='Test Sekolah Menengah Pertama',
+            level_type='SMP',
+            min_grade=7,
+            max_grade=9
+        )
+        self.classroom = Classroom.objects.create(
+            name='8A-TEST',
+            academic_level=self.academic_level,
+            grade=8,
+            section='A',
+            capacity=30,
+            academic_year='2024/2025'
+        )
+        
+        # Create subjects
+        self.subject_math = Subject.objects.create(
+            code='MAT',
+            name='Matematika',
+            category='UMUM',
+            is_active=True
+        )
+        self.subject_physics = Subject.objects.create(
+            code='FIS',
+            name='Fisika',
+            category='UMUM',
+            is_active=True
+        )
+        
+        # Create teacher
+        self.teacher = Teacher.objects.create(
+            nip='12345',
+            full_name='Ahmad Yusuf',
+            employment_date=date(2020, 1, 1),
+            employment_status='ACTIVE',
+            is_active=True
+        )
+        self.teacher.subjects.add(self.subject_math, self.subject_physics)
+    
+    def test_create_schedule_success(self):
+        """Test creating a valid teacher schedule"""
+        schedule_data = {
+            'teacher_id': self.teacher.id,
+            'subject_id': self.subject_math.id,
+            'classroom_id': self.classroom.id,
+            'day_of_week': 0,  # Monday
+            'jp_start': 1,
+            'jp_end': 2,
+            'room_number': 'R101',
+            'notes': 'Test schedule',
+            'effective_date': date.today(),
+            'is_active': True
+        }
+        
+        schedule = TeacherScheduleService.create_schedule(schedule_data)
+        
+        self.assertIsNotNone(schedule)
+        self.assertEqual(schedule.teacher, self.teacher)
+        self.assertEqual(schedule.subject, self.subject_math)
+        self.assertEqual(schedule.classroom, self.classroom)
+        self.assertEqual(schedule.day_of_week, 0)
+        self.assertEqual(schedule.jp_start, 1)
+        self.assertEqual(schedule.jp_end, 2)
+    
+    def test_detect_conflicts_teacher_overlap(self):
+        """Test detecting teacher scheduling conflicts"""
+        # Create first schedule
+        schedule1_data = {
+            'teacher_id': self.teacher.id,
+            'subject_id': self.subject_math.id,
+            'classroom_id': self.classroom.id,
+            'day_of_week': 0,
+            'jp_start': 1,
+            'jp_end': 3,
+            'effective_date': date.today(),
+        }
+        TeacherScheduleService.create_schedule(schedule1_data)
+        
+        # Check for conflicts with overlapping schedule
+        conflicts = TeacherScheduleService.detect_conflicts(
+            teacher_id=self.teacher.id,
+            day=0,
+            jp_start=2,
+            jp_end=4,
+            effective_date=date.today()
+        )
+        
+        self.assertEqual(len(conflicts), 1)
+        self.assertEqual(conflicts[0]['type'], 'teacher')
+        self.assertIn('Ahmad Yusuf', conflicts[0]['message'])
+    
+    def test_detect_conflicts_no_overlap(self):
+        """Test that non-overlapping schedules don't conflict"""
+        # Create first schedule
+        schedule1_data = {
+            'teacher_id': self.teacher.id,
+            'subject_id': self.subject_math.id,
+            'classroom_id': self.classroom.id,
+            'day_of_week': 0,
+            'jp_start': 1,
+            'jp_end': 2,
+            'effective_date': date.today(),
+        }
+        TeacherScheduleService.create_schedule(schedule1_data)
+        
+        # Check for conflicts with non-overlapping schedule
+        conflicts = TeacherScheduleService.detect_conflicts(
+            teacher_id=self.teacher.id,
+            day=0,
+            jp_start=3,
+            jp_end=4,
+            effective_date=date.today()
+        )
+        
+        self.assertEqual(len(conflicts), 0)
+    
+    def test_get_weekly_schedule(self):
+        """Test retrieving teacher's weekly schedule"""
+        # Create schedules for different days
+        for day in range(5):  # Monday to Friday
+            schedule_data = {
+                'teacher_id': self.teacher.id,
+                'subject_id': self.subject_math.id,
+                'classroom_id': self.classroom.id,
+                'day_of_week': day,
+                'jp_start': 1,
+                'jp_end': 2,
+                'effective_date': date.today(),
+            }
+            TeacherScheduleService.create_schedule(schedule_data)
+        
+        weekly_schedule = TeacherScheduleService.get_weekly_schedule(self.teacher.id)
+        
+        self.assertIsInstance(weekly_schedule, dict)
+        self.assertEqual(len(weekly_schedule), 7)  # 7 days
+        
+        # Check that Monday-Friday have schedules
+        for day in range(5):
+            self.assertEqual(len(weekly_schedule[day]), 1)
+        
+        # Check that Saturday and Sunday are empty
+        self.assertEqual(len(weekly_schedule[5]), 0)
+        self.assertEqual(len(weekly_schedule[6]), 0)
+    
+    def test_get_classroom_schedule(self):
+        """Test retrieving classroom schedule for a specific day"""
+        # Create schedule
+        schedule_data = {
+            'teacher_id': self.teacher.id,
+            'subject_id': self.subject_math.id,
+            'classroom_id': self.classroom.id,
+            'day_of_week': 0,
+            'jp_start': 1,
+            'jp_end': 2,
+            'effective_date': date.today(),
+        }
+        TeacherScheduleService.create_schedule(schedule_data)
+        
+        classroom_schedule = TeacherScheduleService.get_classroom_schedule(
+            self.classroom.id, 0
+        )
+        
+        self.assertEqual(len(classroom_schedule), 1)
+        self.assertEqual(classroom_schedule[0].teacher, self.teacher)
+        self.assertEqual(classroom_schedule[0].subject, self.subject_math)
+    
+    def test_update_schedule(self):
+        """Test updating an existing schedule"""
+        # Create schedule
+        schedule_data = {
+            'teacher_id': self.teacher.id,
+            'subject_id': self.subject_math.id,
+            'classroom_id': self.classroom.id,
+            'day_of_week': 0,
+            'jp_start': 1,
+            'jp_end': 2,
+            'effective_date': date.today(),
+        }
+        schedule = TeacherScheduleService.create_schedule(schedule_data)
+        
+        # Update schedule
+        update_data = {
+            'jp_start': 3,
+            'jp_end': 4,
+            'notes': 'Updated schedule'
+        }
+        updated_schedule = TeacherScheduleService.update_schedule(
+            schedule.id, update_data
+        )
+        
+        self.assertEqual(updated_schedule.jp_start, 3)
+        self.assertEqual(updated_schedule.jp_end, 4)
+        self.assertEqual(updated_schedule.notes, 'Updated schedule')
+    
+    def test_delete_schedule(self):
+        """Test soft deleting a schedule"""
+        # Create schedule
+        schedule_data = {
+            'teacher_id': self.teacher.id,
+            'subject_id': self.subject_math.id,
+            'classroom_id': self.classroom.id,
+            'day_of_week': 0,
+            'jp_start': 1,
+            'jp_end': 2,
+            'effective_date': date.today(),
+        }
+        schedule = TeacherScheduleService.create_schedule(schedule_data)
+        
+        # Delete schedule
+        result = TeacherScheduleService.delete_schedule(schedule.id)
+        
+        self.assertTrue(result)
+        
+        # Verify schedule is soft deleted
+        schedule.refresh_from_db()
+        self.assertFalse(schedule.is_active)
+    
+    def test_get_teacher_teaching_load(self):
+        """Test calculating teacher's teaching load"""
+        # Create multiple schedules
+        schedules_data = [
+            {
+                'teacher_id': self.teacher.id,
+                'subject_id': self.subject_math.id,
+                'classroom_id': self.classroom.id,
+                'day_of_week': 0,
+                'jp_start': 1,
+                'jp_end': 2,
+                'effective_date': date.today(),
+            },
+            {
+                'teacher_id': self.teacher.id,
+                'subject_id': self.subject_physics.id,
+                'classroom_id': self.classroom.id,
+                'day_of_week': 1,
+                'jp_start': 3,
+                'jp_end': 5,
+                'effective_date': date.today(),
+            }
+        ]
+        
+        for schedule_data in schedules_data:
+            TeacherScheduleService.create_schedule(schedule_data)
+        
+        teaching_load = TeacherScheduleService.get_teacher_teaching_load(self.teacher.id)
+        
+        self.assertEqual(teaching_load['total_jp_per_week'], 5)  # 2 JP + 3 JP
+        self.assertEqual(teaching_load['schedules_count'], 2)
+        self.assertEqual(len(teaching_load['subjects']), 2)
+        self.assertEqual(len(teaching_load['by_day']), 7)
+    
+    def test_bulk_create_schedules(self):
+        """Test creating multiple schedules at once"""
+        schedules_data = [
+            {
+                'teacher_id': self.teacher.id,
+                'subject_id': self.subject_math.id,
+                'classroom_id': self.classroom.id,
+                'day_of_week': 0,
+                'jp_start': 1,
+                'jp_end': 2,
+                'effective_date': date.today(),
+            },
+            {
+                'teacher_id': self.teacher.id,
+                'subject_id': self.subject_physics.id,
+                'classroom_id': self.classroom.id,
+                'day_of_week': 1,
+                'jp_start': 3,
+                'jp_end': 4,
+                'effective_date': date.today(),
+            }
+        ]
+        
+        created_schedules = TeacherScheduleService.bulk_create_schedules(schedules_data)
+        
+        self.assertEqual(len(created_schedules), 2)
+        self.assertEqual(created_schedules[0].subject, self.subject_math)
+        self.assertEqual(created_schedules[1].subject, self.subject_physics)

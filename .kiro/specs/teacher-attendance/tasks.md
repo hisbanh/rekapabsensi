@@ -131,7 +131,7 @@ Create all required models for teacher attendance system following the design do
   - Add type hints for all parameters and returns
 
 ### 2.2 Create ScheduleService
-- [ ] Create `attendance/services/schedule_service.py`
+- [x] Create `attendance/services/schedule_service.py`
   - Implement `create_schedule(data: dict) -> TeacherSchedule`
   - Implement `detect_conflicts(teacher_id: UUID, day: int, jp_start: int, jp_end: int) -> list`
   - Implement `get_weekly_schedule(teacher_id: UUID) -> dict`
