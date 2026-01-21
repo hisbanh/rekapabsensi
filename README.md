@@ -95,7 +95,11 @@ sipa_yaumi/
 
 7. **Populate Initial Data**
    ```bash
+   # Populate student data
    python manage.py populate_students
+   
+   # Populate teacher data (subjects, teachers, schedules)
+   python manage.py populate_teacher_data
    ```
 
 8. **Run Development Server**
@@ -135,6 +139,51 @@ SIPA_YAUMI = {
 ```
 
 ## Usage
+
+### Management Commands
+
+#### populate_students
+Populates the database with sample student data across all grades (7-12).
+
+```bash
+# Populate student data
+python manage.py populate_students
+
+# Reset and repopulate
+python manage.py populate_students --reset
+```
+
+#### populate_teacher_data
+Populates the database with sample teacher data including:
+- 15 subjects across 4 categories (Religious, General, Skills, Extracurricular)
+- 25 teachers with complete profiles
+- Subject assignments (1-3 subjects per teacher)
+- Weekly teaching schedules with automatic conflict detection
+- Homeroom teacher assignments
+
+```bash
+# Populate teacher data
+python manage.py populate_teacher_data
+
+# Reset and repopulate
+python manage.py populate_teacher_data --reset
+```
+
+**Features:**
+- Creates realistic Indonesian teacher names
+- Assigns subjects based on categories (Religious, General, Skills, Extracurricular)
+- Generates 3-5 teaching slots per teacher per week
+- Automatically detects and avoids scheduling conflicts
+- Assigns homeroom teachers to classrooms
+- Sets employment dates (1-5 years ago)
+
+**Sample Output:**
+```
+Subjects: 13 created, 15 total
+Teachers: 25 created, 25 total
+Schedules: 102 created, 47 conflicts avoided
+Successfully populated database with teacher data!
+```
 
 ### Accessing the System
 1. **Main Application**: http://127.0.0.1:8000/

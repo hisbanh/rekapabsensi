@@ -90,7 +90,7 @@ Create all required models for teacher attendance system following the design do
   - Add migration to git
 
 ### 1.3 Create Sample Data Population
-- [ ] Create management command `populate_teacher_data.py`
+- [x] Create management command `populate_teacher_data.py`
   - Create 5-10 sample subjects (Matematika, Fisika, Bahasa Arab, etc.)
   - Create 20-30 sample teachers with complete profiles
   - Assign subjects to teachers (1-3 subjects per teacher)
