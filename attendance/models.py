@@ -1375,6 +1375,131 @@ class TeacherAttendance(BaseModel):
         return self.status != 'HADIR'
 
 
+class TeacherAttendanceSummary(models.Model):
+    """Monthly attendance summary for teachers (for performance optimization)"""
+    
+    # Foreign key
+    teacher = models.ForeignKey(
+        Teacher,
+        on_delete=models.CASCADE,
+        related_name='attendance_summaries',
+        help_text='Teacher for this summary'
+    )
+    
+    # Period
+    year = models.PositiveIntegerField(
+        help_text='Year of the summary'
+    )
+    month = models.PositiveIntegerField(
+        help_text='Month of the summary (1-12)'
+    )
+    
+    # Attendance counts
+    total_hadir = models.PositiveIntegerField(
+        default=0,
+        help_text='Total number of Hadir (present) JP'
+    )
+    total_sakit = models.PositiveIntegerField(
+        default=0,
+        help_text='Total number of Sakit (sick) JP'
+    )
+    total_izin = models.PositiveIntegerField(
+        default=0,
+        help_text='Total number of Izin (permission) JP'
+    )
+    total_cuti = models.PositiveIntegerField(
+        default=0,
+        help_text='Total number of Cuti (leave) JP'
+    )
+    total_dinas = models.PositiveIntegerField(
+        default=0,
+        help_text='Total number of Dinas (official duty) JP'
+    )
+    total_alpa = models.PositiveIntegerField(
+        default=0,
+        help_text='Total number of Alpa (absent without notice) JP'
+    )
+    total_jp_scheduled = models.PositiveIntegerField(
+        default=0,
+        help_text='Total number of JP scheduled for this period'
+    )
+    
+    # Calculated field
+    attendance_percentage = models.FloatField(
+        default=0.0,
+        help_text='Attendance percentage (total_hadir / total_jp_scheduled * 100)'
+    )
+    
+    # Timestamps
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        help_text='Timestamp when summary was created'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        help_text='Timestamp when summary was last updated'
+    )
+    
+    class Meta:
+        ordering = ['-year', '-month', 'teacher__full_name']
+        indexes = [
+            models.Index(fields=['teacher', 'year', 'month']),
+            models.Index(fields=['year', 'month']),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=['teacher', 'year', 'month'],
+                name='unique_teacher_summary'
+            )
+        ]
+        verbose_name = 'Teacher Attendance Summary'
+        verbose_name_plural = 'Teacher Attendance Summaries'
+    
+    def __str__(self):
+        return f"{self.teacher.full_name} - {self.year}/{self.month:02d}"
+    
+    def clean(self):
+        """Custom validation logic"""
+        super().clean()
+        
+        # Validate month range (1-12)
+        if self.month is not None:
+            if self.month < 1 or self.month > 12:
+                raise ValidationError({
+                    'month': 'Month must be between 1 and 12'
+                })
+        
+        # Validate year range (2020-2030)
+        if self.year is not None:
+            if self.year < 2020 or self.year > 2030:
+                raise ValidationError({
+                    'year': 'Year must be between 2020 and 2030'
+                })
+    
+    def calculate_percentage(self):
+        """Calculate and update attendance percentage"""
+        if self.total_jp_scheduled > 0:
+            self.attendance_percentage = round(
+                (self.total_hadir / self.total_jp_scheduled) * 100, 2
+            )
+        else:
+            self.attendance_percentage = 0.0
+    
+    def save(self, *args, **kwargs):
+        """Override save to calculate percentage before saving"""
+        # Calculate percentage before saving
+        self.calculate_percentage()
+        
+        # Skip full_clean during migrations to avoid validation issues
+        import sys
+        is_migration = 'migrate' in sys.argv or 'makemigrations' in sys.argv
+        
+        if not is_migration:
+            self.full_clean()
+        
+        super().save(*args, **kwargs)
+
+
 class AuditLog(models.Model):
     """Audit log for tracking important system events"""
     

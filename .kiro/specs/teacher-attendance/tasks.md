@@ -70,7 +70,7 @@ Create all required models for teacher attendance system following the design do
   - Add clean() method for validation
 
 #### 1.1.5 Create TeacherAttendanceSummary Model
-- [ ] Create `TeacherAttendanceSummary` model
+- [x] Create `TeacherAttendanceSummary` model
   - Foreign key: teacher
   - Period: year, month
   - Counts: total_hadir, total_sakit, total_izin, total_cuti, total_dinas, total_alpa, total_jp_scheduled
