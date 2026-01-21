@@ -205,7 +205,7 @@ Create all required models for teacher attendance system following the design do
   - Add clean methods for cross-field validation
 
 ### 3.3 Create Teacher Templates
-- [ ] Create `templates/teacher/teacher_list.html`
+- [x] Create `templates/teacher/teacher_list.html`
   - Display teachers in table with photo, NIP, name, subjects, status
   - Add search bar and filters (status, subject)
   - Add pagination controls

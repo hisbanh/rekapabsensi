@@ -1,0 +1,381 @@
+{% extends 'manage/base_list.html' %}
+{% load static %}
+
+{% block page_title %}Data Ustadz{% endblock %}
+
+{% block breadcrumb_items %}
+<li class="breadcrumb-item active">Ustadz</li>
+{% endblock %}
+
+{% block page_actions %}
+{% if user.is_superuser %}
+<a href="{% url 'teacher_create' %}" class="btn btn-primary btn-sm">
+    <i class="fas fa-plus me-1"></i> Tambah Ustadz
+</a>
+{% endif %}
+{% endblock %}
+
+{% block stats_row %}
+<div class="stats-row">
+    <div class="stat-card">
+        <div class="stat-icon primary">
+            <i class="fas fa-chalkboard-teacher"></i>
+        </div>
+        <div>
+            <div class="stat-value">{{ total_teachers }}</div>
+            <div class="stat-label">Total Ustadz</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon success">
+            <i class="fas fa-user-check"></i>
+        </div>
+        <div>
+            <div class="stat-value">{{ active_teachers }}</div>
+            <div class="stat-label">Ustadz Aktif</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon warning">
+            <i class="fas fa-home"></i>
+        </div>
+        <div>
+            <div class="stat-value">{{ homeroom_teachers }}</div>
+            <div class="stat-label">Wali Kelas</div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block filters %}
+<div class="filter-section">
+    <form method="get" class="filter-row">
+        <!-- Search Input -->
+        <div class="filter-group" style="flex: 2;">
+            <label for="search">Cari</label>
+            <input type="text" 
+                   id="search" 
+                   name="search" 
+                   class="form-control" 
+                   placeholder="Cari NIP, nama, atau email..."
+                   value="{{ search_query }}">
+        </div>
+        
+        <!-- Subject Filter -->
+        <div class="filter-group">
+            <label for="subject">Mata Pelajaran</label>
+            <select id="subject" name="subject" class="form-select">
+                <option value="">Semua Mata Pelajaran</option>
+                {% for subject in subjects %}
+                <option value="{{ subject.id }}" {% if subject.id|stringformat:"s" == current_subject %}selected{% endif %}>
+                    {{ subject.name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <!-- Employment Status Filter -->
+        <div class="filter-group">
+            <label for="employment_status">Status Kepegawaian</label>
+            <select id="employment_status" name="employment_status" class="form-select">
+                <option value="">Semua Status</option>
+                <option value="ACTIVE" {% if current_employment_status == 'ACTIVE' %}selected{% endif %}>Aktif</option>
+                <option value="LEAVE" {% if current_employment_status == 'LEAVE' %}selected{% endif %}>Cuti</option>
+                <option value="INACTIVE" {% if current_employment_status == 'INACTIVE' %}selected{% endif %}>Tidak Aktif</option>
+            </select>
+        </div>
+        
+        <!-- Active Status Filter -->
+        <div class="filter-group">
+            <label for="is_active">Status</label>
+            <select id="is_active" name="is_active" class="form-select">
+                <option value="">Semua</option>
+                <option value="true" {% if current_is_active == 'true' %}selected{% endif %}>Aktif</option>
+                <option value="false" {% if current_is_active == 'false' %}selected{% endif %}>Nonaktif</option>
+            </select>
+        </div>
+        
+        <!-- Homeroom Teacher Filter -->
+        <div class="filter-group">
+            <label for="is_homeroom">Wali Kelas</label>
+            <select id="is_homeroom" name="is_homeroom" class="form-select">
+                <option value="">Semua</option>
+                <option value="true" {% if current_is_homeroom == 'true' %}selected{% endif %}>Ya</option>
+                <option value="false" {% if current_is_homeroom == 'false' %}selected{% endif %}>Tidak</option>
+            </select>
+        </div>
+        
+        <!-- Filter Actions -->
+        <div class="filter-actions">
+            <button type="submit" class="btn btn-primary btn-sm">
+                <i class="fas fa-search me-1"></i> Filter
+            </button>
+            <a href="{% url 'teacher_list' %}" class="btn btn-outline-secondary btn-sm">
+                <i class="fas fa-times me-1"></i> Reset
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block list_content %}
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0" id="teacherTable">
+                <thead>
+                    <tr>
+                        <th style="width: 80px;">Foto</th>
+                        <th>NIP</th>
+                        <th>Nama</th>
+                        <th>Mata Pelajaran</th>
+                        <th style="width: 120px;">Status</th>
+                        {% if user.is_superuser %}
+                        <th style="width: 120px;" class="text-center">Aksi</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for teacher in teachers %}
+                    <tr data-id="{{ teacher.pk }}">
+                        <td>
+                            {% if teacher.photo %}
+                            <img src="{{ teacher.photo.url }}" 
+                                 alt="{{ teacher.full_name }}" 
+                                 class="teacher-photo">
+                            {% else %}
+                            <div class="teacher-avatar">
+                                {{ teacher.full_name|slice:":1"|upper }}
+                            </div>
+                            {% endif %}
+                        </td>
+                        <td data-label="NIP">
+                            <span class="fw-medium">{{ teacher.nip }}</span>
+                        </td>
+                        <td data-label="Nama">
+                            <div>
+                                <a href="{% url 'teacher_detail' teacher.pk %}" class="text-decoration-none">
+                                    <span class="fw-medium text-primary">{{ teacher.full_name }}</span>
+                                </a>
+                                {% if teacher.email %}
+                                <div class="text-muted small">
+                                    <i class="fas fa-envelope me-1"></i>{{ teacher.email }}
+                                </div>
+                                {% endif %}
+                                {% if teacher.is_homeroom_teacher and teacher.homeroom_class %}
+                                <div class="text-muted small">
+                                    <i class="fas fa-home me-1"></i>Wali Kelas {{ teacher.homeroom_class.name }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td data-label="Mata Pelajaran">
+                            {% if teacher.subjects.all %}
+                            <div class="subject-badges">
+                                {% for subject in teacher.subjects.all|slice:":3" %}
+                                <span class="badge bg-secondary mb-1">{{ subject.name }}</span>
+                                {% endfor %}
+                                {% if teacher.subjects.count > 3 %}
+                                <span class="badge bg-light text-dark mb-1">+{{ teacher.subjects.count|add:"-3" }} lainnya</span>
+                                {% endif %}
+                            </div>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td data-label="Status">
+                            {% if teacher.is_active %}
+                                {% if teacher.employment_status == 'ACTIVE' %}
+                                <span class="status-badge status-hadir">Aktif</span>
+                                {% elif teacher.employment_status == 'LEAVE' %}
+                                <span class="status-badge status-izin">Cuti</span>
+                                {% else %}
+                                <span class="status-badge status-alpa">Tidak Aktif</span>
+                                {% endif %}
+                            {% else %}
+                            <span class="status-badge status-alpa">Nonaktif</span>
+                            {% endif %}
+                        </td>
+                        {% if user.is_superuser %}
+                        <td class="text-center">
+                            <div class="btn-group btn-group-sm">
+                                <a href="{% url 'teacher_detail' teacher.pk %}" 
+                                   class="btn btn-outline-info" 
+                                   title="Detail">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{% url 'teacher_update' teacher.pk %}" 
+                                   class="btn btn-outline-primary" 
+                                   title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <button type="button" 
+                                        class="btn btn-outline-danger" 
+                                        title="Hapus"
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#deleteModal"
+                                        data-delete-id="{{ teacher.pk }}"
+                                        data-delete-name="{{ teacher.full_name }}"
+                                        data-delete-url="{% url 'teacher_delete' teacher.pk %}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                        {% endif %}
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="{% if user.is_superuser %}6{% else %}5{% endif %}" class="text-center py-4 text-muted">
+                            <i class="fas fa-inbox fa-2x mb-2 d-block"></i>
+                            Tidak ada data ustadz
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Pagination -->
+        {% if teachers.has_other_pages %}
+        {% include 'components/_pagination.html' with page_obj=teachers %}
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block list_extra_css %}
+<style>
+    .teacher-photo {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid var(--border-color);
+    }
+    
+    .teacher-avatar {
+        width: 48px;
+        height: 48px;
+        background: linear-gradient(135deg, var(--primary) 0%, #6b5344 100%);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        font-weight: 600;
+        border: 2px solid var(--border-color);
+    }
+    
+    .subject-badges {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.25rem;
+    }
+    
+    .subject-badges .badge {
+        font-size: 0.75rem;
+        font-weight: 500;
+        padding: 0.25rem 0.5rem;
+    }
+    
+    /* Mobile responsive adjustments */
+    @media (max-width: 767.98px) {
+        .teacher-photo,
+        .teacher-avatar {
+            width: 40px;
+            height: 40px;
+            font-size: 1rem;
+        }
+        
+        .table tbody tr {
+            display: block;
+            margin-bottom: 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.75rem;
+        }
+        
+        .table tbody td {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--border-light);
+        }
+        
+        .table tbody td:last-child {
+            border-bottom: none;
+        }
+        
+        .table tbody td::before {
+            content: attr(data-label);
+            font-weight: 600;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            min-width: 100px;
+        }
+        
+        .table tbody td:first-child {
+            justify-content: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.75rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .table tbody td:first-child::before {
+            content: none;
+        }
+        
+        .table thead {
+            display: none;
+        }
+        
+        .subject-badges {
+            flex-direction: column;
+            align-items: flex-end;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block list_extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle delete modal
+    const deleteModal = document.getElementById('deleteModal');
+    if (deleteModal) {
+        deleteModal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            const deleteId = button.getAttribute('data-delete-id');
+            const deleteName = button.getAttribute('data-delete-name');
+            const deleteUrl = button.getAttribute('data-delete-url');
+            
+            const modalBody = deleteModal.querySelector('.modal-body');
+            const deleteForm = deleteModal.querySelector('#deleteForm');
+            
+            if (modalBody && deleteName) {
+                modalBody.innerHTML = `
+                    <p>Apakah Anda yakin ingin menghapus ustadz <strong>${deleteName}</strong>?</p>
+                    <p class="text-muted mb-0">Tindakan ini akan menonaktifkan ustadz dan tidak dapat dibatalkan.</p>
+                `;
+            }
+            
+            if (deleteForm && deleteUrl) {
+                deleteForm.action = deleteUrl;
+            }
+        });
+    }
+    
+    // Auto-submit form on filter change (optional UX enhancement)
+    const filterSelects = document.querySelectorAll('.filter-section select');
+    filterSelects.forEach(select => {
+        select.addEventListener('change', function() {
+            // Optional: Auto-submit on filter change
+            // Uncomment the line below to enable auto-submit
+            // this.closest('form').submit();
+        });
+    });
+});
+</script>
+{% endblock %}
