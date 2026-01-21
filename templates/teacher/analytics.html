@@ -1,0 +1,938 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Analytics Absensi Ustadz{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'teacher_dashboard' %}">Dashboard Ustadz</a></li>
+        <li class="breadcrumb-item active">Analytics</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<!-- Filter Section -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h6 class="m-0 font-weight-bold text-primary">
+            <i class="fas fa-filter me-2"></i>
+            Filter Analytics
+        </h6>
+    </div>
+    <div class="card-body">
+        <form method="get" action="{% url 'teacher_analytics' %}" id="analyticsFilterForm">
+            <div class="row">
+                <!-- Date Range -->
+                <div class="col-md-3 mb-3">
+                    <label for="start_date" class="form-label">Dari Tanggal</label>
+                    <input type="date" 
+                           name="start_date" 
+                           id="start_date" 
+                           class="form-control" 
+                           value="{{ start_date|date:'Y-m-d' }}"
+                           max="{{ today|date:'Y-m-d' }}"
+                           required>
+                </div>
+
+                <div class="col-md-3 mb-3">
+                    <label for="end_date" class="form-label">Sampai Tanggal</label>
+                    <input type="date" 
+                           name="end_date" 
+                           id="end_date" 
+                           class="form-control" 
+                           value="{{ end_date|date:'Y-m-d' }}"
+                           max="{{ today|date:'Y-m-d' }}"
+                           required>
+                </div>
+
+                <!-- Teacher Filter -->
+                <div class="col-md-3 mb-3">
+                    <label for="teacher_id" class="form-label">Filter Ustadz</label>
+                    <select name="teacher_id" id="teacher_id" class="form-select">
+                        <option value="">-- Semua Ustadz --</option>
+                        {% for teacher in teachers %}
+                        <option value="{{ teacher.id }}" {% if selected_teacher and selected_teacher.id == teacher.id %}selected{% endif %}>
+                            {{ teacher.full_name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Subject Filter -->
+                <div class="col-md-3 mb-3">
+                    <label for="subject_id" class="form-label">Filter Mata Pelajaran</label>
+                    <select name="subject_id" id="subject_id" class="form-select">
+                        <option value="">-- Semua Mata Pelajaran --</option>
+                        {% for subject in subjects %}
+                        <option value="{{ subject.id }}" {% if selected_subject and selected_subject.id == subject.id %}selected{% endif %}>
+                            {{ subject.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="d-flex gap-2 mt-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-chart-line me-2"></i>
+                    Tampilkan Analytics
+                </button>
+                <a href="{% url 'teacher_analytics' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-redo me-2"></i>
+                    Reset Filter
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if analytics %}
+<!-- Overall Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-primary shadow">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            Total Rekaman
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            {{ analytics.overall_stats.total_records }}
+                        </div>
+                        <small class="text-muted">Jam Pelajaran</small>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-clipboard-list fa-2x text-primary"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-success shadow">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            Tingkat Kehadiran
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            {{ analytics.overall_stats.attendance_percentage }}%
+                        </div>
+                        <small class="text-muted">{{ analytics.overall_stats.total_hadir }} dari {{ analytics.overall_stats.total_records }} JP</small>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-percentage fa-2x text-success"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-warning shadow">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                            Total Ustadz
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            {{ analytics.overall_stats.total_teachers }}
+                        </div>
+                        <small class="text-muted">Ustadz Aktif</small>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-users fa-2x text-warning"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-info shadow">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                            Rata-rata Harian
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            {{ analytics.overall_stats.average_daily_attendance|floatformat:1 }}
+                        </div>
+                        <small class="text-muted">JP per Hari</small>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-calendar-day fa-2x text-info"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row 1: Daily Trends and Status Breakdown -->
+<div class="row mb-4">
+    <!-- Daily Attendance Trends -->
+    <div class="col-lg-8 mb-4">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-chart-line me-2"></i>
+                    Trend Kehadiran Harian
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="chart-container" style="position: relative; height: 350px;">
+                    <canvas id="dailyTrendsChart"></canvas>
+                </div>
+                <div class="mt-3 text-center">
+                    <small class="text-muted">
+                        Periode: {{ start_date|date:"d M Y" }} - {{ end_date|date:"d M Y" }}
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Breakdown -->
+    <div class="col-lg-4 mb-4">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-chart-pie me-2"></i>
+                    Breakdown Status
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="chart-container" style="position: relative; height: 350px;">
+                    <canvas id="statusBreakdownChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row 2: Teacher Performance and Subject-wise -->
+<div class="row mb-4">
+    <!-- Teacher Performance Comparison -->
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-user-check me-2"></i>
+                    Performa Ustadz (Top 10)
+                </h6>
+                <span class="badge bg-primary">{{ analytics.teacher_stats|length }} Ustadz</span>
+            </div>
+            <div class="card-body">
+                <div class="chart-container" style="position: relative; height: 400px;">
+                    <canvas id="teacherPerformanceChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Subject-wise Attendance -->
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-book me-2"></i>
+                    Kehadiran per Mata Pelajaran
+                </h6>
+                <span class="badge bg-primary">{{ analytics.subject_stats|length }} Mapel</span>
+            </div>
+            <div class="card-body">
+                <div class="chart-container" style="position: relative; height: 400px;">
+                    <canvas id="subjectAttendanceChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Detailed Statistics Tables -->
+<div class="row mb-4">
+    <!-- Teacher Statistics Table -->
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-table me-2"></i>
+                    Detail Statistik Ustadz
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+                    <table class="table table-hover table-sm">
+                        <thead class="table-light sticky-top">
+                            <tr>
+                                <th style="width: 50px;">No</th>
+                                <th>Nama Ustadz</th>
+                                <th class="text-center" style="width: 80px;">Total JP</th>
+                                <th class="text-center" style="width: 80px;">Hadir</th>
+                                <th class="text-center" style="width: 80px;">%</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for teacher_stat in analytics.teacher_stats %}
+                            <tr>
+                                <td class="text-center">{{ forloop.counter }}</td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="me-2">
+                                            <div class="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center"
+                                                 style="width: 32px; height: 32px; font-size: 0.75rem; font-weight: 600;">
+                                                {{ teacher_stat.teacher_name|slice:":1"|upper }}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div class="font-weight-bold" style="font-size: 0.85rem;">
+                                                {{ teacher_stat.teacher_name }}
+                                            </div>
+                                            <small class="text-muted">{{ teacher_stat.teacher_nip }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-secondary">{{ teacher_stat.total_jp }}</span>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-success">{{ teacher_stat.total_hadir }}</span>
+                                </td>
+                                <td class="text-center">
+                                    {% if teacher_stat.attendance_percentage >= 90 %}
+                                    <span class="badge bg-success">{{ teacher_stat.attendance_percentage }}%</span>
+                                    {% elif teacher_stat.attendance_percentage >= 75 %}
+                                    <span class="badge bg-warning">{{ teacher_stat.attendance_percentage }}%</span>
+                                    {% else %}
+                                    <span class="badge bg-danger">{{ teacher_stat.attendance_percentage }}%</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center py-4">
+                                    <i class="fas fa-inbox fa-2x text-muted mb-2"></i>
+                                    <p class="text-muted mb-0">Tidak ada data ustadz</p>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Subject Statistics Table -->
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-table me-2"></i>
+                    Detail Statistik Mata Pelajaran
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+                    <table class="table table-hover table-sm">
+                        <thead class="table-light sticky-top">
+                            <tr>
+                                <th style="width: 50px;">No</th>
+                                <th>Mata Pelajaran</th>
+                                <th class="text-center" style="width: 80px;">Total JP</th>
+                                <th class="text-center" style="width: 80px;">Hadir</th>
+                                <th class="text-center" style="width: 80px;">%</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for subject_stat in analytics.subject_stats %}
+                            <tr>
+                                <td class="text-center">{{ forloop.counter }}</td>
+                                <td>
+                                    <div>
+                                        <div class="font-weight-bold" style="font-size: 0.85rem;">
+                                            {{ subject_stat.subject_name }}
+                                        </div>
+                                        <small class="text-muted">
+                                            <span class="badge badge-sm" style="background-color: #e3f2fd; color: #1976d2;">
+                                                {{ subject_stat.subject_category }}
+                                            </span>
+                                        </small>
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-secondary">{{ subject_stat.total_jp }}</span>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-success">{{ subject_stat.total_hadir }}</span>
+                                </td>
+                                <td class="text-center">
+                                    {% if subject_stat.attendance_percentage >= 90 %}
+                                    <span class="badge bg-success">{{ subject_stat.attendance_percentage }}%</span>
+                                    {% elif subject_stat.attendance_percentage >= 75 %}
+                                    <span class="badge bg-warning">{{ subject_stat.attendance_percentage }}%</span>
+                                    {% else %}
+                                    <span class="badge bg-danger">{{ subject_stat.attendance_percentage }}%</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center py-4">
+                                    <i class="fas fa-inbox fa-2x text-muted mb-2"></i>
+                                    <p class="text-muted mb-0">Tidak ada data mata pelajaran</p>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Additional Insights -->
+<div class="row mb-4">
+    <!-- Best Performers -->
+    <div class="col-lg-4 mb-4">
+        <div class="card shadow border-left-success">
+            <div class="card-header py-3 bg-success text-white">
+                <h6 class="m-0 font-weight-bold">
+                    <i class="fas fa-trophy me-2"></i>
+                    Ustadz Terbaik
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if analytics.teacher_stats %}
+                    {% for teacher_stat in analytics.teacher_stats|slice:":3" %}
+                    <div class="d-flex justify-content-between align-items-center mb-3 pb-3 {% if not forloop.last %}border-bottom{% endif %}">
+                        <div class="d-flex align-items-center">
+                            <div class="me-3">
+                                {% if forloop.counter == 1 %}
+                                <i class="fas fa-medal fa-2x text-warning"></i>
+                                {% elif forloop.counter == 2 %}
+                                <i class="fas fa-medal fa-2x" style="color: #C0C0C0;"></i>
+                                {% elif forloop.counter == 3 %}
+                                <i class="fas fa-medal fa-2x" style="color: #CD7F32;"></i>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <div class="font-weight-bold">{{ teacher_stat.teacher_name }}</div>
+                                <small class="text-muted">{{ teacher_stat.total_hadir }}/{{ teacher_stat.total_jp }} JP</small>
+                            </div>
+                        </div>
+                        <div>
+                            <span class="badge bg-success" style="font-size: 1rem;">
+                                {{ teacher_stat.attendance_percentage }}%
+                            </span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                <div class="text-center py-3">
+                    <i class="fas fa-trophy fa-3x text-muted mb-2"></i>
+                    <p class="text-muted mb-0">Tidak ada data</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Needs Attention -->
+    <div class="col-lg-4 mb-4">
+        <div class="card shadow border-left-warning">
+            <div class="card-header py-3 bg-warning text-dark">
+                <h6 class="m-0 font-weight-bold">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Perlu Perhatian
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if analytics.teacher_stats %}
+                    {% for teacher_stat in analytics.teacher_stats|slice:"-3:" %}
+                    <div class="d-flex justify-content-between align-items-center mb-3 pb-3 {% if not forloop.last %}border-bottom{% endif %}">
+                        <div>
+                            <div class="font-weight-bold">{{ teacher_stat.teacher_name }}</div>
+                            <small class="text-muted">{{ teacher_stat.total_hadir }}/{{ teacher_stat.total_jp }} JP</small>
+                        </div>
+                        <div>
+                            {% if teacher_stat.attendance_percentage < 75 %}
+                            <span class="badge bg-danger" style="font-size: 1rem;">
+                                {{ teacher_stat.attendance_percentage }}%
+                            </span>
+                            {% else %}
+                            <span class="badge bg-warning" style="font-size: 1rem;">
+                                {{ teacher_stat.attendance_percentage }}%
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                <div class="text-center py-3">
+                    <i class="fas fa-check-circle fa-3x text-success mb-2"></i>
+                    <p class="text-muted mb-0">Semua ustadz baik</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Key Insights -->
+    <div class="col-lg-4 mb-4">
+        <div class="card shadow border-left-info">
+            <div class="card-header py-3 bg-info text-white">
+                <h6 class="m-0 font-weight-bold">
+                    <i class="fas fa-lightbulb me-2"></i>
+                    Insight Utama
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3 pb-3 border-bottom">
+                    <div class="d-flex align-items-center mb-2">
+                        <i class="fas fa-calendar-check fa-lg text-success me-2"></i>
+                        <span class="font-weight-bold">Hari Terbaik</span>
+                    </div>
+                    <p class="mb-0 text-muted">
+                        {% if analytics.daily_trends %}
+                        {{ analytics.daily_trends.0.date|date:"l, d M Y" }}
+                        <span class="badge bg-success ms-2">{{ analytics.daily_trends.0.attendance_percentage }}%</span>
+                        {% else %}
+                        <span class="text-muted">-</span>
+                        {% endif %}
+                    </p>
+                </div>
+
+                <div class="mb-3 pb-3 border-bottom">
+                    <div class="d-flex align-items-center mb-2">
+                        <i class="fas fa-chart-line fa-lg text-primary me-2"></i>
+                        <span class="font-weight-bold">Trend</span>
+                    </div>
+                    <p class="mb-0 text-muted">
+                        {% if analytics.overall_stats.attendance_percentage >= 85 %}
+                        <i class="fas fa-arrow-up text-success me-1"></i>
+                        Kehadiran sangat baik
+                        {% elif analytics.overall_stats.attendance_percentage >= 75 %}
+                        <i class="fas fa-minus text-warning me-1"></i>
+                        Kehadiran cukup baik
+                        {% else %}
+                        <i class="fas fa-arrow-down text-danger me-1"></i>
+                        Perlu peningkatan
+                        {% endif %}
+                    </p>
+                </div>
+
+                <div>
+                    <div class="d-flex align-items-center mb-2">
+                        <i class="fas fa-users fa-lg text-info me-2"></i>
+                        <span class="font-weight-bold">Partisipasi</span>
+                    </div>
+                    <p class="mb-0 text-muted">
+                        {{ analytics.overall_stats.total_teachers }} ustadz aktif
+                        <br>
+                        <small>{{ analytics.overall_stats.total_records }} total rekaman</small>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% else %}
+<!-- Empty State -->
+<div class="card shadow">
+    <div class="card-body text-center py-5">
+        <i class="fas fa-chart-bar fa-4x text-muted mb-4"></i>
+        <h4 class="text-muted mb-3">Belum Ada Data Analytics</h4>
+        <p class="text-muted mb-4">
+            Pilih rentang tanggal dan filter di atas, kemudian klik "Tampilkan Analytics" untuk melihat data analytics.
+        </p>
+        <div class="text-muted">
+            <small>
+                <i class="fas fa-lightbulb me-2"></i>
+                Tips: Gunakan rentang tanggal minimal 7 hari untuk hasil analytics yang lebih akurat
+            </small>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+{% if analytics %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Chart.js default font
+    Chart.defaults.font.family = 'Inter';
+    
+    // 1. Daily Trends Line Chart
+    const dailyTrendsCtx = document.getElementById('dailyTrendsChart');
+    if (dailyTrendsCtx) {
+        new Chart(dailyTrendsCtx, {
+            type: 'line',
+            data: {
+                labels: {{ daily_trends_labels|safe }},
+                datasets: [
+                    {
+                        label: 'Hadir',
+                        data: {{ daily_trends_hadir|safe }},
+                        borderColor: 'rgba(76, 175, 80, 1)',
+                        backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                        borderWidth: 3,
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 4,
+                        pointHoverRadius: 6
+                    },
+                    {
+                        label: 'Tidak Hadir',
+                        data: {{ daily_trends_absent|safe }},
+                        borderColor: 'rgba(244, 67, 54, 1)',
+                        backgroundColor: 'rgba(244, 67, 54, 0.1)',
+                        borderWidth: 3,
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 4,
+                        pointHoverRadius: 6
+                    },
+                    {
+                        label: 'Persentase (%)',
+                        data: {{ daily_trends_percentage|safe }},
+                        borderColor: 'rgba(33, 150, 243, 1)',
+                        backgroundColor: 'rgba(33, 150, 243, 0.1)',
+                        borderWidth: 2,
+                        borderDash: [5, 5],
+                        tension: 0.4,
+                        fill: false,
+                        pointRadius: 3,
+                        pointHoverRadius: 5,
+                        yAxisID: 'y1'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            usePointStyle: true,
+                            padding: 15,
+                            font: {
+                                size: 12
+                            }
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        padding: 12,
+                        titleFont: {
+                            size: 13,
+                            weight: 'bold'
+                        },
+                        bodyFont: {
+                            size: 12
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Jumlah JP',
+                            font: {
+                                size: 12,
+                                weight: 'bold'
+                            }
+                        },
+                        ticks: {
+                            stepSize: 1
+                        }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        beginAtZero: true,
+                        max: 100,
+                        title: {
+                            display: true,
+                            text: 'Persentase (%)',
+                            font: {
+                                size: 12,
+                                weight: 'bold'
+                            }
+                        },
+                        grid: {
+                            drawOnChartArea: false,
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            maxRotation: 45,
+                            minRotation: 45
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // 2. Status Breakdown Doughnut Chart
+    const statusBreakdownCtx = document.getElementById('statusBreakdownChart');
+    if (statusBreakdownCtx) {
+        new Chart(statusBreakdownCtx, {
+            type: 'doughnut',
+            data: {
+                labels: {{ status_labels|safe }},
+                datasets: [{
+                    data: {{ status_counts|safe }},
+                    backgroundColor: [
+                        'rgba(76, 175, 80, 0.8)',   // Hadir
+                        'rgba(255, 152, 0, 0.8)',   // Sakit
+                        'rgba(33, 150, 243, 0.8)',  // Izin
+                        'rgba(156, 39, 176, 0.8)',  // Cuti
+                        'rgba(96, 125, 139, 0.8)',  // Dinas
+                        'rgba(244, 67, 54, 0.8)'    // Alpa
+                    ],
+                    borderColor: [
+                        'rgba(76, 175, 80, 1)',
+                        'rgba(255, 152, 0, 1)',
+                        'rgba(33, 150, 243, 1)',
+                        'rgba(156, 39, 176, 1)',
+                        'rgba(96, 125, 139, 1)',
+                        'rgba(244, 67, 54, 1)'
+                    ],
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            usePointStyle: true,
+                            padding: 15,
+                            font: {
+                                size: 11
+                            },
+                            generateLabels: function(chart) {
+                                const data = chart.data;
+                                if (data.labels.length && data.datasets.length) {
+                                    return data.labels.map((label, i) => {
+                                        const value = data.datasets[0].data[i];
+                                        const total = data.datasets[0].data.reduce((a, b) => a + b, 0);
+                                        const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                        return {
+                                            text: `${label}: ${value} (${percentage}%)`,
+                                            fillStyle: data.datasets[0].backgroundColor[i],
+                                            hidden: false,
+                                            index: i
+                                        };
+                                    });
+                                }
+                                return [];
+                            }
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        padding: 12,
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.parsed || 0;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                return `${label}: ${value} JP (${percentage}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // 3. Teacher Performance Horizontal Bar Chart
+    const teacherPerformanceCtx = document.getElementById('teacherPerformanceChart');
+    if (teacherPerformanceCtx) {
+        new Chart(teacherPerformanceCtx, {
+            type: 'bar',
+            data: {
+                labels: {{ teacher_names|safe }},
+                datasets: [{
+                    label: 'Persentase Kehadiran',
+                    data: {{ teacher_percentages|safe }},
+                    backgroundColor: function(context) {
+                        const value = context.parsed.x;
+                        if (value >= 90) return 'rgba(76, 175, 80, 0.8)';
+                        if (value >= 75) return 'rgba(255, 152, 0, 0.8)';
+                        return 'rgba(244, 67, 54, 0.8)';
+                    },
+                    borderColor: function(context) {
+                        const value = context.parsed.x;
+                        if (value >= 90) return 'rgba(76, 175, 80, 1)';
+                        if (value >= 75) return 'rgba(255, 152, 0, 1)';
+                        return 'rgba(244, 67, 54, 1)';
+                    },
+                    borderWidth: 2,
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        padding: 12,
+                        callbacks: {
+                            label: function(context) {
+                                return `Kehadiran: ${context.parsed.x}%`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        max: 100,
+                        title: {
+                            display: true,
+                            text: 'Persentase Kehadiran (%)',
+                            font: {
+                                size: 12,
+                                weight: 'bold'
+                            }
+                        },
+                        ticks: {
+                            callback: function(value) {
+                                return value + '%';
+                            }
+                        }
+                    },
+                    y: {
+                        ticks: {
+                            font: {
+                                size: 11
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // 4. Subject-wise Attendance Bar Chart
+    const subjectAttendanceCtx = document.getElementById('subjectAttendanceChart');
+    if (subjectAttendanceCtx) {
+        new Chart(subjectAttendanceCtx, {
+            type: 'bar',
+            data: {
+                labels: {{ subject_names|safe }},
+                datasets: [{
+                    label: 'Persentase Kehadiran',
+                    data: {{ subject_percentages|safe }},
+                    backgroundColor: 'rgba(33, 150, 243, 0.8)',
+                    borderColor: 'rgba(33, 150, 243, 1)',
+                    borderWidth: 2,
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        padding: 12,
+                        callbacks: {
+                            label: function(context) {
+                                return `Kehadiran: ${context.parsed.y}%`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        title: {
+                            display: true,
+                            text: 'Persentase Kehadiran (%)',
+                            font: {
+                                size: 12,
+                                weight: 'bold'
+                            }
+                        },
+                        ticks: {
+                            callback: function(value) {
+                                return value + '%';
+                            }
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            maxRotation: 45,
+                            minRotation: 45,
+                            font: {
+                                size: 11
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Date validation
+    const startDateInput = document.getElementById('start_date');
+    const endDateInput = document.getElementById('end_date');
+    
+    if (startDateInput && endDateInput) {
+        startDateInput.addEventListener('change', function() {
+            endDateInput.min = this.value;
+            if (endDateInput.value && endDateInput.value < this.value) {
+                endDateInput.value = this.value;
+            }
+        });
+        
+        endDateInput.addEventListener('change', function() {
+            startDateInput.max = this.value;
+            if (startDateInput.value && startDateInput.value > this.value) {
+                startDateInput.value = this.value;
+            }
+        });
+    }
+});
+</script>
+{% endif %}
+{% endblock %}
