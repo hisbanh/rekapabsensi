@@ -1,0 +1,496 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Dashboard Absensi Ustadz{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item active">Dashboard Ustadz</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<!-- Notifications Section -->
+{% if notifications %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card border-left-warning shadow">
+            <div class="card-header py-3 bg-warning text-dark">
+                <h6 class="m-0 font-weight-bold">
+                    <i class="fas fa-bell me-2"></i>
+                    Notifikasi ({{ notification_count }})
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="list-group list-group-flush">
+                    {% for notification in notifications %}
+                    <div class="list-group-item border-0 px-0">
+                        <div class="d-flex align-items-start">
+                            <div class="me-3">
+                                {% if notification.priority == 'high' %}
+                                <i class="fas fa-exclamation-circle fa-lg text-danger"></i>
+                                {% elif notification.priority == 'medium' %}
+                                <i class="fas fa-exclamation-triangle fa-lg text-warning"></i>
+                                {% else %}
+                                <i class="fas fa-info-circle fa-lg text-info"></i>
+                                {% endif %}
+                            </div>
+                            <div class="flex-grow-1">
+                                <p class="mb-1">{{ notification.message }}</p>
+                                {% if notification.date %}
+                                <small class="text-muted">{{ notification.date|date:"d M Y" }}</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Summary Statistics Cards -->
+<div class="row mb-4">
+    <!-- Hadir Percentage -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-success shadow">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            Hadir
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            {{ stats.hadir_percentage|default:0 }}%
+                        </div>
+                        <small class="text-muted">{{ stats.total_hadir|default:0 }} JP</small>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-check-circle fa-2x text-success"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sakit Percentage -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-warning shadow">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                            Sakit
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            {{ stats.sakit_percentage|default:0 }}%
+                        </div>
+                        <small class="text-muted">{{ stats.total_sakit|default:0 }} JP</small>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-thermometer-half fa-2x text-warning"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Izin Percentage -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-info shadow">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                            Izin
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            {{ stats.izin_percentage|default:0 }}%
+                        </div>
+                        <small class="text-muted">{{ stats.total_izin|default:0 }} JP</small>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-file-alt fa-2x text-info"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alpa Percentage -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-danger shadow">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                            Alpa
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            {{ stats.alpa_percentage|default:0 }}%
+                        </div>
+                        <small class="text-muted">{{ stats.total_alpa|default:0 }} JP</small>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-times-circle fa-2x text-danger"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Attendance Trend Chart -->
+    <div class="col-lg-8 mb-4">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-chart-line me-2"></i>
+                    Trend Kehadiran (30 Hari Terakhir)
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="chart-container" style="position: relative; height: 300px;">
+                    <canvas id="attendanceTrendChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Absent Teachers Today -->
+    <div class="col-lg-4 mb-4">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-user-times me-2"></i>
+                    Ustadz Tidak Hadir Hari Ini
+                </h6>
+            </div>
+            <div class="card-body" style="max-height: 300px; overflow-y: auto;">
+                {% if absent_teachers_today %}
+                <div class="list-group list-group-flush">
+                    {% for item in absent_teachers_today %}
+                    <div class="list-group-item px-0 py-2 border-bottom">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1 font-weight-bold">{{ item.teacher.full_name }}</h6>
+                                <small class="text-muted">NIP: {{ item.teacher.nip }}</small>
+                                <div class="mt-1">
+                                    {% if item.status == 'NOT_RECORDED' %}
+                                    <span class="badge bg-secondary">Belum Absen</span>
+                                    {% elif item.status == 'SAKIT' %}
+                                    <span class="badge bg-warning">Sakit</span>
+                                    {% elif item.status == 'IZIN' %}
+                                    <span class="badge bg-info">Izin</span>
+                                    {% elif item.status == 'CUTI' %}
+                                    <span class="badge bg-primary">Cuti</span>
+                                    {% elif item.status == 'DINAS' %}
+                                    <span class="badge bg-success">Dinas</span>
+                                    {% elif item.status == 'ALPA' %}
+                                    <span class="badge bg-danger">Alpa</span>
+                                    {% endif %}
+                                    <small class="text-muted ms-1">{{ item.total_absent_jp }} JP</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                    <p class="text-muted mb-0">Semua ustadz hadir hari ini</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Teacher-Specific Data (if logged in as teacher) -->
+{% if teacher_data %}
+<div class="row">
+    <!-- Upcoming Schedule -->
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-calendar-day me-2"></i>
+                    Jadwal Hari Ini
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if teacher_data.upcoming_schedule %}
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>JP</th>
+                                <th>Mata Pelajaran</th>
+                                <th>Kelas</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for schedule in teacher_data.upcoming_schedule %}
+                            <tr>
+                                <td>
+                                    <span class="badge bg-primary">
+                                        JP {{ schedule.jp_start }}{% if schedule.jp_end != schedule.jp_start %}-{{ schedule.jp_end }}{% endif %}
+                                    </span>
+                                </td>
+                                <td>{{ schedule.subject.name }}</td>
+                                <td>{{ schedule.classroom.name }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+                    <p class="text-muted mb-0">Tidak ada jadwal hari ini</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Personal Statistics -->
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-chart-pie me-2"></i>
+                    Statistik Pribadi
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6 mb-3">
+                        <div class="p-3 bg-light rounded">
+                            <h4 class="mb-1 text-success">{{ teacher_data.stats.total_hadir }}</h4>
+                            <small class="text-muted">Hadir</small>
+                        </div>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <div class="p-3 bg-light rounded">
+                            <h4 class="mb-1 text-warning">{{ teacher_data.stats.total_sakit }}</h4>
+                            <small class="text-muted">Sakit</small>
+                        </div>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <div class="p-3 bg-light rounded">
+                            <h4 class="mb-1 text-info">{{ teacher_data.stats.total_izin }}</h4>
+                            <small class="text-muted">Izin</small>
+                        </div>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <div class="p-3 bg-light rounded">
+                            <h4 class="mb-1 text-danger">{{ teacher_data.stats.total_alpa }}</h4>
+                            <small class="text-muted">Alpa</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-3 p-3 bg-primary text-white rounded text-center">
+                    <h3 class="mb-1">{{ teacher_data.stats.attendance_percentage }}%</h3>
+                    <small>Persentase Kehadiran</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Additional Statistics -->
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Ringkasan Periode
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 text-center mb-3">
+                        <div class="p-3 border rounded">
+                            <h5 class="mb-1">{{ stats.total_teachers|default:0 }}</h5>
+                            <small class="text-muted">Total Ustadz Aktif</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3 text-center mb-3">
+                        <div class="p-3 border rounded">
+                            <h5 class="mb-1">{{ stats.total_records|default:0 }}</h5>
+                            <small class="text-muted">Total Rekaman Absensi</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3 text-center mb-3">
+                        <div class="p-3 border rounded">
+                            <h5 class="mb-1">{{ stats.attendance_percentage|default:0 }}%</h5>
+                            <small class="text-muted">Tingkat Kehadiran</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3 text-center mb-3">
+                        <div class="p-3 border rounded">
+                            <h5 class="mb-1">{{ absent_count|default:0 }}</h5>
+                            <small class="text-muted">Tidak Hadir Hari Ini</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-3 text-center">
+                    <small class="text-muted">
+                        Periode: {{ start_date|date:"d M Y" }} - {{ end_date|date:"d M Y" }}
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Attendance Trend Chart
+    const ctx = document.getElementById('attendanceTrendChart');
+    if (ctx) {
+        // Trend data from server
+        const trendData = [
+            {% for trend in trends %}
+            {
+                date_display: '{{ trend.date_display }}',
+                total_hadir: {{ trend.total_hadir }},
+                total_sakit: {{ trend.total_sakit }},
+                total_izin: {{ trend.total_izin }},
+                total_alpa: {{ trend.total_alpa }}
+            }{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ];
+        
+        // Extract data for chart
+        const labels = trendData.map(item => item.date_display);
+        const hadirData = trendData.map(item => item.total_hadir);
+        const sakitData = trendData.map(item => item.total_sakit);
+        const izinData = trendData.map(item => item.total_izin);
+        const alpaData = trendData.map(item => item.total_alpa);
+        
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Hadir',
+                        data: hadirData,
+                        borderColor: 'rgba(76, 175, 80, 1)',
+                        backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: true
+                    },
+                    {
+                        label: 'Sakit',
+                        data: sakitData,
+                        borderColor: 'rgba(255, 152, 0, 1)',
+                        backgroundColor: 'rgba(255, 152, 0, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: true
+                    },
+                    {
+                        label: 'Izin',
+                        data: izinData,
+                        borderColor: 'rgba(33, 150, 243, 1)',
+                        backgroundColor: 'rgba(33, 150, 243, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: true
+                    },
+                    {
+                        label: 'Alpa',
+                        data: alpaData,
+                        borderColor: 'rgba(244, 67, 54, 1)',
+                        backgroundColor: 'rgba(244, 67, 54, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: true
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            usePointStyle: true,
+                            padding: 15,
+                            font: {
+                                family: 'Inter',
+                                size: 12
+                            }
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        padding: 12,
+                        titleFont: {
+                            family: 'Inter',
+                            size: 13,
+                            weight: 'bold'
+                        },
+                        bodyFont: {
+                            family: 'Inter',
+                            size: 12
+                        },
+                        callbacks: {
+                            label: function(context) {
+                                return context.dataset.label + ': ' + context.parsed.y + ' JP';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1,
+                            font: {
+                                family: 'Inter',
+                                size: 11
+                            }
+                        },
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            font: {
+                                family: 'Inter',
+                                size: 11
+                            },
+                            maxRotation: 45,
+                            minRotation: 45
+                        },
+                        grid: {
+                            display: false
+                        }
+                    }
+                }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

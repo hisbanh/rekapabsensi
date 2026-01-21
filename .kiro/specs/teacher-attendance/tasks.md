@@ -294,7 +294,7 @@ Create all required models for teacher attendance system following the design do
   - Get notifications (missing attendance, conflicts)
 
 ### 4.2 Create Dashboard Template
-- [ ] Create `templates/teacher/dashboard.html`
+- [x] Create `templates/teacher/dashboard.html`
   - Display summary cards (Hadir %, Sakit %, Izin %, Alpa %)
   - Show attendance trend chart (line chart, last 30 days)
   - Display notifications section
