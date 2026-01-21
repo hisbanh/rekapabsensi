@@ -1,6 +1,7 @@
 from django.urls import path
 from . import views
 from . import teacher_views
+from . import teacher_attendance_views
 
 urlpatterns = [
     path('', views.dashboard, name='dashboard'),
@@ -73,4 +74,15 @@ urlpatterns = [
     path('teachers/<uuid:pk>/delete/', teacher_views.teacher_delete, name='teacher_delete'),
     path('teachers/<uuid:pk>/schedule/', teacher_views.teacher_schedule, name='teacher_schedule'),
     path('api/teachers/inline-edit/', teacher_views.api_teacher_inline_edit, name='api_teacher_inline_edit'),
+    
+    # Teacher Attendance URLs
+    path('teacher-attendance/', teacher_attendance_views.attendance_input, name='teacher_attendance_input'),
+    path('teacher-attendance/admin/', teacher_attendance_views.attendance_admin_input, name='teacher_attendance_admin'),
+    path('teacher-attendance/history/', teacher_attendance_views.attendance_history, name='teacher_attendance_history'),
+    path('teacher-attendance/<uuid:pk>/edit/', teacher_attendance_views.attendance_update, name='teacher_attendance_update'),
+    path('teacher-attendance/<uuid:pk>/delete/', teacher_attendance_views.attendance_delete, name='teacher_attendance_delete'),
+    
+    # Teacher Attendance API URLs
+    path('api/teacher-attendance/validate-location/', teacher_attendance_views.api_validate_location, name='api_validate_location'),
+    path('api/teacher-attendance/schedule/', teacher_attendance_views.api_teacher_schedule, name='api_teacher_schedule'),
 ]

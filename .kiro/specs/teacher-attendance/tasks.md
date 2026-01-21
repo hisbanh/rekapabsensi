@@ -236,7 +236,7 @@ Create all required models for teacher attendance system following the design do
   - Show total JP per week
 
 ### 3.4 Create Attendance Recording Views
-- [ ] Create `attendance/views/teacher_attendance_views.py`
+- [x] Create `attendance/views/teacher_attendance_views.py`
   - Implement `attendance_input` view (self-service attendance)
   - Implement `attendance_admin_input` view (admin input for any teacher)
   - Implement `attendance_history` view (view attendance history)
