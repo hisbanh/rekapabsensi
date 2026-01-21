@@ -118,7 +118,7 @@ Create all required models for teacher attendance system following the design do
 ## Phase 2: Service Layer & Business Logic (Week 3-4)
 
 ### 2.1 Create TeacherService
-- [ ] Create `attendance/services/teacher_service.py`
+- [x] Create `attendance/services/teacher_service.py`
   - Implement `create_teacher(data: dict) -> Teacher`
   - Implement `update_teacher(teacher_id: UUID, data: dict) -> Teacher`
   - Implement `get_teacher_profile(teacher_id: UUID) -> dict`
