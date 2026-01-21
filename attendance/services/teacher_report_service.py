@@ -589,7 +589,8 @@ class TeacherReportService:
     @staticmethod
     def export_attendance_excel(
         start_date: date,
-        end_date: date
+        end_date: date,
+        teacher_ids: Optional[List[UUID]] = None
     ) -> bytes:
         """
         Export teacher attendance data to Excel format with advanced features.
@@ -597,17 +598,20 @@ class TeacherReportService:
         Creates an Excel workbook with multiple sheets:
         - Summary sheet: Overall statistics and teacher performance
         - Detail sheet: Complete attendance records
-        - Analytics sheet: Charts and visualizations (data for charts)
+        - Per-teacher sheets: Individual sheets for each teacher (if teacher_ids provided)
         
         Features:
         - Conditional formatting (color-coded statuses)
         - Formulas for automatic calculations
-        - Frozen header rows
-        - Professional styling
+        - Frozen header rows and first column
+        - Professional styling with indigo theme
+        - Summary rows with totals
+        - Separate sheets per teacher (if multiple teachers specified)
         
         Args:
             start_date: Start date of the export period (inclusive)
             end_date: End date of the export period (inclusive)
+            teacher_ids: Optional list of teacher UUIDs to create individual sheets for
             
         Returns:
             bytes: Excel file content
@@ -734,6 +738,41 @@ class TeacherReportService:
                 cell.border = thin_border
                 cell.alignment = Alignment(horizontal='center' if col_idx != 3 else 'left')
         
+        # Add summary row with formulas
+        if analytics['teacher_stats']:
+            summary_row = 18 + len(analytics['teacher_stats'])
+            summary_fill = PatternFill(start_color='EEF2FF', end_color='EEF2FF', fill_type='solid')
+            summary_font = Font(bold=True)
+            
+            # Summary labels and formulas
+            ws_summary.cell(row=summary_row, column=1, value='')
+            ws_summary.cell(row=summary_row, column=2, value='TOTAL')
+            ws_summary.cell(row=summary_row, column=2).font = summary_font
+            ws_summary.cell(row=summary_row, column=2).fill = summary_fill
+            ws_summary.cell(row=summary_row, column=2).border = thin_border
+            ws_summary.cell(row=summary_row, column=2).alignment = Alignment(horizontal='center')
+            
+            ws_summary.cell(row=summary_row, column=3, value='')
+            ws_summary.cell(row=summary_row, column=3).fill = summary_fill
+            ws_summary.cell(row=summary_row, column=3).border = thin_border
+            
+            # Formulas for totals
+            for col_idx in range(4, 11):  # Columns D to J (Total JP to Alpa)
+                col_letter = get_column_letter(col_idx)
+                ws_summary.cell(row=summary_row, column=col_idx, value=f'=SUM({col_letter}18:{col_letter}{summary_row-1})')
+                ws_summary.cell(row=summary_row, column=col_idx).font = summary_font
+                ws_summary.cell(row=summary_row, column=col_idx).fill = summary_fill
+                ws_summary.cell(row=summary_row, column=col_idx).border = thin_border
+                ws_summary.cell(row=summary_row, column=col_idx).alignment = Alignment(horizontal='center')
+            
+            # Average percentage formula
+            ws_summary.cell(row=summary_row, column=11, value=f'=E{summary_row}/D{summary_row}*100')
+            ws_summary.cell(row=summary_row, column=11).font = summary_font
+            ws_summary.cell(row=summary_row, column=11).fill = summary_fill
+            ws_summary.cell(row=summary_row, column=11).border = thin_border
+            ws_summary.cell(row=summary_row, column=11).alignment = Alignment(horizontal='center')
+            ws_summary.cell(row=summary_row, column=11).number_format = '0.00"%"'
+        
         # Set column widths
         ws_summary.column_dimensions['A'].width = 5
         ws_summary.column_dimensions['B'].width = 15
@@ -747,8 +786,8 @@ class TeacherReportService:
         ws_summary.column_dimensions['J'].width = 8
         ws_summary.column_dimensions['K'].width = 12
         
-        # Freeze header row
-        ws_summary.freeze_panes = 'A18'
+        # Freeze header row and first column
+        ws_summary.freeze_panes = 'B18'
         
         # Sheet 2: Detail
         ws_detail = wb.create_sheet(title='Detail Kehadiran')
@@ -811,8 +850,197 @@ class TeacherReportService:
         ws_detail.column_dimensions['J'].width = 20
         ws_detail.column_dimensions['K'].width = 15
         
-        # Freeze header row
-        ws_detail.freeze_panes = 'A2'
+        # Freeze header row and first column
+        ws_detail.freeze_panes = 'B2'
+        
+        # Add summary row with totals and formulas
+        if attendances.exists():
+            summary_row = len(list(attendances)) + 2
+            
+            # Summary row styling
+            summary_fill = PatternFill(start_color='EEF2FF', end_color='EEF2FF', fill_type='solid')
+            summary_font = Font(bold=True)
+            
+            ws_detail.cell(row=summary_row, column=1, value='TOTAL')
+            ws_detail.cell(row=summary_row, column=1).font = summary_font
+            ws_detail.cell(row=summary_row, column=1).fill = summary_fill
+            ws_detail.cell(row=summary_row, column=1).border = thin_border
+            
+            # Count formulas for each status
+            ws_detail.cell(row=summary_row, column=4, value='Total JP:')
+            ws_detail.cell(row=summary_row, column=4).font = summary_font
+            ws_detail.cell(row=summary_row, column=4).fill = summary_fill
+            ws_detail.cell(row=summary_row, column=4).border = thin_border
+            ws_detail.cell(row=summary_row, column=4).alignment = Alignment(horizontal='right')
+            
+            # Formula to count total records
+            ws_detail.cell(row=summary_row, column=5, value=f'=COUNTA(E2:E{summary_row-1})')
+            ws_detail.cell(row=summary_row, column=5).font = summary_font
+            ws_detail.cell(row=summary_row, column=5).fill = summary_fill
+            ws_detail.cell(row=summary_row, column=5).border = thin_border
+            ws_detail.cell(row=summary_row, column=5).alignment = Alignment(horizontal='center')
+            
+            # Status count formulas
+            status_labels = {
+                'Hadir': 'HADIR',
+                'Sakit': 'SAKIT',
+                'Izin': 'IZIN',
+                'Cuti': 'CUTI',
+                'Dinas': 'DINAS',
+                'Alpa': 'ALPA'
+            }
+            
+            col_offset = 6
+            for label, status_value in status_labels.items():
+                ws_detail.cell(row=summary_row, column=col_offset, value=f'{label}:')
+                ws_detail.cell(row=summary_row, column=col_offset).font = summary_font
+                ws_detail.cell(row=summary_row, column=col_offset).fill = summary_fill
+                ws_detail.cell(row=summary_row, column=col_offset).border = thin_border
+                
+                # Formula to count status occurrences
+                ws_detail.cell(row=summary_row + 1, column=col_offset, value=f'=COUNTIF(F2:F{summary_row-1},"{status_value}")')
+                ws_detail.cell(row=summary_row + 1, column=col_offset).font = summary_font
+                ws_detail.cell(row=summary_row + 1, column=col_offset).border = thin_border
+                ws_detail.cell(row=summary_row + 1, column=col_offset).alignment = Alignment(horizontal='center')
+                
+                col_offset += 1
+        
+        # Sheet 3+: Per-teacher sheets (if teacher_ids provided)
+        if teacher_ids:
+            teachers = Teacher.objects.filter(id__in=teacher_ids).order_by('full_name')
+            
+            for teacher in teachers:
+                # Create sheet for this teacher
+                sheet_name = f"{teacher.full_name[:25]}"  # Limit to 25 chars for Excel
+                ws_teacher = wb.create_sheet(title=sheet_name)
+                
+                # Teacher info header
+                ws_teacher['A1'] = f'LAPORAN ABSENSI - {teacher.full_name}'
+                ws_teacher['A1'].font = Font(bold=True, size=12, color='4F46E5')
+                ws_teacher['A1'].alignment = Alignment(horizontal='center')
+                ws_teacher.merge_cells('A1:H1')
+                
+                ws_teacher['A2'] = f"NIP: {teacher.nip} | Periode: {start_date.strftime('%d/%m/%Y')} - {end_date.strftime('%d/%m/%Y')}"
+                ws_teacher['A2'].alignment = Alignment(horizontal='center')
+                ws_teacher.merge_cells('A2:H2')
+                
+                # Get teacher's attendance records
+                teacher_attendances = attendances.filter(teacher=teacher).order_by('date', 'jp_number')
+                
+                # Summary statistics
+                ws_teacher['A4'] = 'Ringkasan'
+                ws_teacher['A4'].font = Font(bold=True)
+                
+                teacher_summary_data = [
+                    ['Status', 'Jumlah', 'Persentase'],
+                ]
+                
+                total_teacher_jp = teacher_attendances.count()
+                if total_teacher_jp > 0:
+                    teacher_hadir = teacher_attendances.filter(status='HADIR').count()
+                    teacher_sakit = teacher_attendances.filter(status='SAKIT').count()
+                    teacher_izin = teacher_attendances.filter(status='IZIN').count()
+                    teacher_cuti = teacher_attendances.filter(status='CUTI').count()
+                    teacher_dinas = teacher_attendances.filter(status='DINAS').count()
+                    teacher_alpa = teacher_attendances.filter(status='ALPA').count()
+                    
+                    teacher_summary_data.extend([
+                        ['Hadir', teacher_hadir, f'=B6/B12*100'],
+                        ['Sakit', teacher_sakit, f'=B7/B12*100'],
+                        ['Izin', teacher_izin, f'=B8/B12*100'],
+                        ['Cuti', teacher_cuti, f'=B9/B12*100'],
+                        ['Dinas', teacher_dinas, f'=B10/B12*100'],
+                        ['Alpa', teacher_alpa, f'=B11/B12*100'],
+                        ['Total JP', total_teacher_jp, '100%'],
+                    ])
+                else:
+                    teacher_summary_data.extend([
+                        ['Hadir', 0, '0%'],
+                        ['Sakit', 0, '0%'],
+                        ['Izin', 0, '0%'],
+                        ['Cuti', 0, '0%'],
+                        ['Dinas', 0, '0%'],
+                        ['Alpa', 0, '0%'],
+                        ['Total JP', 0, '0%'],
+                    ])
+                
+                for row_idx, row_data in enumerate(teacher_summary_data, 5):
+                    for col_idx, value in enumerate(row_data, 1):
+                        cell = ws_teacher.cell(row=row_idx, column=col_idx, value=value)
+                        cell.border = thin_border
+                        
+                        if row_idx == 5:  # Header row
+                            cell.font = header_font
+                            cell.fill = header_fill
+                            cell.alignment = header_alignment
+                        elif col_idx == 3 and row_idx < 12:  # Percentage formulas
+                            cell.number_format = '0.00"%"'
+                            cell.alignment = Alignment(horizontal='center')
+                        else:
+                            cell.alignment = Alignment(horizontal='center' if col_idx != 1 else 'left')
+                        
+                        # Highlight total row
+                        if row_idx == 11:
+                            cell.font = Font(bold=True)
+                            cell.fill = PatternFill(start_color='EEF2FF', end_color='EEF2FF', fill_type='solid')
+                
+                # Detail records
+                ws_teacher['A14'] = 'Detail Kehadiran'
+                ws_teacher['A14'].font = Font(bold=True)
+                
+                detail_headers_teacher = ['No', 'Tanggal', 'JP', 'Status', 'Mata Pelajaran', 'Kelas', 'Keterangan', 'Dicatat Oleh']
+                for col_idx, header in enumerate(detail_headers_teacher, 1):
+                    cell = ws_teacher.cell(row=15, column=col_idx, value=header)
+                    cell.font = header_font
+                    cell.fill = header_fill
+                    cell.alignment = header_alignment
+                    cell.border = thin_border
+                
+                # Detail data
+                for row_idx, att in enumerate(teacher_attendances, 16):
+                    row_data = [
+                        row_idx - 15,
+                        att.date.strftime('%d/%m/%Y'),
+                        att.jp_number,
+                        att.get_status_display(),
+                        att.schedule.subject.name if att.schedule else '-',
+                        att.schedule.classroom.name if att.schedule else '-',
+                        att.notes or '-',
+                        att.recorded_by.get_full_name() if att.recorded_by else '-',
+                    ]
+                    
+                    for col_idx, value in enumerate(row_data, 1):
+                        cell = ws_teacher.cell(row=row_idx, column=col_idx, value=value)
+                        cell.border = thin_border
+                        cell.alignment = Alignment(horizontal='center' if col_idx in [1, 3, 4] else 'left')
+                        
+                        # Apply status-based coloring
+                        if col_idx == 4:  # Status column
+                            if att.status == 'HADIR':
+                                cell.fill = hadir_fill
+                            elif att.status == 'SAKIT':
+                                cell.fill = sakit_fill
+                            elif att.status == 'IZIN':
+                                cell.fill = izin_fill
+                            elif att.status == 'CUTI':
+                                cell.fill = cuti_fill
+                            elif att.status == 'DINAS':
+                                cell.fill = dinas_fill
+                            elif att.status == 'ALPA':
+                                cell.fill = alpa_fill
+                
+                # Set column widths
+                ws_teacher.column_dimensions['A'].width = 5
+                ws_teacher.column_dimensions['B'].width = 12
+                ws_teacher.column_dimensions['C'].width = 5
+                ws_teacher.column_dimensions['D'].width = 10
+                ws_teacher.column_dimensions['E'].width = 20
+                ws_teacher.column_dimensions['F'].width = 15
+                ws_teacher.column_dimensions['G'].width = 30
+                ws_teacher.column_dimensions['H'].width = 20
+                
+                # Freeze header row and first column
+                ws_teacher.freeze_panes = 'B16'
         
         # Save to buffer
         buffer = BytesIO()
