@@ -273,7 +273,7 @@ Create all required models for teacher attendance system following the design do
   - Add notes field
   - Add Submit button
 
-- [ ] Create `templates/teacher/attendance_history.html`
+- [x] Create `templates/teacher/attendance_history.html`
   - Display attendance records in table
   - Filters: date range, status, teacher (admin only)
   - Show date, JP, status, notes, recorded by

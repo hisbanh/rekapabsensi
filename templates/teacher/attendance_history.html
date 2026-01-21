@@ -1,0 +1,701 @@
+{% extends 'manage/base_list.html' %}
+{% load static %}
+{% load attendance_extras %}
+
+{% block page_title %}Riwayat Absensi Ustadz{% endblock %}
+
+{% block breadcrumb_items %}
+<li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+<li class="breadcrumb-item active">Riwayat Absensi Ustadz</li>
+{% endblock %}
+
+{% block page_actions %}
+<div class="btn-group">
+    <a href="{% url 'teacher_attendance_input' %}" class="btn btn-primary btn-sm">
+        <i class="fas fa-plus me-1"></i> Input Absensi
+    </a>
+    {% if user.is_superuser %}
+    <a href="{% url 'teacher_attendance_admin' %}" class="btn btn-outline-primary btn-sm">
+        <i class="fas fa-user-shield me-1"></i> Input Admin
+    </a>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block stats_row %}
+<!-- Summary Statistics -->
+<div class="stats-row">
+    <div class="stat-card">
+        <div class="stat-icon primary">
+            <i class="fas fa-list"></i>
+        </div>
+        <div>
+            <div class="stat-value">{{ total_records }}</div>
+            <div class="stat-label">Total Rekaman</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon success">
+            <i class="fas fa-check-circle"></i>
+        </div>
+        <div>
+            <div class="stat-value">{{ hadir_count }}</div>
+            <div class="stat-label">Hadir</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon warning">
+            <i class="fas fa-exclamation-circle"></i>
+        </div>
+        <div>
+            <div class="stat-value">{{ sakit_count|add:izin_count }}</div>
+            <div class="stat-label">Sakit/Izin</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon danger">
+            <i class="fas fa-times-circle"></i>
+        </div>
+        <div>
+            <div class="stat-value">{{ alpa_count }}</div>
+            <div class="stat-label">Alpa</div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block filters %}
+<!-- Filter Section -->
+<div class="filter-section">
+    <form method="get" class="filter-row">
+        <!-- Date Range Filter -->
+        <div class="filter-group">
+            <label for="start_date">Tanggal Mulai</label>
+            <input type="date" 
+                   id="start_date" 
+                   name="start_date" 
+                   class="form-control"
+                   value="{{ start_date|date:'Y-m-d' }}">
+        </div>
+        
+        <div class="filter-group">
+            <label for="end_date">Tanggal Akhir</label>
+            <input type="date" 
+                   id="end_date" 
+                   name="end_date" 
+                   class="form-control"
+                   value="{{ end_date|date:'Y-m-d' }}">
+        </div>
+        
+        <!-- Status Filter -->
+        <div class="filter-group">
+            <label for="status">Status</label>
+            <select id="status" name="status" class="form-select">
+                <option value="">Semua Status</option>
+                {% for value, label in status_choices %}
+                <option value="{{ value }}" {% if selected_status == value %}selected{% endif %}>
+                    {{ label }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <!-- Teacher Filter (Admin Only) -->
+        {% if user.is_superuser %}
+        <div class="filter-group">
+            <label for="teacher">Ustadz/Ustadzah</label>
+            <select id="teacher" name="teacher" class="form-select">
+                <option value="">Semua Ustadz</option>
+                {% for teacher in teachers %}
+                <option value="{{ teacher.id }}" {% if selected_teacher == teacher.id|stringformat:"s" %}selected{% endif %}>
+                    {{ teacher.full_name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        {% endif %}
+        
+        <!-- Search Input -->
+        <div class="filter-group" style="flex: 2;">
+            <label for="search">Cari</label>
+            <input type="text" 
+                   id="search" 
+                   name="search" 
+                   class="form-control" 
+                   placeholder="Cari nama atau catatan..."
+                   value="{{ search_query }}">
+        </div>
+        
+        <!-- Filter Actions -->
+        <div class="filter-actions">
+            <button type="submit" class="btn btn-primary btn-sm">
+                <i class="fas fa-search me-1"></i> Filter
+            </button>
+            <a href="{% url 'teacher_attendance_history' %}" class="btn btn-outline-secondary btn-sm">
+                <i class="fas fa-times me-1"></i> Reset
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block list_content %}
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover attendance-history-table mb-0">
+                <thead>
+                    <tr>
+                        {% if user.is_superuser %}
+                        <th style="width: 80px;">Foto</th>
+                        <th>Ustadz/Ustadzah</th>
+                        {% endif %}
+                        <th style="width: 120px;">Tanggal</th>
+                        <th style="width: 80px;">JP</th>
+                        <th>Mata Pelajaran</th>
+                        <th>Kelas</th>
+                        <th style="width: 120px;">Status</th>
+                        <th>Catatan</th>
+                        <th style="width: 150px;">Dicatat Oleh</th>
+                        {% if user.is_superuser %}
+                        <th style="width: 120px;" class="text-center">Aksi</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for attendance in attendances %}
+                    <tr data-id="{{ attendance.pk }}">
+                        {% if user.is_superuser %}
+                        <td>
+                            {% if attendance.teacher.photo %}
+                            <img src="{{ attendance.teacher.photo.url }}" 
+                                 alt="{{ attendance.teacher.full_name }}" 
+                                 class="teacher-photo-sm">
+                            {% else %}
+                            <div class="teacher-avatar-sm">
+                                {{ attendance.teacher.full_name|slice:":1"|upper }}
+                            </div>
+                            {% endif %}
+                        </td>
+                        <td data-label="Ustadz/Ustadzah">
+                            <div>
+                                <a href="{% url 'teacher_detail' attendance.teacher.pk %}" 
+                                   class="text-decoration-none">
+                                    <span class="fw-medium text-primary">{{ attendance.teacher.full_name }}</span>
+                                </a>
+                                <div class="text-muted small">
+                                    <i class="fas fa-id-card me-1"></i>{{ attendance.teacher.nip }}
+                                </div>
+                            </div>
+                        </td>
+                        {% endif %}
+                        <td data-label="Tanggal">
+                            <div class="date-display">
+                                <div class="date-day">{{ attendance.date|date:"D" }}</div>
+                                <div class="date-full">{{ attendance.date|date:"d/m/Y" }}</div>
+                            </div>
+                        </td>
+                        <td data-label="JP" class="text-center">
+                            <div class="jp-badge-sm">JP {{ attendance.jp_number }}</div>
+                        </td>
+                        <td data-label="Mata Pelajaran">
+                            {% if attendance.schedule %}
+                            <div class="subject-info">
+                                <i class="fas fa-book me-2 text-primary"></i>
+                                <span>{{ attendance.schedule.subject.name }}</span>
+                            </div>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td data-label="Kelas">
+                            {% if attendance.schedule %}
+                            <div class="classroom-info">
+                                <i class="fas fa-users me-2 text-secondary"></i>
+                                <span>{{ attendance.schedule.classroom.name }}</span>
+                            </div>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td data-label="Status">
+                            {% if attendance.status == 'HADIR' %}
+                            <span class="status-badge status-hadir">
+                                <i class="fas fa-check-circle me-1"></i>Hadir
+                            </span>
+                            {% elif attendance.status == 'SAKIT' %}
+                            <span class="status-badge status-sakit">
+                                <i class="fas fa-thermometer me-1"></i>Sakit
+                            </span>
+                            {% elif attendance.status == 'IZIN' %}
+                            <span class="status-badge status-izin">
+                                <i class="fas fa-file-alt me-1"></i>Izin
+                            </span>
+                            {% elif attendance.status == 'CUTI' %}
+                            <span class="status-badge status-izin">
+                                <i class="fas fa-calendar-times me-1"></i>Cuti
+                            </span>
+                            {% elif attendance.status == 'DINAS' %}
+                            <span class="status-badge status-izin">
+                                <i class="fas fa-briefcase me-1"></i>Dinas
+                            </span>
+                            {% elif attendance.status == 'ALPA' %}
+                            <span class="status-badge status-alpa">
+                                <i class="fas fa-times-circle me-1"></i>Alpa
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td data-label="Catatan">
+                            {% if attendance.notes %}
+                            <div class="notes-text">{{ attendance.notes }}</div>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                            {% if not attendance.is_location_valid and attendance.latitude %}
+                            <div class="location-warning">
+                                <i class="fas fa-map-marker-alt me-1"></i>
+                                <small class="text-warning">Lokasi tidak valid</small>
+                            </div>
+                            {% endif %}
+                            {% if attendance.is_substitute %}
+                            <div class="substitute-badge">
+                                <i class="fas fa-exchange-alt me-1"></i>
+                                <small class="text-info">Mengajar Pengganti</small>
+                            </div>
+                            {% endif %}
+                        </td>
+                        <td data-label="Dicatat Oleh">
+                            <div class="recorded-by">
+                                <div class="fw-medium">{{ attendance.recorded_by.get_full_name|default:attendance.recorded_by.username }}</div>
+                                <div class="text-muted small">
+                                    <i class="fas fa-clock me-1"></i>{{ attendance.recorded_at|date:"d/m/Y H:i" }}
+                                </div>
+                            </div>
+                        </td>
+                        {% if user.is_superuser %}
+                        <td class="text-center">
+                            <div class="btn-group btn-group-sm">
+                                <a href="{% url 'teacher_attendance_update' attendance.pk %}" 
+                                   class="btn btn-outline-primary" 
+                                   title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <button type="button" 
+                                        class="btn btn-outline-danger" 
+                                        title="Hapus"
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#deleteModal"
+                                        data-delete-id="{{ attendance.pk }}"
+                                        data-delete-name="{{ attendance.teacher.full_name }} - {{ attendance.date|date:'d/m/Y' }} JP {{ attendance.jp_number }}"
+                                        data-delete-url="{% url 'teacher_attendance_delete' attendance.pk %}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                        {% endif %}
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="{% if user.is_superuser %}10{% else %}7{% endif %}" class="text-center py-5 text-muted">
+                            <i class="fas fa-inbox fa-3x mb-3 d-block"></i>
+                            <h5>Tidak Ada Data Absensi</h5>
+                            <p class="mb-0">Tidak ada rekaman absensi untuk filter yang dipilih</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Pagination -->
+        {% if attendances.has_other_pages %}
+        <div class="pagination-wrapper">
+            <div class="pagination-info">
+                Menampilkan {{ attendances.start_index }}-{{ attendances.end_index }} dari {{ attendances.paginator.count }} data
+            </div>
+            
+            <nav aria-label="Page navigation">
+                <ul class="pagination pagination-sm mb-0">
+                    <!-- First Page -->
+                    <li class="page-item {% if not attendances.has_previous %}disabled{% endif %}">
+                        <a class="page-link" href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="First">
+                            <i class="fas fa-angle-double-left"></i>
+                        </a>
+                    </li>
+                    
+                    <!-- Previous Page -->
+                    <li class="page-item {% if not attendances.has_previous %}disabled{% endif %}">
+                        <a class="page-link" href="{% if attendances.has_previous %}?page={{ attendances.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}{% else %}#{% endif %}" aria-label="Previous">
+                            <i class="fas fa-angle-left"></i>
+                        </a>
+                    </li>
+                    
+                    <!-- Page Numbers -->
+                    {% for num in attendances.paginator.page_range %}
+                        {% if attendances.number == num %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                        {% elif num > attendances.number|add:'-3' and num < attendances.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ num }}</a>
+                            </li>
+                        {% elif num == attendances.number|add:'-3' or num == attendances.number|add:'3' %}
+                            <li class="page-item disabled">
+                                <span class="page-link">...</span>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    <!-- Next Page -->
+                    <li class="page-item {% if not attendances.has_next %}disabled{% endif %}">
+                        <a class="page-link" href="{% if attendances.has_next %}?page={{ attendances.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}{% else %}#{% endif %}" aria-label="Next">
+                            <i class="fas fa-angle-right"></i>
+                        </a>
+                    </li>
+                    
+                    <!-- Last Page -->
+                    <li class="page-item {% if not attendances.has_next %}disabled{% endif %}">
+                        <a class="page-link" href="?page={{ attendances.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Last">
+                            <i class="fas fa-angle-double-right"></i>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block list_extra_css %}
+<style>
+    /* Teacher Photo/Avatar */
+    .teacher-photo-sm {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid var(--border-color);
+    }
+    
+    .teacher-avatar-sm {
+        width: 40px;
+        height: 40px;
+        background: linear-gradient(135deg, var(--primary) 0%, #6b5344 100%);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+        font-weight: 600;
+        border: 2px solid var(--border-color);
+    }
+    
+    /* Attendance History Table */
+    .attendance-history-table {
+        font-size: 0.9rem;
+    }
+    
+    .attendance-history-table thead th {
+        background: var(--bg-light);
+        font-weight: 600;
+        text-align: left;
+        padding: 1rem;
+        border-bottom: 2px solid var(--border-color);
+        white-space: nowrap;
+    }
+    
+    .attendance-history-table tbody td {
+        padding: 1rem;
+        vertical-align: middle;
+        border-bottom: 1px solid var(--border-light);
+    }
+    
+    .attendance-history-table tbody tr:hover {
+        background-color: var(--bg-light);
+    }
+    
+    /* Date Display */
+    .date-display {
+        text-align: left;
+    }
+    
+    .date-day {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        font-weight: 500;
+        text-transform: uppercase;
+    }
+    
+    .date-full {
+        font-size: 0.9rem;
+        color: var(--text-primary);
+        font-weight: 600;
+        margin-top: 0.15rem;
+    }
+    
+    /* JP Badge */
+    .jp-badge-sm {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 45px;
+        padding: 0.35rem 0.5rem;
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+        color: white;
+        border-radius: 6px;
+        font-weight: 700;
+        font-size: 0.8rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* Subject and Classroom Info */
+    .subject-info,
+    .classroom-info {
+        display: flex;
+        align-items: center;
+        font-size: 0.9rem;
+    }
+    
+    /* Status Badge */
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.35rem 0.75rem;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+    
+    .status-badge.status-hadir {
+        background-color: var(--status-hadir-bg);
+        color: var(--status-hadir);
+    }
+    
+    .status-badge.status-sakit {
+        background-color: var(--status-sakit-bg);
+        color: var(--status-sakit);
+    }
+    
+    .status-badge.status-izin {
+        background-color: var(--status-izin-bg);
+        color: var(--status-izin);
+    }
+    
+    .status-badge.status-alpa {
+        background-color: var(--status-alpa-bg);
+        color: var(--status-alpa);
+    }
+    
+    /* Notes Text */
+    .notes-text {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        max-width: 200px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    
+    .location-warning,
+    .substitute-badge {
+        margin-top: 0.25rem;
+        font-size: 0.75rem;
+    }
+    
+    /* Recorded By */
+    .recorded-by {
+        font-size: 0.85rem;
+    }
+    
+    .recorded-by .fw-medium {
+        color: var(--text-primary);
+    }
+    
+    /* Pagination Wrapper */
+    .pagination-wrapper {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 1.25rem;
+        border-top: 1px solid var(--border-color);
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+    
+    .pagination-info {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+    }
+    
+    .pagination .page-link {
+        border: 1px solid var(--border-color);
+        color: var(--text-secondary);
+        padding: 0.375rem 0.75rem;
+        margin: 0 2px;
+        border-radius: 6px;
+    }
+    
+    .pagination .page-link:hover {
+        background-color: var(--bg-light);
+        border-color: var(--primary);
+        color: var(--primary);
+    }
+    
+    .pagination .page-item.active .page-link {
+        background-color: var(--primary);
+        border-color: var(--primary);
+        color: white;
+    }
+    
+    .pagination .page-item.disabled .page-link {
+        background-color: var(--bg-light);
+        color: var(--text-muted);
+    }
+    
+    /* Mobile Responsive */
+    @media (max-width: 991.98px) {
+        .attendance-history-table {
+            font-size: 0.85rem;
+        }
+        
+        .attendance-history-table thead th,
+        .attendance-history-table tbody td {
+            padding: 0.75rem 0.5rem;
+        }
+        
+        .subject-info i,
+        .classroom-info i {
+            display: none;
+        }
+        
+        .notes-text {
+            max-width: 150px;
+        }
+    }
+    
+    @media (max-width: 767.98px) {
+        .attendance-history-table thead {
+            display: none;
+        }
+        
+        .attendance-history-table tbody tr {
+            display: block;
+            margin-bottom: 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.75rem;
+        }
+        
+        .attendance-history-table tbody td {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--border-light);
+        }
+        
+        .attendance-history-table tbody td:last-child {
+            border-bottom: none;
+        }
+        
+        .attendance-history-table tbody td::before {
+            content: attr(data-label);
+            font-weight: 600;
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            min-width: 100px;
+        }
+        
+        .attendance-history-table tbody td:first-child {
+            justify-content: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.75rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .attendance-history-table tbody td:first-child::before {
+            content: none;
+        }
+        
+        .notes-text {
+            max-width: none;
+            white-space: normal;
+        }
+        
+        .pagination-wrapper {
+            flex-direction: column;
+            text-align: center;
+        }
+        
+        .pagination-info {
+            order: 2;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block list_extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle delete modal
+    const deleteModal = document.getElementById('deleteModal');
+    if (deleteModal) {
+        deleteModal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            const deleteId = button.getAttribute('data-delete-id');
+            const deleteName = button.getAttribute('data-delete-name');
+            const deleteUrl = button.getAttribute('data-delete-url');
+            
+            const modalBody = deleteModal.querySelector('.modal-body');
+            const deleteForm = deleteModal.querySelector('#deleteForm');
+            
+            if (modalBody && deleteName) {
+                modalBody.innerHTML = `
+                    <p>Apakah Anda yakin ingin menghapus rekaman absensi:</p>
+                    <p class="fw-bold mb-2">${deleteName}</p>
+                    <p class="text-muted mb-0">Tindakan ini tidak dapat dibatalkan.</p>
+                `;
+            }
+            
+            if (deleteForm && deleteUrl) {
+                deleteForm.action = deleteUrl;
+            }
+        });
+    }
+    
+    // Auto-submit form on date change (optional UX enhancement)
+    const startDateInput = document.getElementById('start_date');
+    const endDateInput = document.getElementById('end_date');
+    
+    if (startDateInput && endDateInput) {
+        // Optional: Auto-submit on date change
+        // Uncomment the lines below to enable auto-submit
+        /*
+        startDateInput.addEventListener('change', function() {
+            this.closest('form').submit();
+        });
+        
+        endDateInput.addEventListener('change', function() {
+            this.closest('form').submit();
+        });
+        */
+    }
+    
+    // Highlight current row on hover
+    const tableRows = document.querySelectorAll('.attendance-history-table tbody tr');
+    tableRows.forEach(row => {
+        row.addEventListener('mouseenter', function() {
+            this.style.backgroundColor = 'var(--bg-light)';
+        });
+        
+        row.addEventListener('mouseleave', function() {
+            this.style.backgroundColor = '';
+        });
+    });
+});
+</script>
+{% endblock %}
