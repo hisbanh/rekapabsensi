@@ -4,6 +4,7 @@ from . import teacher_views
 from . import teacher_attendance_views
 from . import teacher_dashboard_views
 from . import teacher_report_views
+from . import schedule_views
 
 urlpatterns = [
     # Teacher API endpoints
@@ -79,6 +80,13 @@ urlpatterns = [
     path('teachers/<uuid:pk>/delete/', teacher_views.teacher_delete, name='teacher_delete'),
     path('teachers/<uuid:pk>/schedule/', teacher_views.teacher_schedule, name='teacher_schedule'),
     path('api/teachers/inline-edit/', teacher_views.api_teacher_inline_edit, name='api_teacher_inline_edit'),
+    
+    # Teacher Schedule Management URLs
+    path('schedules/', schedule_views.schedule_management, name='schedule_management'),
+    path('schedules/create/', schedule_views.schedule_create, name='schedule_create'),
+    path('schedules/<uuid:pk>/update/', schedule_views.schedule_update, name='schedule_update'),
+    path('schedules/<uuid:pk>/delete/', schedule_views.schedule_delete, name='schedule_delete'),
+    path('schedules/<uuid:pk>/detail/', schedule_views.schedule_detail, name='schedule_detail'),
     
     # Teacher Attendance URLs
     path('teacher-attendance/', teacher_attendance_views.attendance_input, name='teacher_attendance_input'),

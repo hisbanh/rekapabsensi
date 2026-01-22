@@ -8,6 +8,16 @@ def get_item(dictionary, key):
     return dictionary.get(key)
 
 @register.filter
+def get_schedule_at_jp(schedules, jp):
+    """Check if there's a schedule at specific JP"""
+    if not schedules:
+        return None
+    for schedule in schedules:
+        if schedule.jp_start <= jp <= schedule.jp_end:
+            return schedule
+    return None
+
+@register.filter
 def get_attr(obj, attr):
     """Get an attribute from an object using a string key.
     Supports nested attributes using dot notation (e.g., 'student.name')

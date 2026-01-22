@@ -128,59 +128,34 @@ def teacher_create(request):
     - Photo upload
     - Subject assignment
     - Homeroom class assignment
-    - Validation using TeacherService
+    - Validation using TeacherForm
     
     Requirements: FR-001, FR-002, FR-004
     """
-    if request.method == 'POST':
-        try:
-            # Collect form data
-            data = {
-                'nip': request.POST.get('nip', '').strip().upper(),
-                'full_name': request.POST.get('full_name', '').strip(),
-                'email': request.POST.get('email', '').strip(),
-                'phone': request.POST.get('phone', '').strip(),
-                'address': request.POST.get('address', '').strip(),
-                'employment_date': request.POST.get('employment_date'),
-                'employment_status': request.POST.get('employment_status', 'ACTIVE'),
-                'is_homeroom_teacher': request.POST.get('is_homeroom_teacher') == 'on',
-                'is_active': request.POST.get('is_active', 'on') == 'on',
-            }
-            
-            # Handle homeroom class
-            homeroom_class_id = request.POST.get('homeroom_class')
-            if homeroom_class_id:
-                data['homeroom_class_id'] = homeroom_class_id
-            
-            # Handle photo upload
-            if 'photo' in request.FILES:
-                data['photo'] = request.FILES['photo']
-            
-            # Create teacher using service
-            teacher = TeacherService.create_teacher(data)
-            
-            # Assign subjects
-            subject_ids = request.POST.getlist('subjects')
-            if subject_ids:
-                TeacherService.assign_subjects(teacher.id, subject_ids)
-            
-            messages.success(request, f'Ustadz "{teacher.full_name}" berhasil ditambahkan')
-            return redirect('teacher_detail', pk=teacher.id)
-            
-        except TeacherServiceError as e:
-            logger.error(f"Teacher service error: {str(e)}")
-            messages.error(request, f"Gagal menambahkan ustadz: {str(e)}")
-        except Exception as e:
-            logger.error(f"Error creating teacher: {str(e)}")
-            messages.error(request, f"Terjadi kesalahan: {str(e)}")
+    from .forms import TeacherForm
     
-    # GET request - show form
-    subjects = Subject.objects.filter(is_active=True).order_by('name')
-    classrooms = Classroom.objects.filter(is_active=True).select_related('academic_level').order_by('name')
+    if request.method == 'POST':
+        form = TeacherForm(request.POST, request.FILES)
+        if form.is_valid():
+            try:
+                # Save teacher (form handles subject assignment)
+                teacher = form.save()
+                
+                messages.success(request, f'Ustadz "{teacher.full_name}" berhasil ditambahkan')
+                return redirect('teacher_detail', pk=teacher.id)
+                
+            except Exception as e:
+                logger.error(f"Error creating teacher: {str(e)}")
+                messages.error(request, f"Terjadi kesalahan: {str(e)}")
+        else:
+            # Form validation failed
+            messages.error(request, "Mohon perbaiki kesalahan pada form")
+    else:
+        # GET request - show empty form
+        form = TeacherForm()
     
     context = {
-        'subjects': subjects,
-        'classrooms': classrooms,
+        'form': form,
         'is_edit': False,
     }
     
@@ -276,10 +251,12 @@ def teacher_update(request, pk):
     - Update photo
     - Modify subject assignments
     - Change homeroom class
-    - Validation using TeacherService
+    - Validation using TeacherForm
     
     Requirements: FR-001, FR-002, FR-004
     """
+    from .forms import TeacherForm
+    
     try:
         teacher = Teacher.objects.get(id=pk)
     except Teacher.DoesNotExist:
@@ -287,62 +264,28 @@ def teacher_update(request, pk):
         return redirect('teacher_list')
     
     if request.method == 'POST':
-        try:
-            # Collect form data
-            data = {
-                'full_name': request.POST.get('full_name', '').strip(),
-                'email': request.POST.get('email', '').strip(),
-                'phone': request.POST.get('phone', '').strip(),
-                'address': request.POST.get('address', '').strip(),
-                'employment_date': request.POST.get('employment_date'),
-                'employment_status': request.POST.get('employment_status'),
-                'is_homeroom_teacher': request.POST.get('is_homeroom_teacher') == 'on',
-                'is_active': request.POST.get('is_active', 'on') == 'on',
-            }
-            
-            # Only update NIP if provided (to avoid unique constraint issues)
-            nip = request.POST.get('nip', '').strip().upper()
-            if nip and nip != teacher.nip:
-                data['nip'] = nip
-            
-            # Handle homeroom class
-            homeroom_class_id = request.POST.get('homeroom_class')
-            if homeroom_class_id:
-                data['homeroom_class_id'] = homeroom_class_id
-            else:
-                data['homeroom_class'] = None
-            
-            # Handle photo upload
-            if 'photo' in request.FILES:
-                data['photo'] = request.FILES['photo']
-            
-            # Update teacher using service
-            teacher = TeacherService.update_teacher(pk, data)
-            
-            # Update subjects
-            subject_ids = request.POST.getlist('subjects')
-            TeacherService.assign_subjects(teacher.id, subject_ids)
-            
-            messages.success(request, f'Ustadz "{teacher.full_name}" berhasil diperbarui')
-            return redirect('teacher_detail', pk=teacher.id)
-            
-        except TeacherServiceError as e:
-            logger.error(f"Teacher service error: {str(e)}")
-            messages.error(request, f"Gagal memperbarui ustadz: {str(e)}")
-        except Exception as e:
-            logger.error(f"Error updating teacher: {str(e)}")
-            messages.error(request, f"Terjadi kesalahan: {str(e)}")
-    
-    # GET request - show form with existing data
-    subjects = Subject.objects.filter(is_active=True).order_by('name')
-    classrooms = Classroom.objects.filter(is_active=True).select_related('academic_level').order_by('name')
-    teacher_subjects = teacher.subjects.all()
+        form = TeacherForm(request.POST, request.FILES, instance=teacher)
+        if form.is_valid():
+            try:
+                # Save teacher (form handles subject assignment)
+                teacher = form.save()
+                
+                messages.success(request, f'Ustadz "{teacher.full_name}" berhasil diperbarui')
+                return redirect('teacher_detail', pk=teacher.id)
+                
+            except Exception as e:
+                logger.error(f"Error updating teacher: {str(e)}")
+                messages.error(request, f"Terjadi kesalahan: {str(e)}")
+        else:
+            # Form validation failed
+            messages.error(request, "Mohon perbaiki kesalahan pada form")
+    else:
+        # GET request - show form with existing data
+        form = TeacherForm(instance=teacher)
     
     context = {
+        'form': form,
         'teacher': teacher,
-        'subjects': subjects,
-        'classrooms': classrooms,
-        'teacher_subjects': teacher_subjects,
         'is_edit': True,
     }
     

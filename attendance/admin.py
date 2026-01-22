@@ -7,6 +7,7 @@ from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import User
 from django.utils.html import format_html
 from django.urls import reverse
+from django.db import models
 from django.db.models import Count, Q
 from django.utils import timezone
 from datetime import timedelta
@@ -502,7 +503,7 @@ class TeacherAdmin(admin.ModelAdmin, ExportCsvMixin):
     
     fieldsets = (
         ('Basic Information', {
-            'fields': ('nip', 'full_name', 'user', 'photo', 'photo_preview_large')
+            'fields': ('nip', 'full_name', 'photo', 'photo_preview_large')
         }),
         ('Contact Information', {
             'fields': ('email', 'phone', 'address'),
@@ -513,6 +514,11 @@ class TeacherAdmin(admin.ModelAdmin, ExportCsvMixin):
         }),
         ('Teaching Information', {
             'fields': ('subjects', 'is_homeroom_teacher', 'homeroom_class')
+        }),
+        ('User Account', {
+            'fields': ('user',),
+            'classes': ('collapse',),
+            'description': 'Link to user account for self-attendance (optional)'
         }),
         ('Status', {
             'fields': ('is_active',)
@@ -527,24 +533,43 @@ class TeacherAdmin(admin.ModelAdmin, ExportCsvMixin):
     inlines = [TeacherScheduleInline]
     actions = ['export_as_csv', 'activate_teachers', 'deactivate_teachers']
     
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        """Customize foreign key fields"""
+        if db_field.name == "user":
+            # Only show users that don't have a teacher profile yet
+            # or the current teacher's user
+            kwargs["queryset"] = User.objects.filter(
+                models.Q(teacher_profile__isnull=True) | 
+                models.Q(teacher_profile=getattr(request, '_obj_', None))
+            )
+            kwargs["required"] = False
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+    
+    def get_form(self, request, obj=None, **kwargs):
+        """Store the object in request for use in formfield_for_foreignkey"""
+        request._obj_ = obj
+        return super().get_form(request, obj, **kwargs)
+    
     def photo_preview(self, obj):
         """Display small photo preview in list"""
-        if obj.photo:
+        from django.utils.safestring import mark_safe
+        if obj and obj.photo:
             return format_html(
                 '<img src="{}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;" />',
                 obj.photo.url
             )
-        return format_html('<div style="width: 40px; height: 40px; border-radius: 50%; background: #e5e7eb; display: flex; align-items: center; justify-content: center; color: #6b7280;">👤</div>')
+        return mark_safe('<div style="width: 40px; height: 40px; border-radius: 50%; background: #e5e7eb; display: flex; align-items: center; justify-content: center; color: #6b7280;">👤</div>')
     photo_preview.short_description = 'Photo'
     
     def photo_preview_large(self, obj):
         """Display larger photo preview in detail view"""
-        if obj.photo:
+        from django.utils.safestring import mark_safe
+        if obj and obj.photo:
             return format_html(
                 '<img src="{}" style="max-width: 200px; max-height: 200px; border-radius: 8px; object-fit: cover;" />',
                 obj.photo.url
             )
-        return format_html('<div style="width: 200px; height: 200px; border-radius: 8px; background: #e5e7eb; display: flex; align-items: center; justify-content: center; color: #6b7280; font-size: 48px;">👤</div>')
+        return mark_safe('<div style="width: 200px; height: 200px; border-radius: 8px; background: #e5e7eb; display: flex; align-items: center; justify-content: center; color: #6b7280; font-size: 48px;">👤</div>')
     photo_preview_large.short_description = 'Photo Preview'
     
     def subject_list_display(self, obj):
@@ -558,6 +583,8 @@ class TeacherAdmin(admin.ModelAdmin, ExportCsvMixin):
     
     def employment_status_display(self, obj):
         """Display employment status with color coding"""
+        if not obj:
+            return '-'
         colors = {
             'ACTIVE': 'green',
             'LEAVE': 'orange',
@@ -573,17 +600,20 @@ class TeacherAdmin(admin.ModelAdmin, ExportCsvMixin):
     
     def teaching_load_display(self, obj):
         """Display teaching load (total JP per week)"""
-        load = obj.teaching_load
-        if load == 0:
-            color = 'gray'
-        elif load < 18:
-            color = 'orange'
-        else:
-            color = 'green'
-        return format_html(
-            '<span style="color: {};">{} JP/week</span>',
-            color, load
-        )
+        try:
+            load = obj.teaching_load if obj else 0
+            if load == 0:
+                color = 'gray'
+            elif load < 18:
+                color = 'orange'
+            else:
+                color = 'green'
+            return format_html(
+                '<span style="color: {};">{} JP/week</span>',
+                color, load
+            )
+        except Exception as e:
+            return format_html('<span style="color: gray;">-</span>')
     teaching_load_display.short_description = 'Teaching Load'
     
     def activate_teachers(self, request, queryset):

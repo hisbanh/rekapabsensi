@@ -19,43 +19,66 @@ from .teacher_attendance_forms import (
     BulkAttendanceForm as TeacherBulkAttendanceForm,
 )
 
-# Import all other forms from the legacy forms.py file
-# We'll re-export them here for backwards compatibility
+# Import legacy forms from forms.py file
+# We need to import from the parent module to avoid circular imports
+# The forms.py file exists at attendance/forms.py (sibling to this package)
 import sys
-import os
+import importlib.util
 
-# Add parent directory to path to import from forms.py
-parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-if parent_dir not in sys.path:
-    sys.path.insert(0, parent_dir)
+# Initialize forms to None
+StudentForm = None
+StudentFilterForm = None
+ClassroomForm = None
+HolidayForm = None
+DayScheduleForm = None
+UserForm = None
+JPReportFilterForm = None
+BulkAttendanceForm = None
 
-# Import from the attendance.forms module (the forms.py file)
-# This works because Python will find forms.py before the forms/ package
-# when importing from the parent attendance module
 try:
-    # Import the forms.py module directly
-    import importlib
-    forms_module = importlib.import_module('attendance.forms', package='attendance')
+    # Import from attendance.forms module (the .py file, not this package)
+    # We need to temporarily manipulate sys.modules to avoid the circular reference
     
-    # Get all the forms we need
-    StudentForm = getattr(forms_module, 'StudentForm', None)
-    StudentFilterForm = getattr(forms_module, 'StudentFilterForm', None)
-    ClassroomForm = getattr(forms_module, 'ClassroomForm', None)
-    HolidayForm = getattr(forms_module, 'HolidayForm', None)
-    DayScheduleForm = getattr(forms_module, 'DayScheduleForm', None)
-    UserForm = getattr(forms_module, 'UserForm', None)
-    JPReportFilterForm = getattr(forms_module, 'JPReportFilterForm', None)
-    BulkAttendanceForm = getattr(forms_module, 'BulkAttendanceForm', None)
-except (ImportError, AttributeError) as e:
-    # If import fails, set to None
-    StudentForm = None
-    StudentFilterForm = None
-    ClassroomForm = None
-    HolidayForm = None
-    DayScheduleForm = None
-    UserForm = None
-    JPReportFilterForm = None
-    BulkAttendanceForm = None
+    # Save the current attendance.forms module (this package)
+    current_forms_module = sys.modules.get('attendance.forms')
+    
+    # Temporarily remove it so we can import the .py file
+    if 'attendance.forms' in sys.modules:
+        del sys.modules['attendance.forms']
+    
+    # Now import the forms.py file as a different module name
+    import os
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    forms_py_path = os.path.join(os.path.dirname(current_dir), 'forms.py')
+    
+    if os.path.exists(forms_py_path):
+        spec = importlib.util.spec_from_file_location("attendance.legacy_forms", forms_py_path)
+        legacy_forms = importlib.util.module_from_spec(spec)
+        sys.modules['attendance.legacy_forms'] = legacy_forms
+        spec.loader.exec_module(legacy_forms)
+        
+        # Extract the forms we need
+        StudentForm = getattr(legacy_forms, 'StudentForm', None)
+        StudentFilterForm = getattr(legacy_forms, 'StudentFilterForm', None)
+        ClassroomForm = getattr(legacy_forms, 'ClassroomForm', None)
+        HolidayForm = getattr(legacy_forms, 'HolidayForm', None)
+        DayScheduleForm = getattr(legacy_forms, 'DayScheduleForm', None)
+        UserForm = getattr(legacy_forms, 'UserForm', None)
+        JPReportFilterForm = getattr(legacy_forms, 'JPReportFilterForm', None)
+        BulkAttendanceForm = getattr(legacy_forms, 'BulkAttendanceForm', None)
+    
+    # Restore the current module
+    if current_forms_module:
+        sys.modules['attendance.forms'] = current_forms_module
+        
+except Exception as e:
+    import traceback
+    print(f"Warning: Could not load legacy forms from forms.py: {e}")
+    traceback.print_exc()
+    
+    # Make sure to restore the module even on error
+    if current_forms_module:
+        sys.modules['attendance.forms'] = current_forms_module
 
 __all__ = [
     # Teacher forms

@@ -283,7 +283,8 @@ class UserForm(forms.ModelForm):
         widget=forms.PasswordInput(attrs={
             'class': 'form-control',
             'placeholder': 'Masukkan password'
-        })
+        }),
+        help_text='Minimal 8 karakter'
     )
     password2 = forms.CharField(
         label='Konfirmasi Password',
@@ -294,8 +295,11 @@ class UserForm(forms.ModelForm):
         })
     )
     role = forms.ChoiceField(
+        label='Role',
+        required=True,
         choices=[('guru', 'Guru'), ('admin', 'Admin')],
-        widget=forms.Select(attrs={'class': 'form-select'})
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        initial='guru'
     )
     
     class Meta:
@@ -328,16 +332,24 @@ class UserForm(forms.ModelForm):
         
         # Set initial role based on instance
         if self.instance and self.instance.pk:
+            # Determine role from user permissions
             if self.instance.is_superuser:
-                self.initial['role'] = 'admin'
+                self.fields['role'].initial = 'admin'
             else:
-                self.initial['role'] = 'guru'
+                self.fields['role'].initial = 'guru'
+            
             # Password not required for edit
-            self.fields['password1'].help_text = 'Kosongkan jika tidak ingin mengubah password'
+            if 'password1' in self.fields:
+                self.fields['password1'].required = False
+                self.fields['password1'].help_text = 'Kosongkan jika tidak ingin mengubah password'
+            if 'password2' in self.fields:
+                self.fields['password2'].required = False
         else:
             # Password required for new user
-            self.fields['password1'].required = True
-            self.fields['password2'].required = True
+            if 'password1' in self.fields:
+                self.fields['password1'].required = True
+            if 'password2' in self.fields:
+                self.fields['password2'].required = True
     
     def clean(self):
         cleaned_data = super().clean()

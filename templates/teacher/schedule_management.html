@@ -1,0 +1,749 @@
+{% extends 'base_new.html' %}
+{% load static %}
+
+{% block page_title %}Kelola Jadwal Mengajar{% endblock %}
+
+{% block extra_css %}
+<style>
+    .schedule-grid {
+        overflow-x: auto;
+        margin-top: 1.5rem;
+    }
+    
+    .schedule-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+    
+    .schedule-table th,
+    .schedule-table td {
+        border: 1px solid var(--border-light);
+        padding: 0.75rem;
+        text-align: center;
+        min-width: 120px;
+    }
+    
+    .schedule-table th {
+        background: var(--primary);
+        color: white;
+        font-weight: 600;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+    
+    .schedule-table th.jp-header {
+        background: var(--primary-dark);
+        min-width: 60px;
+    }
+    
+    .schedule-table td.jp-cell {
+        background: var(--bg-light);
+        font-weight: 600;
+        color: var(--text-secondary);
+    }
+    
+    .schedule-cell {
+        position: relative;
+        min-height: 80px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .schedule-cell:hover {
+        background: var(--bg-light);
+    }
+    
+    .schedule-cell.empty:hover {
+        background: var(--status-hadir-bg);
+    }
+    
+    .schedule-item {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+        color: white;
+        padding: 0.75rem;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    .schedule-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    }
+    
+    .schedule-item-subject {
+        font-weight: 600;
+        font-size: 0.9rem;
+        margin-bottom: 0.25rem;
+    }
+    
+    .schedule-item-class {
+        font-size: 0.8rem;
+        opacity: 0.9;
+    }
+    
+    .schedule-item-room {
+        font-size: 0.75rem;
+        opacity: 0.8;
+        margin-top: 0.25rem;
+    }
+    
+    .stats-summary {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .stat-box {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 12px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        text-align: center;
+    }
+    
+    .stat-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--primary);
+        margin-bottom: 0.5rem;
+    }
+    
+    .stat-label {
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+    }
+    
+    .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .modal.show {
+        display: flex;
+    }
+    
+    .modal-content {
+        background: white;
+        border-radius: 12px;
+        padding: 2rem;
+        max-width: 500px;
+        width: 90%;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+    
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+    
+    .modal-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--text-primary);
+    }
+    
+    .modal-close {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: var(--text-secondary);
+        padding: 0;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        transition: all 0.2s;
+    }
+    
+    .modal-close:hover {
+        background: var(--bg-light);
+        color: var(--text-primary);
+    }
+    
+    .form-group {
+        margin-bottom: 1rem;
+    }
+    
+    .form-label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+    
+    .form-control,
+    .form-select {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        font-size: 1rem;
+    }
+    
+    .form-control:focus,
+    .form-select:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px var(--primary-light);
+    }
+    
+    .btn-group {
+        display: flex;
+        gap: 0.75rem;
+        margin-top: 1.5rem;
+    }
+    
+    .btn {
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        flex: 1;
+    }
+    
+    .btn-primary {
+        background: var(--primary);
+        color: white;
+    }
+    
+    .btn-primary:hover {
+        background: var(--primary-dark);
+    }
+    
+    .btn-secondary {
+        background: var(--bg-light);
+        color: var(--text-primary);
+    }
+    
+    .btn-secondary:hover {
+        background: var(--border-color);
+    }
+    
+    .btn-danger {
+        background: var(--status-alpa);
+        color: white;
+    }
+    
+    .btn-danger:hover {
+        background: #c53030;
+    }
+    
+    .alert {
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+    }
+    
+    .alert-error {
+        background: var(--status-alpa-bg);
+        color: var(--status-alpa);
+        border: 1px solid var(--status-alpa);
+    }
+    
+    .alert-success {
+        background: var(--status-hadir-bg);
+        color: var(--status-hadir);
+        border: 1px solid var(--status-hadir);
+    }
+    
+    .conflict-list {
+        list-style: none;
+        padding: 0;
+        margin: 0.5rem 0 0 0;
+    }
+    
+    .conflict-list li {
+        padding: 0.5rem;
+        background: var(--bg-light);
+        border-radius: 4px;
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+    }
+    
+    .teacher-filter {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 12px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        margin-bottom: 1.5rem;
+    }
+    
+    .filter-row {
+        display: flex;
+        gap: 1rem;
+        align-items: end;
+    }
+    
+    .filter-group {
+        flex: 1;
+    }
+    
+    @media (max-width: 768px) {
+        .schedule-table th,
+        .schedule-table td {
+            min-width: 100px;
+            padding: 0.5rem;
+            font-size: 0.85rem;
+        }
+        
+        .schedule-item {
+            padding: 0.5rem;
+        }
+        
+        .schedule-item-subject {
+            font-size: 0.8rem;
+        }
+        
+        .schedule-item-class,
+        .schedule-item-room {
+            font-size: 0.7rem;
+        }
+        
+        .modal-content {
+            padding: 1.5rem;
+        }
+        
+        .filter-row {
+            flex-direction: column;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">
+            <i class="fas fa-calendar-alt me-2"></i>
+            Kelola Jadwal Mengajar
+        </h1>
+        <p class="page-subtitle">
+            {% if selected_teacher %}
+                Jadwal mengajar {{ selected_teacher.full_name }}
+            {% else %}
+                Pilih ustadz untuk melihat jadwal
+            {% endif %}
+        </p>
+    </div>
+    {% if is_admin %}
+    <div>
+        <button class="btn btn-primary" onclick="openAddModal()">
+            <i class="fas fa-plus me-2"></i>Tambah Jadwal
+        </button>
+    </div>
+    {% endif %}
+</div>
+
+{% if is_admin %}
+<div class="teacher-filter">
+    <form method="get" class="filter-row">
+        <div class="filter-group">
+            <label for="teacher" class="form-label">Pilih Ustadz</label>
+            <select name="teacher" id="teacher" class="form-select" onchange="this.form.submit()">
+                <option value="">-- Pilih Ustadz --</option>
+                {% for teacher in teachers %}
+                <option value="{{ teacher.id }}" {% if selected_teacher and teacher.id == selected_teacher.id %}selected{% endif %}>
+                    {{ teacher.full_name }} ({{ teacher.nip }})
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+    </form>
+</div>
+{% endif %}
+
+{% if selected_teacher %}
+<div class="stats-summary">
+    <div class="stat-box">
+        <div class="stat-value">{{ total_jp }}</div>
+        <div class="stat-label">Total JP per Minggu</div>
+    </div>
+    <div class="stat-box">
+        <div class="stat-value">{{ selected_teacher.subjects.count }}</div>
+        <div class="stat-label">Mata Pelajaran</div>
+    </div>
+    <div class="stat-box">
+        <div class="stat-value">
+            {% if total_jp >= 18 %}
+                <i class="fas fa-check-circle" style="color: var(--status-hadir);"></i>
+            {% else %}
+                <i class="fas fa-exclamation-circle" style="color: var(--status-izin);"></i>
+            {% endif %}
+        </div>
+        <div class="stat-label">
+            {% if total_jp >= 18 %}Beban Mengajar Terpenuhi{% else %}Beban Mengajar Kurang{% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="schedule-grid">
+    <table class="schedule-table">
+        <thead>
+            <tr>
+                <th class="jp-header">JP</th>
+                {% for day in days %}
+                <th>{{ day.name }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for jp in jp_slots %}
+            <tr>
+                <td class="jp-cell">{{ jp }}</td>
+                {% for day in days %}
+                <td class="schedule-cell {% if not weekly_schedule|get_item:day.value or not weekly_schedule|get_item:day.value|get_schedule_at_jp:jp %}empty{% endif %}"
+                    data-day="{{ day.value }}"
+                    data-jp="{{ jp }}"
+                    onclick="handleCellClick({{ day.value }}, {{ jp }})">
+                    {% for schedule in weekly_schedule|get_item:day.value %}
+                        {% if schedule.jp_start <= jp and schedule.jp_end >= jp %}
+                            {% if schedule.jp_start == jp %}
+                            <div class="schedule-item" 
+                                 data-schedule-id="{{ schedule.id }}"
+                                 onclick="event.stopPropagation(); openEditModal('{{ schedule.id }}')">
+                                <div class="schedule-item-subject">{{ schedule.subject.name }}</div>
+                                <div class="schedule-item-class">{{ schedule.classroom.name }}</div>
+                                {% if schedule.room_number %}
+                                <div class="schedule-item-room">
+                                    <i class="fas fa-door-open"></i> {{ schedule.room_number }}
+                                </div>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                        {% endif %}
+                    {% endfor %}
+                </td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="alert alert-error">
+    <i class="fas fa-exclamation-circle me-2"></i>
+    Silakan pilih ustadz untuk melihat jadwal
+</div>
+{% endif %}
+
+<!-- Add/Edit Schedule Modal -->
+<div id="scheduleModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title" id="modalTitle">Tambah Jadwal</h3>
+            <button class="modal-close" onclick="closeModal()">&times;</button>
+        </div>
+        
+        <div id="modalAlert"></div>
+        
+        <form id="scheduleForm">
+            <input type="hidden" id="scheduleId" name="schedule_id">
+            <input type="hidden" id="teacherId" name="teacher_id" value="{% if selected_teacher %}{{ selected_teacher.id }}{% endif %}">
+            
+            <div class="form-group">
+                <label for="dayOfWeek" class="form-label">Hari <span class="text-danger">*</span></label>
+                <select id="dayOfWeek" name="day_of_week" class="form-select" required>
+                    <option value="">-- Pilih Hari --</option>
+                    {% for day in days %}
+                    <option value="{{ day.value }}">{{ day.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="jpStart" class="form-label">JP Mulai <span class="text-danger">*</span></label>
+                <select id="jpStart" name="jp_start" class="form-select" required>
+                    <option value="">-- Pilih JP --</option>
+                    {% for jp in jp_slots %}
+                    <option value="{{ jp }}">JP {{ jp }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="jpEnd" class="form-label">JP Selesai <span class="text-danger">*</span></label>
+                <select id="jpEnd" name="jp_end" class="form-select" required>
+                    <option value="">-- Pilih JP --</option>
+                    {% for jp in jp_slots %}
+                    <option value="{{ jp }}">JP {{ jp }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="subjectId" class="form-label">Mata Pelajaran <span class="text-danger">*</span></label>
+                <select id="subjectId" name="subject_id" class="form-select" required>
+                    <option value="">-- Pilih Mata Pelajaran --</option>
+                    {% for subject in subjects %}
+                    <option value="{{ subject.id }}">{{ subject.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="classroomId" class="form-label">Kelas <span class="text-danger">*</span></label>
+                <select id="classroomId" name="classroom_id" class="form-select" required>
+                    <option value="">-- Pilih Kelas --</option>
+                    {% for classroom in classrooms %}
+                    <option value="{{ classroom.id }}">{{ classroom.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="roomNumber" class="form-label">Nomor Ruangan</label>
+                <input type="text" id="roomNumber" name="room_number" class="form-control" placeholder="Contoh: R101">
+            </div>
+            
+            <div class="form-group">
+                <label for="notes" class="form-label">Catatan</label>
+                <textarea id="notes" name="notes" class="form-control" rows="3" placeholder="Catatan tambahan (opsional)"></textarea>
+            </div>
+            
+            <div class="btn-group">
+                <button type="button" class="btn btn-secondary" onclick="closeModal()">Batal</button>
+                <button type="submit" class="btn btn-primary" id="submitBtn">Simpan</button>
+                <button type="button" class="btn btn-danger" id="deleteBtn" style="display: none;" onclick="deleteSchedule()">Hapus</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Global variables
+let isEditMode = false;
+let currentScheduleId = null;
+
+// Template filters (Django-like)
+function getItem(obj, key) {
+    return obj ? obj[key] : null;
+}
+
+// Open add modal
+function openAddModal(day = null, jp = null) {
+    isEditMode = false;
+    currentScheduleId = null;
+    
+    document.getElementById('modalTitle').textContent = 'Tambah Jadwal';
+    document.getElementById('scheduleForm').reset();
+    document.getElementById('scheduleId').value = '';
+    document.getElementById('deleteBtn').style.display = 'none';
+    document.getElementById('modalAlert').innerHTML = '';
+    
+    // Pre-fill day and JP if provided
+    if (day !== null) {
+        document.getElementById('dayOfWeek').value = day;
+    }
+    if (jp !== null) {
+        document.getElementById('jpStart').value = jp;
+        document.getElementById('jpEnd').value = jp;
+    }
+    
+    document.getElementById('scheduleModal').classList.add('show');
+}
+
+// Open edit modal
+async function openEditModal(scheduleId) {
+    isEditMode = true;
+    currentScheduleId = scheduleId;
+    
+    document.getElementById('modalTitle').textContent = 'Edit Jadwal';
+    document.getElementById('deleteBtn').style.display = 'block';
+    document.getElementById('modalAlert').innerHTML = '';
+    
+    try {
+        const response = await fetch(`/schedules/${scheduleId}/detail/`);
+        const data = await response.json();
+        
+        if (data.success) {
+            const schedule = data.schedule;
+            document.getElementById('scheduleId').value = schedule.id;
+            document.getElementById('dayOfWeek').value = schedule.day_of_week;
+            document.getElementById('jpStart').value = schedule.jp_start;
+            document.getElementById('jpEnd').value = schedule.jp_end;
+            document.getElementById('subjectId').value = schedule.subject_id;
+            document.getElementById('classroomId').value = schedule.classroom_id;
+            document.getElementById('roomNumber').value = schedule.room_number || '';
+            document.getElementById('notes').value = schedule.notes || '';
+            
+            document.getElementById('scheduleModal').classList.add('show');
+        } else {
+            alert('Gagal memuat data jadwal: ' + data.error);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Terjadi kesalahan saat memuat data jadwal');
+    }
+}
+
+// Close modal
+function closeModal() {
+    document.getElementById('scheduleModal').classList.remove('show');
+    document.getElementById('scheduleForm').reset();
+    document.getElementById('modalAlert').innerHTML = '';
+}
+
+// Handle cell click (for adding schedule)
+function handleCellClick(day, jp) {
+    {% if is_admin %}
+    // Check if cell is empty
+    const cell = event.currentTarget;
+    if (cell.classList.contains('empty')) {
+        openAddModal(day, jp);
+    }
+    {% endif %}
+}
+
+// Handle form submission
+document.getElementById('scheduleForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const submitBtn = document.getElementById('submitBtn');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Menyimpan...';
+    
+    const formData = {
+        teacher_id: document.getElementById('teacherId').value,
+        day_of_week: document.getElementById('dayOfWeek').value,
+        jp_start: document.getElementById('jpStart').value,
+        jp_end: document.getElementById('jpEnd').value,
+        subject_id: document.getElementById('subjectId').value,
+        classroom_id: document.getElementById('classroomId').value,
+        room_number: document.getElementById('roomNumber').value,
+        notes: document.getElementById('notes').value,
+    };
+    
+    try {
+        let url, method;
+        if (isEditMode) {
+            url = `/schedules/${currentScheduleId}/update/`;
+            method = 'POST';
+        } else {
+            url = '/schedules/create/';
+            method = 'POST';
+        }
+        
+        const response = await fetch(url, {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify(formData)
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Show success message and reload
+            alert(data.message);
+            window.location.reload();
+        } else {
+            // Show error message
+            let errorHtml = `<div class="alert alert-error">
+                <i class="fas fa-exclamation-circle me-2"></i>
+                ${data.error}`;
+            
+            if (data.conflicts) {
+                errorHtml += '<ul class="conflict-list">';
+                data.conflicts.forEach(conflict => {
+                    errorHtml += `<li><i class="fas fa-times-circle me-2"></i>${conflict}</li>`;
+                });
+                errorHtml += '</ul>';
+            }
+            
+            errorHtml += '</div>';
+            document.getElementById('modalAlert').innerHTML = errorHtml;
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        document.getElementById('modalAlert').innerHTML = `
+            <div class="alert alert-error">
+                <i class="fas fa-exclamation-circle me-2"></i>
+                Terjadi kesalahan saat menyimpan jadwal
+            </div>`;
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Simpan';
+    }
+});
+
+// Delete schedule
+async function deleteSchedule() {
+    if (!confirm('Apakah Anda yakin ingin menghapus jadwal ini?')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/schedules/${currentScheduleId}/delete/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            alert(data.message);
+            window.location.reload();
+        } else {
+            alert('Gagal menghapus jadwal: ' + data.error);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Terjadi kesalahan saat menghapus jadwal');
+    }
+}
+
+// Get CSRF token
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Close modal on outside click
+document.getElementById('scheduleModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeModal();
+    }
+});
+</script>
+{% endblock %}
