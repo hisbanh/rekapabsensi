@@ -134,7 +134,7 @@ Isi form berikut untuk menambahkan pengguna baru
     </div>
 </div>
 
-{% if is_edit and user_obj.last_login %}
+{% if is_edit %}
 <div class="form-section">
     <h6 class="form-section-title">
         <i class="fas fa-history me-2"></i>Informasi Login
@@ -142,11 +142,23 @@ Isi form berikut untuk menambahkan pengguna baru
     <div class="row">
         <div class="col-md-6">
             <p class="mb-1 text-muted small">Login Terakhir</p>
-            <p class="mb-0">{{ user_obj.last_login|date:"d M Y H:i" }}</p>
+            <p class="mb-0">
+                {% if user_obj.last_login %}
+                    {{ user_obj.last_login|date:"d M Y H:i" }}
+                {% else %}
+                    <span class="text-muted">Belum pernah login</span>
+                {% endif %}
+            </p>
         </div>
         <div class="col-md-6">
             <p class="mb-1 text-muted small">Tanggal Bergabung</p>
-            <p class="mb-0">{{ user_obj.date_joined|date:"d M Y H:i" }}</p>
+            <p class="mb-0">
+                {% if user_obj.date_joined %}
+                    {{ user_obj.date_joined|date:"d M Y H:i" }}
+                {% else %}
+                    <span class="text-muted">-</span>
+                {% endif %}
+            </p>
         </div>
     </div>
 </div>
