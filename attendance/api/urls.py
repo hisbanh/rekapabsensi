@@ -2,7 +2,7 @@
 URL Configuration for Teacher API
 """
 from django.urls import path
-from . import teacher_api, schedule_api, teacher_attendance_api
+from . import teacher_api, schedule_api, teacher_attendance_api, teacher_report_api
 
 app_name = 'teacher_api'
 
@@ -35,4 +35,10 @@ urlpatterns = [
     # Teacher Attendance CRUD endpoints
     path('teacher-attendance/', teacher_attendance_api.attendance_list_create, name='attendance_list_create'),
     path('teacher-attendance/<str:attendance_id>/', teacher_attendance_api.attendance_detail_update_delete, name='attendance_detail_update_delete'),
+    
+    # Teacher Report API endpoints
+    path('reports/teacher/<str:teacher_id>/pdf/', teacher_report_api.teacher_report_pdf, name='teacher_report_pdf'),
+    path('reports/analytics/', teacher_report_api.analytics, name='analytics'),
+    path('reports/export/excel/', teacher_report_api.export_excel, name='export_excel'),
+    path('reports/dashboard/', teacher_report_api.dashboard_stats, name='dashboard_stats'),
 ]
