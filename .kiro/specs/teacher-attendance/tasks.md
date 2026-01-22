@@ -417,26 +417,26 @@ Create all required models for teacher attendance system following the design do
 ## Phase 6: Testing & Quality Assurance (Week 10)
 
 ### 6.1 Unit Tests
-- [ ] Create `attendance/tests/test_teacher_models.py`
+- [x] Create `attendance/tests/test_teacher_models.py`
   - Test Subject model validation
   - Test Teacher model validation
   - Test TeacherSchedule model validation and conflict detection
   - Test TeacherAttendance model validation
   - Test TeacherAttendanceSummary calculation
 
-- [ ] Create `attendance/tests/test_teacher_services.py`
+- [x] Create `attendance/tests/test_teacher_services.py`
   - Test TeacherService methods
   - Test ScheduleService methods (especially conflict detection)
   - Test TeacherAttendanceService methods (especially location validation)
   - Test TeacherReportService methods
 
-- [ ] Create `attendance/tests/test_location_utils.py`
+- [x] Create `attendance/tests/test_location_utils.py`
   - Test Haversine distance calculation
   - Test location validation with various coordinates
   - Test edge cases (exactly on boundary, etc.)
 
 ### 6.2 Integration Tests
-- [ ] Create `attendance/tests/test_teacher_views.py`
+- [x] Create `attendance/tests/test_teacher_views.py`
   - Test teacher CRUD views
   - Test schedule management views
   - Test attendance recording views

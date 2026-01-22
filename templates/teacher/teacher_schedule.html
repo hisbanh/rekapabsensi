@@ -480,12 +480,16 @@
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form method="post" action="{% url 'schedule_create' teacher.pk %}">
+            <form method="post" action="#" id="scheduleCreateForm">
                 {% csrf_token %}
                 <div class="modal-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Fitur tambah jadwal sedang dalam pengembangan. Silakan hubungi admin untuk menambah jadwal.
+                    </div>
                     <div class="mb-3">
                         <label for="subject" class="form-label">Mata Pelajaran *</label>
-                        <select class="form-select" id="subject" name="subject" required>
+                        <select class="form-select" id="subject" name="subject" required disabled>
                             <option value="">Pilih Mata Pelajaran</option>
                             {% for subject in subjects %}
                             <option value="{{ subject.id }}">{{ subject.name }}</option>

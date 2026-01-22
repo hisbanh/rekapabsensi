@@ -18,7 +18,7 @@ import logging
 
 from .models import Teacher, Subject, Classroom, TeacherSchedule
 from .services.teacher_service import TeacherService, TeacherServiceError
-from .services.schedule_service import ScheduleService
+from .services.schedule_service import TeacherScheduleService
 from .decorators import admin_required
 
 logger = logging.getLogger(__name__)
@@ -427,7 +427,7 @@ def teacher_schedule(request, pk):
         
         # Get weekly schedule using service
         try:
-            weekly_schedule = ScheduleService.get_weekly_schedule(teacher.id)
+            weekly_schedule = TeacherScheduleService.get_weekly_schedule(teacher.id)
         except Exception as e:
             logger.error(f"Error getting weekly schedule: {str(e)}")
             weekly_schedule = {}

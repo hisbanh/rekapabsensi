@@ -1,0 +1,179 @@
+{% extends 'manage/base_form.html' %}
+{% load static %}
+
+{% block page_title %}Edit Absensi Ustadz{% endblock %}
+
+{% block breadcrumb_items %}
+<li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+<li class="breadcrumb-item"><a href="{% url 'teacher_attendance_history' %}">Riwayat Absensi</a></li>
+<li class="breadcrumb-item active">Edit Absensi</li>
+{% endblock %}
+
+{% block form_title %}
+<i class="fas fa-edit me-2"></i>Edit Absensi Ustadz
+{% endblock %}
+
+{% block form_content %}
+<form method="post" id="attendanceUpdateForm">
+    {% csrf_token %}
+    
+    <!-- Attendance Info Card -->
+    <div class="card mb-3">
+        <div class="card-header">
+            <h6 class="mb-0">
+                <i class="fas fa-info-circle me-2"></i>
+                Informasi Absensi
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Ustadz</label>
+                        <div class="fw-bold">{{ attendance.teacher.full_name }}</div>
+                        <small class="text-muted">NIP: {{ attendance.teacher.nip }}</small>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Tanggal</label>
+                        <div class="fw-bold">{{ attendance.date|date:"l, d F Y" }}</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label text-muted">JP</label>
+                        <div class="fw-bold">JP {{ attendance.jp_number }}</div>
+                    </div>
+                </div>
+                {% if attendance.schedule %}
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Mata Pelajaran</label>
+                        <div class="fw-bold">{{ attendance.schedule.subject.name }}</div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Edit Form Card -->
+    <div class="card">
+        <div class="card-header">
+            <h6 class="mb-0">
+                <i class="fas fa-pencil-alt me-2"></i>
+                Edit Data Absensi
+            </h6>
+        </div>
+        <div class="card-body">
+            <!-- Status Field -->
+            <div class="mb-3">
+                <label for="status" class="form-label required">
+                    Status Kehadiran
+                </label>
+                <select name="status" 
+                        id="status" 
+                        class="form-select"
+                        required>
+                    {% for value, label in status_choices %}
+                    <option value="{{ value }}" 
+                            {% if attendance.status == value %}selected{% endif %}>
+                        {{ label }}
+                    </option>
+                    {% endfor %}
+                </select>
+                <div class="form-text">
+                    Pilih status kehadiran yang sesuai
+                </div>
+            </div>
+            
+            <!-- Notes Field -->
+            <div class="mb-3">
+                <label for="notes" class="form-label">
+                    Catatan
+                </label>
+                <textarea name="notes" 
+                          id="notes" 
+                          class="form-control"
+                          rows="3"
+                          placeholder="Tambahkan catatan jika diperlukan (opsional)">{{ attendance.notes }}</textarea>
+                <div class="form-text">
+                    Catatan tambahan tentang kehadiran (opsional)
+                </div>
+            </div>
+            
+            <!-- Recording Info -->
+            <div class="alert alert-info">
+                <div class="d-flex">
+                    <div class="me-3">
+                        <i class="fas fa-info-circle fa-2x"></i>
+                    </div>
+                    <div>
+                        <h6 class="alert-heading mb-2">Informasi Pencatatan</h6>
+                        <ul class="mb-0 ps-3">
+                            <li>Dicatat oleh: <strong>{{ attendance.recorded_by.get_full_name|default:attendance.recorded_by.username }}</strong></li>
+                            <li>Waktu pencatatan: <strong>{{ attendance.recorded_at|date:"d F Y, H:i" }}</strong></li>
+                            {% if attendance.is_location_valid %}
+                            <li>Lokasi: <strong class="text-success">Valid ✓</strong></li>
+                            {% elif attendance.latitude and attendance.longitude %}
+                            <li>Lokasi: <strong class="text-warning">Di luar area sekolah</strong></li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card-footer">
+            <div class="d-flex justify-content-between">
+                <a href="{% url 'teacher_attendance_history' %}" 
+                   class="btn btn-outline-secondary">
+                    <i class="fas fa-times me-2"></i>
+                    Batal
+                </a>
+                <button type="submit" 
+                        class="btn btn-primary"
+                        id="submitBtn">
+                    <i class="fas fa-save me-2"></i>
+                    Simpan Perubahan
+                </button>
+            </div>
+        </div>
+    </div>
+</form>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .required::after {
+        content: " *";
+        color: var(--status-alpa);
+    }
+    
+    .alert-info {
+        background-color: #E3F2FD;
+        border: 1px solid #90CAF9;
+        color: #0D47A1;
+    }
+    
+    .alert-info .alert-heading {
+        color: #0D47A1;
+        font-weight: 600;
+    }
+    
+    .alert-info ul {
+        font-size: 0.9rem;
+        line-height: 1.8;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('attendanceUpdateForm').addEventListener('submit', function(e) {
+    const submitBtn = document.getElementById('submitBtn');
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Menyimpan...';
+});
+</script>
+{% endblock %}

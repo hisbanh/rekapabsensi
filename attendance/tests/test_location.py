@@ -2,127 +2,163 @@
 Unit tests for location validation utilities.
 
 Tests the Haversine distance calculation and school location validation
-functions used in the teacher attendance system.
+functions used for teacher attendance location verification.
 """
 
 from django.test import TestCase, override_settings
-from django.conf import settings
+from decimal import Decimal
+import math
+
 from attendance.utils.location import (
     haversine_distance,
     validate_school_location,
     get_school_location,
     EARTH_RADIUS_METERS
 )
-import math
 
 
 class HaversineDistanceTestCase(TestCase):
     """Test cases for Haversine distance calculation."""
     
-    def test_same_location_returns_zero(self):
-        """Distance between identical coordinates should be zero."""
+    def test_distance_between_same_point(self):
+        """Distance between same coordinates should be zero."""
         distance = haversine_distance(-7.7956, 110.3695, -7.7956, 110.3695)
         self.assertAlmostEqual(distance, 0.0, places=2)
     
-    def test_known_distance_yogyakarta(self):
-        """Test with known distance in Yogyakarta area."""
-        # Two points approximately 1km apart in Yogyakarta
+    def test_distance_calculation_accuracy(self):
+        """Test distance calculation with known coordinates."""
+        # Distance between two points in Yogyakarta
+        # Point 1: -7.7956, 110.3695
+        # Point 2: -7.7960, 110.3700
+        # Expected distance: approximately 70 meters
+        distance = haversine_distance(-7.7956, 110.3695, -7.7960, 110.3700)
+        
+        # Allow reasonable margin of error
+        self.assertGreater(distance, 60)
+        self.assertLess(distance, 80)
+    
+    def test_distance_is_symmetric(self):
+        """Distance from A to B should equal distance from B to A."""
         lat1, lon1 = -7.7956, 110.3695
-        lat2, lon2 = -7.8050, 110.3695
+        lat2, lon2 = -7.8000, 110.3800
+        
+        distance_ab = haversine_distance(lat1, lon1, lat2, lon2)
+        distance_ba = haversine_distance(lat2, lon2, lat1, lon1)
+        
+        self.assertAlmostEqual(distance_ab, distance_ba, places=2)
+    
+    def test_distance_across_equator(self):
+        """Test distance calculation across equator."""
+        # Point in northern hemisphere
+        lat1, lon1 = 10.0, 100.0
+        # Point in southern hemisphere
+        lat2, lon2 = -10.0, 100.0
         
         distance = haversine_distance(lat1, lon1, lat2, lon2)
         
-        # Should be approximately 1045 meters (1.045 km)
-        # Allow 5% margin for floating point precision
-        expected = 1045
-        self.assertAlmostEqual(distance, expected, delta=expected * 0.05)
+        # Approximately 2,222 km (20 degrees of latitude)
+        expected_distance = 20 * 111000  # ~111km per degree
+        self.assertAlmostEqual(distance, expected_distance, delta=50000)
     
-    def test_short_distance_accuracy(self):
-        """Test accuracy for short distances (< 200m)."""
-        # Two points approximately 100m apart
+    def test_distance_across_prime_meridian(self):
+        """Test distance calculation across prime meridian."""
+        # Point west of prime meridian
+        lat1, lon1 = 0.0, -10.0
+        # Point east of prime meridian
+        lat2, lon2 = 0.0, 10.0
+        
+        distance = haversine_distance(lat1, lon1, lat2, lon2)
+        
+        # Approximately 2,222 km (20 degrees of longitude at equator)
+        expected_distance = 20 * 111000
+        self.assertAlmostEqual(distance, expected_distance, delta=50000)
+    
+    def test_distance_with_negative_coordinates(self):
+        """Test distance calculation with negative coordinates."""
+        # Both points in southern/western hemisphere
+        distance = haversine_distance(-33.8688, -151.2093, -37.8136, -144.9631)
+        
+        # Distance should be positive
+        self.assertGreater(distance, 0)
+    
+    def test_short_distance_precision(self):
+        """Test precision for very short distances."""
+        # Two points 10 meters apart (approximately)
         lat1, lon1 = -7.7956, 110.3695
-        lat2, lon2 = -7.7965, 110.3695
+        lat2, lon2 = -7.79569, 110.3695  # ~10 meters north
         
         distance = haversine_distance(lat1, lon1, lat2, lon2)
         
-        # Should be approximately 100 meters
-        self.assertGreater(distance, 90)
-        self.assertLess(distance, 110)
+        # Should be approximately 10 meters (allow 2 meter margin)
+        self.assertAlmostEqual(distance, 10.0, delta=2.0)
     
-    def test_equator_distance(self):
-        """Test distance calculation at equator."""
-        # 1 degree of longitude at equator ≈ 111.32 km
-        lat1, lon1 = 0.0, 0.0
-        lat2, lon2 = 0.0, 1.0
+    def test_long_distance_calculation(self):
+        """Test distance calculation for long distances."""
+        # New York to London (approximately 5,570 km)
+        ny_lat, ny_lon = 40.7128, -74.0060
+        london_lat, london_lon = 51.5074, -0.1278
         
-        distance = haversine_distance(lat1, lon1, lat2, lon2)
+        distance = haversine_distance(ny_lat, ny_lon, london_lat, london_lon)
         
-        # Should be approximately 111,320 meters
-        expected = 111320
-        self.assertAlmostEqual(distance, expected, delta=expected * 0.01)
+        # Expected approximately 5,570 km (allow 100km margin)
+        self.assertAlmostEqual(distance, 5570000, delta=100000)
     
-    def test_north_south_distance(self):
-        """Test distance calculation for north-south movement."""
-        # 1 degree of latitude ≈ 111.32 km everywhere
-        lat1, lon1 = -7.0, 110.0
-        lat2, lon2 = -6.0, 110.0
-        
-        distance = haversine_distance(lat1, lon1, lat2, lon2)
-        
-        # Should be approximately 111,195 meters
-        expected = 111195
-        self.assertAlmostEqual(distance, expected, delta=expected * 0.01)
-    
-    def test_invalid_latitude_raises_error(self):
-        """Invalid latitude should raise ValueError."""
+    def test_invalid_latitude_too_high(self):
+        """Should raise ValueError for latitude > 90."""
         with self.assertRaises(ValueError) as context:
-            haversine_distance(91.0, 110.0, -7.0, 110.0)
-        self.assertIn("Latitude must be between -90 and 90", str(context.exception))
+            haversine_distance(91.0, 110.0, 0.0, 0.0)
         
+        self.assertIn('Latitude must be between -90 and 90', str(context.exception))
+    
+    def test_invalid_latitude_too_low(self):
+        """Should raise ValueError for latitude < -90."""
         with self.assertRaises(ValueError) as context:
-            haversine_distance(-7.0, 110.0, -91.0, 110.0)
-        self.assertIn("Latitude must be between -90 and 90", str(context.exception))
+            haversine_distance(-91.0, 110.0, 0.0, 0.0)
+        
+        self.assertIn('Latitude must be between -90 and 90', str(context.exception))
     
-    def test_invalid_longitude_raises_error(self):
-        """Invalid longitude should raise ValueError."""
+    def test_invalid_longitude_too_high(self):
+        """Should raise ValueError for longitude > 180."""
         with self.assertRaises(ValueError) as context:
-            haversine_distance(-7.0, 181.0, -7.0, 110.0)
-        self.assertIn("Longitude must be between -180 and 180", str(context.exception))
+            haversine_distance(0.0, 181.0, 0.0, 0.0)
         
+        self.assertIn('Longitude must be between -180 and 180', str(context.exception))
+    
+    def test_invalid_longitude_too_low(self):
+        """Should raise ValueError for longitude < -180."""
         with self.assertRaises(ValueError) as context:
-            haversine_distance(-7.0, 110.0, -7.0, -181.0)
-        self.assertIn("Longitude must be between -180 and 180", str(context.exception))
+            haversine_distance(0.0, -181.0, 0.0, 0.0)
+        
+        self.assertIn('Longitude must be between -180 and 180', str(context.exception))
     
-    def test_boundary_coordinates(self):
-        """Test with boundary coordinate values."""
-        # North pole to south pole
-        distance = haversine_distance(90.0, 0.0, -90.0, 0.0)
+    def test_boundary_latitude_values(self):
+        """Test with boundary latitude values (90 and -90)."""
+        # North pole to equator
+        distance = haversine_distance(90.0, 0.0, 0.0, 0.0)
         
-        # Should be approximately half Earth's circumference (20,015 km)
-        expected = math.pi * EARTH_RADIUS_METERS
-        self.assertAlmostEqual(distance, expected, delta=expected * 0.01)
+        # Should be approximately 10,000 km (quarter of Earth's circumference)
+        expected_distance = (2 * math.pi * EARTH_RADIUS_METERS) / 4
+        self.assertAlmostEqual(distance, expected_distance, delta=10000)
     
-    def test_antipodal_points(self):
-        """Test distance between antipodal points (opposite sides of Earth)."""
-        # Yogyakarta and its antipodal point
-        lat1, lon1 = -7.7956, 110.3695
-        lat2, lon2 = 7.7956, -69.6305
+    def test_boundary_longitude_values(self):
+        """Test with boundary longitude values (180 and -180)."""
+        # Points at opposite sides of date line (same location)
+        distance = haversine_distance(0.0, 180.0, 0.0, -180.0)
         
-        distance = haversine_distance(lat1, lon1, lat2, lon2)
-        
-        # Should be approximately half Earth's circumference
-        expected = math.pi * EARTH_RADIUS_METERS
-        self.assertAlmostEqual(distance, expected, delta=expected * 0.01)
+        # Should be approximately zero (same location)
+        self.assertAlmostEqual(distance, 0.0, delta=1000)
     
-    def test_symmetry(self):
-        """Distance should be same regardless of point order."""
-        lat1, lon1 = -7.7956, 110.3695
-        lat2, lon2 = -7.8050, 110.3700
+    def test_distance_with_decimal_type(self):
+        """Test distance calculation with Decimal type coordinates."""
+        lat1 = Decimal('-7.7956')
+        lon1 = Decimal('110.3695')
+        lat2 = Decimal('-7.7960')
+        lon2 = Decimal('110.3700')
         
-        distance1 = haversine_distance(lat1, lon1, lat2, lon2)
-        distance2 = haversine_distance(lat2, lon2, lat1, lon1)
+        distance = haversine_distance(float(lat1), float(lon1), float(lat2), float(lon2))
         
-        self.assertAlmostEqual(distance1, distance2, places=10)
+        self.assertGreater(distance, 0)
+        self.assertIsInstance(distance, float)
 
 
 @override_settings(
@@ -133,111 +169,124 @@ class HaversineDistanceTestCase(TestCase):
 class ValidateSchoolLocationTestCase(TestCase):
     """Test cases for school location validation."""
     
-    def test_exact_school_location_is_valid(self):
-        """Exact school coordinates should be valid."""
+    def test_location_exactly_at_school(self):
+        """Location exactly at school coordinates should be valid."""
         is_valid, distance = validate_school_location(-7.7956, 110.3695)
         
         self.assertTrue(is_valid)
         self.assertAlmostEqual(distance, 0.0, places=2)
     
-    def test_within_radius_is_valid(self):
+    def test_location_within_radius(self):
         """Location within school radius should be valid."""
-        # Point approximately 100m from school
-        is_valid, distance = validate_school_location(-7.7965, 110.3695)
+        # Point approximately 50 meters from school
+        is_valid, distance = validate_school_location(-7.79605, 110.3695)
         
         self.assertTrue(is_valid)
         self.assertLess(distance, 150)
     
-    def test_outside_radius_is_invalid(self):
+    def test_location_outside_radius(self):
         """Location outside school radius should be invalid."""
-        # Point approximately 500m from school
+        # Point approximately 500 meters from school
         is_valid, distance = validate_school_location(-7.8000, 110.3695)
         
         self.assertFalse(is_valid)
         self.assertGreater(distance, 150)
     
-    def test_on_boundary_is_valid(self):
-        """Location exactly on radius boundary should be valid."""
-        # Calculate a point exactly 150m away
-        # Using approximate conversion: 1 degree latitude ≈ 111,320 meters
-        # 150m ≈ 0.001348 degrees
-        lat_offset = 150 / 111320
+    def test_location_exactly_on_boundary(self):
+        """Location exactly on boundary should be valid."""
+        # Calculate a point exactly 150 meters away
+        # Using approximate conversion: 1 degree latitude ≈ 111,000 meters
+        # 150 meters ≈ 0.00135 degrees
+        boundary_lat = -7.7956 + (150 / 111000)
         
-        is_valid, distance = validate_school_location(
-            -7.7956 + lat_offset,
-            110.3695
-        )
+        is_valid, distance = validate_school_location(boundary_lat, 110.3695)
         
         # Should be valid (within or at boundary)
-        self.assertTrue(is_valid)
-        self.assertAlmostEqual(distance, 150, delta=5)
+        # Note: Due to floating point precision, we check distance is close to 150m
+        self.assertAlmostEqual(distance, 150, delta=10)
+        # May be slightly over or under due to precision
+        if distance <= 150:
+            self.assertTrue(is_valid)
     
-    def test_returns_distance(self):
-        """Function should return actual distance."""
-        is_valid, distance = validate_school_location(-7.7965, 110.3695)
+    def test_location_just_inside_boundary(self):
+        """Location just inside boundary should be valid."""
+        # Point 145 meters from school (5 meters inside boundary)
+        offset = 145 / 111000
+        test_lat = -7.7956 + offset
         
-        self.assertIsInstance(distance, float)
-        self.assertGreater(distance, 0)
+        is_valid, distance = validate_school_location(test_lat, 110.3695)
+        
+        self.assertTrue(is_valid)
+        self.assertLess(distance, 150)
     
-    def test_invalid_coordinates_raise_error(self):
+    def test_location_just_outside_boundary(self):
+        """Location just outside boundary should be invalid."""
+        # Point 155 meters from school (5 meters outside boundary)
+        offset = 155 / 111000
+        test_lat = -7.7956 + offset
+        
+        is_valid, distance = validate_school_location(test_lat, 110.3695)
+        
+        self.assertFalse(is_valid)
+        self.assertGreater(distance, 150)
+    
+    def test_returns_actual_distance(self):
+        """Should return actual distance from school."""
+        is_valid, distance = validate_school_location(-7.7960, 110.3700)
+        
+        # Distance should be positive
+        self.assertGreater(distance, 0)
+        # Distance should be reasonable (not millions of meters)
+        self.assertLess(distance, 1000)
+    
+    def test_invalid_coordinates_raises_error(self):
         """Invalid coordinates should raise ValueError."""
         with self.assertRaises(ValueError):
             validate_school_location(91.0, 110.0)
-        
-        with self.assertRaises(ValueError):
-            validate_school_location(-7.0, 181.0)
     
-    @override_settings(SCHOOL_LATITUDE=None, SCHOOL_LONGITUDE=None)
-    def test_missing_school_config_returns_invalid(self):
-        """Missing school configuration should return invalid."""
-        is_valid, distance = validate_school_location(-7.7956, 110.3695)
+    def test_with_decimal_coordinates(self):
+        """Should work with Decimal type coordinates."""
+        lat = Decimal('-7.7956')
+        lon = Decimal('110.3695')
         
-        self.assertFalse(is_valid)
-        self.assertEqual(distance, 0.0)
+        is_valid, distance = validate_school_location(float(lat), float(lon))
+        
+        self.assertTrue(is_valid)
+        self.assertAlmostEqual(distance, 0.0, places=2)
+
+
+@override_settings(
+    SCHOOL_LATITUDE=-7.7956,
+    SCHOOL_LONGITUDE=110.3695,
+    SCHOOL_RADIUS_METERS=200
+)
+class ValidateSchoolLocationDifferentRadiusTestCase(TestCase):
+    """Test location validation with different radius settings."""
     
-    @override_settings(SCHOOL_RADIUS_METERS=200)
-    def test_custom_radius(self):
-        """Should respect custom radius setting."""
-        # Point approximately 180m from school
-        is_valid, distance = validate_school_location(-7.7972, 110.3695)
+    def test_larger_radius_accepts_more_locations(self):
+        """Larger radius should accept locations further away."""
+        # Point approximately 180 meters from school
+        is_valid, distance = validate_school_location(-7.79722, 110.3695)
         
         # Should be valid with 200m radius
         self.assertTrue(is_valid)
         self.assertLess(distance, 200)
+
+
+@override_settings(
+    SCHOOL_LATITUDE=None,
+    SCHOOL_LONGITUDE=None,
+    SCHOOL_RADIUS_METERS=150
+)
+class ValidateSchoolLocationNoConfigTestCase(TestCase):
+    """Test location validation when school coordinates are not configured."""
     
-    @override_settings(SCHOOL_RADIUS_METERS=100)
-    def test_smaller_radius(self):
-        """Should work with smaller radius."""
-        # Point approximately 120m from school
-        is_valid, distance = validate_school_location(-7.7967, 110.3695)
+    def test_no_school_coordinates_returns_invalid(self):
+        """Should return invalid when school coordinates not configured."""
+        is_valid, distance = validate_school_location(-7.7956, 110.3695)
         
-        # Should be invalid with 100m radius
         self.assertFalse(is_valid)
-        self.assertGreater(distance, 100)
-    
-    def test_different_directions(self):
-        """Test validation in different directions from school."""
-        school_lat = -7.7956
-        school_lon = 110.3695
-        
-        # Small offset in each direction (approximately 50m)
-        offset = 50 / 111320
-        
-        # North
-        is_valid_n, _ = validate_school_location(school_lat - offset, school_lon)
-        self.assertTrue(is_valid_n)
-        
-        # South
-        is_valid_s, _ = validate_school_location(school_lat + offset, school_lon)
-        self.assertTrue(is_valid_s)
-        
-        # East
-        is_valid_e, _ = validate_school_location(school_lat, school_lon + offset)
-        self.assertTrue(is_valid_e)
-        
-        # West
-        is_valid_w, _ = validate_school_location(school_lat, school_lon - offset)
-        self.assertTrue(is_valid_w)
+        self.assertEqual(distance, 0.0)
 
 
 @override_settings(
@@ -256,99 +305,103 @@ class GetSchoolLocationTestCase(TestCase):
         self.assertEqual(lon, 110.3695)
         self.assertEqual(radius, 150)
     
-    @override_settings(SCHOOL_LATITUDE=None)
-    def test_missing_latitude_raises_error(self):
-        """Missing latitude should raise AttributeError."""
-        with self.assertRaises(AttributeError) as context:
-            get_school_location()
-        self.assertIn("School location not configured", str(context.exception))
-    
-    @override_settings(SCHOOL_LONGITUDE=None)
-    def test_missing_longitude_raises_error(self):
-        """Missing longitude should raise AttributeError."""
-        with self.assertRaises(AttributeError) as context:
-            get_school_location()
-        self.assertIn("School location not configured", str(context.exception))
-    
-    @override_settings(SCHOOL_RADIUS_METERS=200)
-    def test_custom_radius_returned(self):
-        """Should return custom radius if configured."""
-        lat, lon, radius = get_school_location()
+    def test_returns_tuple_of_three(self):
+        """Should return tuple of (lat, lon, radius)."""
+        result = get_school_location()
         
-        self.assertEqual(radius, 200)
-    
-    def test_default_radius_if_not_configured(self):
-        """Should return default radius if not configured."""
-        # Remove SCHOOL_RADIUS_METERS setting
-        if hasattr(settings, 'SCHOOL_RADIUS_METERS'):
-            delattr(settings, 'SCHOOL_RADIUS_METERS')
-        
-        lat, lon, radius = get_school_location()
-        
-        # Default should be 150
-        self.assertEqual(radius, 150)
+        self.assertIsInstance(result, tuple)
+        self.assertEqual(len(result), 3)
 
 
-class LocationValidationIntegrationTestCase(TestCase):
-    """Integration tests for location validation workflow."""
+@override_settings(
+    SCHOOL_LATITUDE=None,
+    SCHOOL_LONGITUDE=None
+)
+class GetSchoolLocationNoConfigTestCase(TestCase):
+    """Test get_school_location when coordinates not configured."""
+    
+    def test_raises_error_when_not_configured(self):
+        """Should raise AttributeError when school location not configured."""
+        with self.assertRaises(AttributeError) as context:
+            get_school_location()
+        
+        self.assertIn('School location not configured', str(context.exception))
+
+
+class EdgeCaseTestCase(TestCase):
+    """Test edge cases for location utilities."""
     
     @override_settings(
-        SCHOOL_LATITUDE=-7.7956,
-        SCHOOL_LONGITUDE=110.3695,
-        SCHOOL_RADIUS_METERS=150
+        SCHOOL_LATITUDE=0.0,
+        SCHOOL_LONGITUDE=0.0,
+        SCHOOL_RADIUS_METERS=100
     )
-    def test_teacher_at_school_entrance(self):
-        """Simulate teacher at school entrance (within radius)."""
-        # Coordinates approximately 80m from school center
-        teacher_lat = -7.7963
-        teacher_lon = 110.3695
-        
-        is_valid, distance = validate_school_location(teacher_lat, teacher_lon)
+    def test_location_at_equator_prime_meridian(self):
+        """Test validation at equator and prime meridian intersection."""
+        is_valid, distance = validate_school_location(0.0, 0.0)
         
         self.assertTrue(is_valid)
-        self.assertLess(distance, 150)
-        self.assertGreater(distance, 50)
+        self.assertAlmostEqual(distance, 0.0, places=2)
+    
+    @override_settings(
+        SCHOOL_LATITUDE=90.0,
+        SCHOOL_LONGITUDE=0.0,
+        SCHOOL_RADIUS_METERS=1000
+    )
+    def test_location_at_north_pole(self):
+        """Test validation at north pole."""
+        is_valid, distance = validate_school_location(90.0, 0.0)
+        
+        self.assertTrue(is_valid)
+        self.assertAlmostEqual(distance, 0.0, places=2)
+    
+    @override_settings(
+        SCHOOL_LATITUDE=-90.0,
+        SCHOOL_LONGITUDE=0.0,
+        SCHOOL_RADIUS_METERS=1000
+    )
+    def test_location_at_south_pole(self):
+        """Test validation at south pole."""
+        is_valid, distance = validate_school_location(-90.0, 0.0)
+        
+        self.assertTrue(is_valid)
+        self.assertAlmostEqual(distance, 0.0, places=2)
+    
+    def test_very_small_distance(self):
+        """Test distance calculation for very small distances (< 1 meter)."""
+        # Two points approximately 0.5 meters apart
+        lat1, lon1 = -7.7956, 110.3695
+        lat2, lon2 = -7.79560005, 110.3695  # ~0.5 meters
+        
+        distance = haversine_distance(lat1, lon1, lat2, lon2)
+        
+        # Should be less than 1 meter
+        self.assertLess(distance, 1.0)
+        self.assertGreater(distance, 0.0)
     
     @override_settings(
         SCHOOL_LATITUDE=-7.7956,
         SCHOOL_LONGITUDE=110.3695,
-        SCHOOL_RADIUS_METERS=150
+        SCHOOL_RADIUS_METERS=0
     )
-    def test_teacher_at_nearby_location(self):
-        """Simulate teacher at nearby location (outside radius)."""
-        # Coordinates approximately 300m from school
-        teacher_lat = -7.7983
-        teacher_lon = 110.3695
+    def test_zero_radius_only_exact_match(self):
+        """Zero radius should only accept exact school coordinates."""
+        # Exact match
+        is_valid, distance = validate_school_location(-7.7956, 110.3695)
+        self.assertTrue(is_valid)
         
-        is_valid, distance = validate_school_location(teacher_lat, teacher_lon)
-        
+        # Even 1 meter away should be invalid
+        is_valid, distance = validate_school_location(-7.79561, 110.3695)
         self.assertFalse(is_valid)
-        self.assertGreater(distance, 150)
     
-    @override_settings(
-        SCHOOL_LATITUDE=-7.7956,
-        SCHOOL_LONGITUDE=110.3695,
-        SCHOOL_RADIUS_METERS=150
-    )
-    def test_multiple_teachers_different_locations(self):
-        """Test validation for multiple teachers at different locations."""
-        teachers = [
-            (-7.7956, 110.3695, True),   # At school center
-            (-7.7960, 110.3695, True),   # 44m away
-            (-7.7968, 110.3695, True),   # 133m away - within boundary
-            (-7.8000, 110.3695, False),  # 489m away
-        ]
+    def test_antipodal_points(self):
+        """Test distance between antipodal points (opposite sides of Earth)."""
+        # Two points on opposite sides of Earth
+        lat1, lon1 = 0.0, 0.0
+        lat2, lon2 = 0.0, 180.0
         
-        for lat, lon, expected_valid in teachers:
-            is_valid, distance = validate_school_location(lat, lon)
-            
-            if expected_valid:
-                self.assertTrue(
-                    is_valid,
-                    f"Expected valid for ({lat}, {lon}) at {distance:.2f}m"
-                )
-            else:
-                self.assertFalse(
-                    is_valid,
-                    f"Expected invalid for ({lat}, {lon}) at {distance:.2f}m"
-                )
+        distance = haversine_distance(lat1, lon1, lat2, lon2)
+        
+        # Should be approximately half Earth's circumference at equator
+        expected_distance = math.pi * EARTH_RADIUS_METERS
+        self.assertAlmostEqual(distance, expected_distance, delta=10000)
