@@ -258,7 +258,10 @@ def teacher_update(request, pk):
     from .forms import TeacherForm
     
     try:
-        teacher = Teacher.objects.get(id=pk)
+        # Optimized query with prefetch_related for subjects
+        teacher = Teacher.objects.prefetch_related('subjects').select_related(
+            'homeroom_class', 'homeroom_class__academic_level'
+        ).get(id=pk)
     except Teacher.DoesNotExist:
         messages.error(request, "Ustadz tidak ditemukan")
         return redirect('teacher_list')

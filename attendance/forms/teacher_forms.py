@@ -88,7 +88,7 @@ class TeacherForm(forms.ModelForm):
     
     # Additional field for subject selection
     subject_ids = forms.ModelMultipleChoiceField(
-        queryset=Subject.objects.filter(is_active=True).order_by('category', 'name'),
+        queryset=Subject.objects.none(),  # Will be set in __init__
         required=False,
         widget=forms.SelectMultiple(attrs={
             'class': 'form-select',
@@ -173,17 +173,25 @@ class TeacherForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         
-        # Filter only active classrooms
+        # Set subject queryset efficiently
+        self.fields['subject_ids'].queryset = Subject.objects.filter(
+            is_active=True
+        ).only('id', 'name', 'category').order_by('category', 'name')
+        
+        # Filter only active classrooms with optimized query
         self.fields['homeroom_class'].queryset = Classroom.objects.filter(
             is_active=True
-        ).select_related('academic_level').order_by(
+        ).select_related('academic_level').only(
+            'id', 'name', 'grade', 'section',
+            'academic_level__code', 'academic_level__name'
+        ).order_by(
             'academic_level__code', 'grade', 'section'
         )
         self.fields['homeroom_class'].required = False
         
-        # Set initial subjects if editing existing teacher
+        # Set initial subjects if editing existing teacher (optimized)
         if self.instance and self.instance.pk:
-            self.fields['subject_ids'].initial = self.instance.subjects.all()
+            self.fields['subject_ids'].initial = self.instance.subjects.only('id')
     
     def clean_nip(self):
         """Validate and normalize NIP"""

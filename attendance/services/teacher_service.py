@@ -445,7 +445,13 @@ class TeacherService:
             'homeroom_class',
             'homeroom_class__academic_level',
             'user'
-        ).prefetch_related('subjects')
+        ).prefetch_related('subjects').only(
+            'id', 'nip', 'full_name', 'photo', 'email', 'phone',
+            'employment_status', 'employment_date', 'is_homeroom_teacher',
+            'is_active', 'homeroom_class__name', 'homeroom_class__grade',
+            'homeroom_class__section', 'homeroom_class__academic_level__code',
+            'user__username'
+        )
         
         # Apply filters
         if filters.get('employment_status'):
