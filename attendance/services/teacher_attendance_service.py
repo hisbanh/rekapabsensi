@@ -271,9 +271,22 @@ class TeacherAttendanceService:
             ).first()
             
             if existing:
-                raise TeacherAttendanceServiceError(
-                    f"Attendance already recorded for {teacher.full_name} on {data['date']} JP {data['jp_number']}"
-                )
+                # If attendance already exists, update it instead of creating new
+                existing.status = data['status']
+                existing.notes = data.get('notes', '')
+                existing.schedule = schedule
+                existing.is_substitute = data.get('is_substitute', False)
+                existing.substitute_for = substitute_for
+                existing.recorded_by = user
+                
+                # Update location if provided
+                if latitude is not None and longitude is not None:
+                    existing.latitude = latitude
+                    existing.longitude = longitude
+                    existing.is_location_valid = is_location_valid
+                
+                existing.save()
+                return existing
             
             # Create attendance record
             attendance = TeacherAttendance.objects.create(

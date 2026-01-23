@@ -1,6 +1,6 @@
 /**
  * Print Styles for Teacher Reports
- * Optimized for A4 Landscape printing - COMPACT VERSION
+ * Optimized for A4 Landscape printing
  */
 
 /* Print header - hidden by default, shown only in print */
@@ -31,19 +31,18 @@
     }
     
     /* ============================================
-       PAGE SETUP - COMPACT
+       PAGE SETUP
        ============================================ */
     @page {
         size: A4 landscape;
-        margin: 1cm;  /* Reduced from 1.5cm */
+        margin: 1.5cm;
     }
     
     body {
         background: white !important;
         margin: 0;
         padding: 0;
-        font-size: 9pt;  /* Reduced from 10pt */
-        line-height: 1.3;  /* Tighter line height */
+        font-size: 10pt;
     }
     
     .main-content {
@@ -56,78 +55,67 @@
     }
     
     /* ============================================
-       PRINT HEADER - COMPACT
+       PRINT HEADER
        ============================================ */
     .print-header {
         display: block !important;
         text-align: center;
-        border-bottom: 2px solid #10b981;  /* Thinner border */
-        padding-bottom: 8px;  /* Reduced padding */
-        margin-bottom: 12px;  /* Reduced margin */
+        border-bottom: 3px solid #10b981;
+        padding-bottom: 15px;
+        margin-bottom: 20px;
         page-break-after: avoid;
     }
     
     .print-header h2 {
         margin: 0;
-        font-size: 14pt;  /* Reduced from 18pt */
+        font-size: 18pt;
         font-weight: bold;
         color: #1e293b;
-        line-height: 1.2;
     }
     
     .print-header h3 {
-        margin: 2px 0 0 0;  /* Reduced margin */
-        font-size: 11pt;  /* Reduced from 14pt */
+        margin: 5px 0 0 0;
+        font-size: 14pt;
         font-weight: normal;
         color: #64748b;
-        line-height: 1.2;
     }
     
     .print-header .period {
-        margin-top: 6px;  /* Reduced margin */
-        font-size: 9pt;  /* Reduced from 11pt */
+        margin-top: 10px;
+        font-size: 11pt;
         color: #475569;
-        line-height: 1.2;
     }
     
     /* ============================================
-       CARDS - COMPACT
+       CARDS
        ============================================ */
     .card {
         border: 1px solid #e2e8f0 !important;
         box-shadow: none !important;
         page-break-inside: avoid;
-        margin-bottom: 8px !important;  /* Reduced from 15px */
+        margin-bottom: 15px !important;
     }
     
     .card-header {
         background-color: #f8fafc !important;
-        border-bottom: 1px solid #e2e8f0 !important;  /* Thinner border */
-        padding: 6px 10px !important;  /* Reduced padding */
-        font-size: 9pt !important;
+        border-bottom: 2px solid #e2e8f0 !important;
+        padding: 10px 15px !important;
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
     }
     
-    .card-header h6 {
-        margin: 0 !important;
-        font-size: 9pt !important;
-        font-weight: 600 !important;
-    }
-    
     .card-body {
-        padding: 10px !important;  /* Reduced from 15px */
+        padding: 15px !important;
     }
     
-    /* Statistics cards - more compact */
+    /* Statistics cards with colored borders */
     .border-left-primary,
     .border-left-success,
     .border-left-warning,
     .border-left-danger {
-        border-left: 3px solid !important;  /* Thinner border */
+        border-left: 4px solid !important;
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
-        padding: 8px !important;  /* Reduced padding */
     }
     
     .border-left-primary {
@@ -146,51 +134,27 @@
         border-left-color: #ef4444 !important;
     }
     
-    /* Stat card text - compact */
-    .text-xs {
-        font-size: 7pt !important;  /* Smaller */
-    }
-    
-    .h5 {
-        font-size: 12pt !important;  /* Smaller */
-        margin: 2px 0 !important;
-    }
-    
-    small {
-        font-size: 7pt !important;
-    }
-    
-    /* Icons in stat cards - smaller */
-    .fa-2x {
-        font-size: 1.5em !important;  /* Reduced from 2em */
-    }
-    
     /* ============================================
-       TABLES - COMPACT
+       TABLES
        ============================================ */
     .table {
-        font-size: 8pt !important;  /* Reduced from 9pt */
+        font-size: 9pt !important;
         width: 100% !important;
         border-collapse: collapse !important;
-        margin-bottom: 0 !important;
     }
     
     .table thead th {
         background-color: #f1f5f9 !important;
         border: 1px solid #cbd5e1 !important;
-        padding: 4px 6px !important;  /* Reduced padding */
+        padding: 8px !important;
         font-weight: bold !important;
-        font-size: 8pt !important;
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
-        line-height: 1.2;
     }
     
     .table tbody td {
         border: 1px solid #e2e8f0 !important;
-        padding: 3px 6px !important;  /* Reduced padding */
-        font-size: 8pt !important;
-        line-height: 1.3;
+        padding: 6px 8px !important;
     }
     
     .table tbody tr:nth-child(even) {
@@ -199,25 +163,19 @@
         print-color-adjust: exact;
     }
     
-    .table tbody tr:hover {
+    .table-hover tbody tr:hover {
         background-color: inherit !important;
     }
     
     /* ============================================
-       BADGES - COMPACT
+       BADGES - PRESERVE COLORS
        ============================================ */
     .badge {
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
-        padding: 2px 6px !important;  /* Reduced padding */
-        font-size: 7pt !important;  /* Reduced from 8pt */
+        padding: 3px 8px !important;
+        font-size: 8pt !important;
         border: 1px solid rgba(0,0,0,0.1);
-        line-height: 1.2;
-    }
-    
-    .badge i {
-        font-size: 7pt !important;
-        margin-right: 2px !important;
     }
     
     .bg-success,
@@ -257,86 +215,61 @@
     }
     
     /* ============================================
-       CHARTS - COMPACT
+       CHARTS
        ============================================ */
     .chart-container {
         page-break-inside: avoid;
-        max-height: 180px !important;  /* Reduced from 250px */
-        height: 180px !important;
+        max-height: 250px !important;
     }
     
     canvas {
-        max-height: 180px !important;
-    }
-    
-    /* Hide chart if too large */
-    .col-lg-6:has(.chart-container) {
-        max-height: 200px !important;
+        max-height: 250px !important;
     }
     
     /* ============================================
-       INFO SECTION - COMPACT
-       ============================================ */
-    .rounded-circle {
-        width: 60px !important;  /* Reduced from 100px */
-        height: 60px !important;
-        font-size: 1.5rem !important;
-    }
-    
-    .table-sm td {
-        padding: 2px 4px !important;
-        font-size: 8pt !important;
-    }
-    
-    /* ============================================
-       PRINT FOOTER - COMPACT
+       PRINT FOOTER
        ============================================ */
     .print-footer {
         display: block !important;
-        margin-top: 15px;  /* Reduced from 30px */
+        margin-top: 30px;
         page-break-inside: avoid;
-        border-top: 1px solid #e2e8f0;  /* Thinner border */
-        padding-top: 10px;  /* Reduced padding */
+        border-top: 2px solid #e2e8f0;
+        padding-top: 20px;
     }
     
     .signature-section {
         display: flex !important;
         justify-content: space-between;
-        margin-top: 10px;  /* Reduced from 20px */
+        margin-top: 20px;
         page-break-inside: avoid;
     }
     
     .signature-box {
         text-align: center;
         width: 30%;
-        font-size: 8pt;  /* Reduced from 9pt */
+        font-size: 9pt;
     }
     
     .signature-box strong {
-        font-size: 9pt;  /* Reduced from 10pt */
+        font-size: 10pt;
     }
     
     .signature-line {
         border-top: 1px solid #000;
-        margin-top: 40px;  /* Reduced from 60px */
-        padding-top: 3px;  /* Reduced padding */
+        margin-top: 60px;
+        padding-top: 5px;
     }
     
     .qr-code-section {
         text-align: center;
-        margin-top: 10px;  /* Reduced from 20px */
-        font-size: 7pt;  /* Reduced from 8pt */
+        margin-top: 20px;
+        font-size: 8pt;
         color: #64748b;
         page-break-inside: avoid;
     }
     
     .qr-code-section #qrcode {
-        margin: 5px auto;  /* Reduced margin */
-    }
-    
-    .qr-code-section #qrcode img {
-        width: 60px !important;  /* Smaller QR code */
-        height: 60px !important;
+        margin: 10px auto;
     }
     
     /* ============================================
@@ -355,29 +288,21 @@
     }
     
     /* ============================================
-       LAYOUT ADJUSTMENTS - COMPACT
+       LAYOUT ADJUSTMENTS
        ============================================ */
     .row {
-        margin-bottom: 6px !important;  /* Reduced from 10px */
+        margin-bottom: 10px !important;
     }
     
     .col-xl-3,
     .col-md-6,
     .col-lg-6,
     .col-md-4 {
-        margin-bottom: 6px !important;  /* Reduced from 10px */
+        margin-bottom: 10px !important;
         page-break-inside: avoid;
     }
     
-    /* Reduce spacing between columns */
-    .col-xl-3,
-    .col-md-6,
-    .col-lg-6 {
-        padding-left: 5px !important;
-        padding-right: 5px !important;
-    }
-    
-    /* Ensure images print - compact */
+    /* Ensure images print */
     img {
         max-width: 100% !important;
         page-break-inside: avoid;
@@ -407,7 +332,7 @@
     }
     
     /* ============================================
-       UTILITIES - COMPACT
+       UTILITIES
        ============================================ */
     .shadow,
     .shadow-sm,
@@ -423,87 +348,5 @@
     /* Hide empty states */
     .empty-state {
         display: none !important;
-    }
-    
-    /* Compact headings */
-    h1, h2, h3, h4, h5, h6 {
-        margin-top: 0 !important;
-        margin-bottom: 4px !important;
-        line-height: 1.2 !important;
-    }
-    
-    h6 {
-        font-size: 9pt !important;
-    }
-    
-    /* Compact paragraphs */
-    p {
-        margin-bottom: 4px !important;
-        line-height: 1.3 !important;
-    }
-    
-    /* Reduce icon sizes */
-    .fas, .far, .fab {
-        font-size: inherit !important;
-    }
-    
-    /* Make stat cards more compact */
-    .no-gutters {
-        margin: 0 !important;
-    }
-    
-    .col-auto {
-        padding: 0 5px !important;
-    }
-    
-    /* ============================================
-       SPECIFIC ADJUSTMENTS
-       ============================================ */
-    
-    /* Make info table more compact */
-    .table-borderless td {
-        padding: 1px 4px !important;
-        font-size: 8pt !important;
-    }
-    
-    /* Compact alert messages */
-    .alert {
-        padding: 6px 10px !important;
-        font-size: 8pt !important;
-        margin-bottom: 6px !important;
-    }
-    
-    /* Reduce spacing in cards */
-    .mb-3, .my-3 {
-        margin-bottom: 6px !important;
-    }
-    
-    .mb-4, .my-4 {
-        margin-bottom: 8px !important;
-    }
-    
-    .py-3 {
-        padding-top: 6px !important;
-        padding-bottom: 6px !important;
-    }
-    
-    .py-4 {
-        padding-top: 8px !important;
-        padding-bottom: 8px !important;
-    }
-    
-    .py-5 {
-        padding-top: 10px !important;
-        padding-bottom: 10px !important;
-    }
-    
-    /* Compact table info text */
-    .text-center.py-4 {
-        padding: 10px !important;
-    }
-    
-    .text-center.py-4 i {
-        font-size: 2em !important;
-        margin-bottom: 5px !important;
     }
 }
