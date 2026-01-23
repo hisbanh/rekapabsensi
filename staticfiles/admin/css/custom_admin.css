@@ -1,13 +1,16 @@
-/* Custom CSS for SIPA Beta  Admin with Grappelli */
+/* Custom CSS for SIPA Yaumi Admin - Emerald Green Style */
 
-/* Custom branding colors */
+/* Custom branding colors - Emerald Green */
 :root {
-    --sipa-primary: #2c5aa0;
-    --sipa-secondary: #1e3a5f;
-    --sipa-accent: #4a90e2;
-    --sipa-success: #28a745;
-    --sipa-warning: #ffc107;
-    --sipa-danger: #dc3545;
+    --sipa-primary: #10b981;
+    --sipa-secondary: #059669;
+    --sipa-accent: #34d399;
+    --sipa-success: #22C55E;
+    --sipa-warning: #EAB308;
+    --sipa-danger: #EF4444;
+    --sipa-info: #3B82F6;
+    --sipa-light: #F8FAFC;
+    --sipa-dark: #1E293B;
 }
 
 /* Header customization for Grappelli */
@@ -28,71 +31,145 @@
     text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
 }
 
-/* Navigation styling */
+/* Module styling - Datta Able Enhanced */
 .module {
-    border: 1px solid #dee2e6;
+    border: none;
     border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    transition: box-shadow 0.3s ease;
+    box-shadow: 0 1px 20px 0 rgba(69, 90, 100, 0.08);
+    transition: all 0.3s ease;
     margin-bottom: 20px;
+    background: white;
 }
 
 .module:hover {
-    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    box-shadow: 0 4px 25px 0 rgba(69, 90, 100, 0.12);
+    transform: translateY(-2px);
 }
 
 .module h2 {
-    background: linear-gradient(135deg, var(--sipa-primary) 0%, var(--sipa-accent) 100%);
+    background: linear-gradient(135deg, var(--sipa-primary) 0%, var(--sipa-secondary) 100%);
     color: white !important;
-    border-radius: 7px 7px 0 0;
-    padding: 12px 15px;
+    border-radius: 8px 8px 0 0;
+    padding: 14px 18px;
     font-weight: 500;
+    font-size: 16px;
+    margin: 0;
 }
 
 .module caption {
-    background: linear-gradient(135deg, var(--sipa-primary) 0%, var(--sipa-accent) 100%);
+    background: linear-gradient(135deg, var(--sipa-primary) 0%, var(--sipa-secondary) 100%);
     color: white !important;
-    border-radius: 7px 7px 0 0;
-    padding: 12px 15px;
+    border-radius: 8px 8px 0 0;
+    padding: 14px 18px;
     font-weight: 500;
+    font-size: 16px;
 }
 
-/* Button styling */
-.button, input[type="submit"], .submit-row input {
-    background: linear-gradient(135deg, var(--sipa-primary) 0%, var(--sipa-accent) 100%) !important;
+/* Button styling - Datta Able Enhanced */
+.button, input[type="submit"], .submit-row input, button {
+    background: linear-gradient(135deg, var(--sipa-primary) 0%, var(--sipa-secondary) 100%) !important;
     border: none !important;
-    border-radius: 5px;
-    padding: 8px 16px;
+    border-radius: 6px;
+    padding: 10px 20px;
     color: white !important;
     font-weight: 500;
+    font-size: 14px;
     transition: all 0.3s ease;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(16, 185, 129, 0.3);
 }
 
-.button:hover, input[type="submit"]:hover, .submit-row input:hover {
+.button:hover, input[type="submit"]:hover, .submit-row input:hover, button:hover {
     transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-    background: linear-gradient(135deg, var(--sipa-secondary) 0%, var(--sipa-primary) 100%) !important;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+    background: linear-gradient(135deg, var(--sipa-secondary) 0%, #047857 100%) !important;
 }
 
-/* Success messages */
-.messagelist .success {
-    background-color: var(--sipa-success) !important;
-    border-left: 4px solid #1e7e34;
-    color: white !important;
+.button:active, input[type="submit"]:active, .submit-row input:active, button:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 6px rgba(16, 185, 129, 0.3);
 }
 
-/* Error messages */
-.messagelist .error {
-    background-color: var(--sipa-danger) !important;
-    border-left: 4px solid #bd2130;
-    color: white !important;
+/* Delete button */
+.deletelink, .deletelink-box a {
+    background: linear-gradient(135deg, var(--sipa-danger) 0%, #DC2626 100%) !important;
+    box-shadow: 0 2px 6px rgba(239, 68, 68, 0.3);
 }
 
-/* Warning messages */
-.messagelist .warning {
-    background-color: var(--sipa-warning) !important;
-    border-left: 4px solid #e0a800;
-    color: #856404 !important;
+.deletelink:hover, .deletelink-box a:hover {
+    background: linear-gradient(135deg, #DC2626 0%, #B91C1C 100%) !important;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+}
+
+/* Default/Cancel button */
+.default, .cancel-link {
+    background: linear-gradient(135deg, #64748B 0%, #475569 100%) !important;
+    box-shadow: 0 2px 6px rgba(100, 116, 139, 0.3);
+}
+
+.default:hover, .cancel-link:hover {
+    background: linear-gradient(135deg, #475569 0%, #334155 100%) !important;
+    box-shadow: 0 4px 12px rgba(100, 116, 139, 0.4);
+}
+
+/* Submit row */
+.submit-row {
+    background: white;
+    border-top: 1px solid #E2E8F0;
+    padding: 20px;
+    margin: 0 -20px -20px -20px;
+    border-radius: 0 0 8px 8px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+/* Success messages - Datta Able Style */
+.messagelist .success, .messagelist li.success {
+    background-color: #DCFCE7 !important;
+    border-left: 4px solid var(--sipa-success);
+    color: #166534 !important;
+    padding: 14px 18px;
+    border-radius: 6px;
+    margin-bottom: 16px;
+    font-weight: 500;
+    box-shadow: 0 2px 8px rgba(34, 197, 94, 0.15);
+}
+
+/* Error messages - Datta Able Style */
+.messagelist .error, .messagelist li.error {
+    background-color: #FEE2E2 !important;
+    border-left: 4px solid var(--sipa-danger);
+    color: #991B1B !important;
+    padding: 14px 18px;
+    border-radius: 6px;
+    margin-bottom: 16px;
+    font-weight: 500;
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.15);
+}
+
+/* Warning messages - Datta Able Style */
+.messagelist .warning, .messagelist li.warning {
+    background-color: #FEF9C3 !important;
+    border-left: 4px solid var(--sipa-warning);
+    color: #854D0E !important;
+    padding: 14px 18px;
+    border-radius: 6px;
+    margin-bottom: 16px;
+    font-weight: 500;
+    box-shadow: 0 2px 8px rgba(234, 179, 8, 0.15);
+}
+
+/* Info messages */
+.messagelist .info, .messagelist li.info {
+    background-color: #DBEAFE !important;
+    border-left: 4px solid var(--sipa-info);
+    color: #1E40AF !important;
+    padding: 14px 18px;
+    border-radius: 6px;
+    margin-bottom: 16px;
+    font-weight: 500;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.15);
 }
 
 /* Table styling */
@@ -125,31 +202,252 @@
     color: var(--sipa-accent);
 }
 
-/* Breadcrumbs */
+/* Breadcrumbs - Datta Able Style */
 .breadcrumbs {
-    background: #f8f9fa;
-    border-bottom: 1px solid #dee2e6;
-    padding: 10px 20px;
+    background: white;
+    border-bottom: 1px solid #E2E8F0;
+    padding: 12px 30px;
+    font-size: 13px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .breadcrumbs a {
     color: var(--sipa-primary);
     text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s ease;
 }
 
 .breadcrumbs a:hover {
-    color: var(--sipa-accent);
-    text-decoration: underline;
+    color: var(--sipa-secondary);
 }
 
-/* Form styling */
+.breadcrumbs .separator {
+    color: #94A3B8;
+    margin: 0 8px;
+}
+
+/* Form styling - Datta Able Enhanced */
 .form-row {
-    border-bottom: 1px solid #f0f0f0;
-    padding: 15px 0;
+    border-bottom: 1px solid #E2E8F0;
+    padding: 20px 0;
+    margin-bottom: 0;
 }
 
 .form-row:last-child {
     border-bottom: none;
+}
+
+/* Form field labels */
+.form-row label {
+    font-weight: 500;
+    color: var(--sipa-dark);
+    font-size: 14px;
+    margin-bottom: 8px;
+    display: block;
+}
+
+/* Form inputs */
+.form-row input[type="text"],
+.form-row input[type="email"],
+.form-row input[type="number"],
+.form-row input[type="tel"],
+.form-row input[type="date"],
+.form-row input[type="file"],
+.form-row select,
+.form-row textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #CBD5E1;
+    border-radius: 6px;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    background-color: white;
+}
+
+.form-row input[type="text"]:focus,
+.form-row input[type="email"]:focus,
+.form-row input[type="number"]:focus,
+.form-row input[type="tel"]:focus,
+.form-row input[type="date"]:focus,
+.form-row select:focus,
+.form-row textarea:focus {
+    outline: none;
+    border-color: var(--sipa-primary);
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+/* Help text */
+.form-row .help {
+    font-size: 12px;
+    color: #64748B;
+    margin-top: 6px;
+    display: block;
+}
+
+/* Error styling */
+.form-row .errorlist {
+    background-color: #FEE2E2;
+    border-left: 4px solid var(--sipa-danger);
+    padding: 10px 12px;
+    margin: 8px 0;
+    border-radius: 6px;
+    list-style: none;
+}
+
+.form-row .errorlist li {
+    color: #991B1B;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+/* Fieldset styling */
+fieldset.module {
+    background: white;
+    border: 1px solid #E2E8F0;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 20px 0 rgba(69, 90, 100, 0.08);
+}
+
+fieldset.module h2 {
+    background: linear-gradient(135deg, var(--sipa-primary) 0%, var(--sipa-secondary) 100%);
+    color: white !important;
+    border-radius: 6px;
+    padding: 12px 16px;
+    font-weight: 500;
+    font-size: 16px;
+    margin: -20px -20px 20px -20px;
+}
+
+/* Inline forms */
+.inline-group {
+    background: white;
+    border: 1px solid #E2E8F0;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 20px 0 rgba(69, 90, 100, 0.08);
+}
+
+.inline-group h2 {
+    background: linear-gradient(135deg, var(--sipa-primary) 0%, var(--sipa-secondary) 100%);
+    color: white !important;
+    border-radius: 6px;
+    padding: 12px 16px;
+    font-weight: 500;
+    font-size: 16px;
+    margin: -20px -20px 20px -20px;
+}
+
+/* Tabular inline */
+.tabular {
+    border: none;
+}
+
+.tabular thead th {
+    background: var(--sipa-light);
+    color: var(--sipa-dark);
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 12px 10px;
+    border-bottom: 2px solid #E2E8F0;
+}
+
+.tabular tbody tr {
+    border-bottom: 1px solid #F1F5F9;
+}
+
+.tabular tbody tr:hover {
+    background-color: #F8FAFC;
+}
+
+.tabular tbody td {
+    padding: 12px 10px;
+}
+
+/* File upload widget */
+.file-upload {
+    border: 2px dashed #CBD5E1;
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+    background: #F8FAFC;
+    transition: all 0.3s ease;
+}
+
+.file-upload:hover {
+    border-color: var(--sipa-primary);
+    background: #EFF6FF;
+}
+
+/* Photo preview */
+.photo-preview {
+    margin-top: 15px;
+    padding: 15px;
+    background: #F8FAFC;
+    border-radius: 8px;
+    border: 1px solid #E2E8F0;
+}
+
+.photo-preview img {
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Select2 / Autocomplete styling */
+.select2-container--admin-autocomplete .select2-selection--single,
+.select2-container--admin-autocomplete .select2-selection--multiple {
+    border: 1px solid #CBD5E1;
+    border-radius: 6px;
+    min-height: 40px;
+}
+
+.select2-container--admin-autocomplete.select2-container--focus .select2-selection {
+    border-color: var(--sipa-primary);
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+/* Checkbox and radio styling */
+.form-row input[type="checkbox"],
+.form-row input[type="radio"] {
+    width: 18px;
+    height: 18px;
+    margin-right: 8px;
+    cursor: pointer;
+}
+
+/* Related widget wrapper */
+.related-widget-wrapper {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.related-widget-wrapper select {
+    flex: 1;
+}
+
+.related-widget-wrapper a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    background: var(--sipa-primary);
+    color: white;
+    border-radius: 6px;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.related-widget-wrapper a:hover {
+    background: var(--sipa-secondary);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
 }
 
 /* Dashboard app list */
@@ -240,9 +538,33 @@
     color: white;
 }
 
-/* Content area */
+/* Content area - Enhanced */
 #content {
-    background: #ffffff;
+    background: var(--sipa-light);
+    padding: 30px;
+}
+
+/* Main content wrapper */
+#content-main {
+    background: white;
+    border-radius: 8px;
+    padding: 30px;
+    box-shadow: 0 1px 20px 0 rgba(69, 90, 100, 0.08);
+}
+
+/* Form container */
+form {
+    background: white;
+}
+
+/* Content title */
+#content h1 {
+    color: var(--sipa-dark);
+    font-size: 24px;
+    font-weight: 600;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid #E2E8F0;
 }
 
 /* Change list filters */
@@ -264,4 +586,399 @@
     font-size: 13px;
     margin: 15px 0 5px 0;
     padding: 0 10px;
+}
+
+
+/* ============================================
+   ADDITIONAL FORM ENHANCEMENTS
+   ============================================ */
+
+/* Required field indicator */
+.form-row .required label::after {
+    content: " *";
+    color: var(--sipa-danger);
+    font-weight: 600;
+}
+
+/* Readonly fields */
+.form-row .readonly {
+    background-color: #F1F5F9;
+    color: #64748B;
+    cursor: not-allowed;
+}
+
+/* Field wrapper */
+.field-box {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid #E2E8F0;
+    margin-bottom: 16px;
+}
+
+/* Aligned form rows */
+.aligned .form-row {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    gap: 20px;
+    align-items: start;
+}
+
+.aligned .form-row label {
+    padding-top: 10px;
+    text-align: right;
+}
+
+/* Wide form rows */
+.wide .form-row {
+    display: block;
+}
+
+.wide .form-row label {
+    text-align: left;
+}
+
+/* VTextField (large text areas) */
+.vTextField {
+    min-height: 120px;
+    font-family: inherit;
+    resize: vertical;
+}
+
+/* Date/Time widgets */
+.vDateField, .vTimeField {
+    max-width: 200px;
+}
+
+/* URL field */
+.vURLField {
+    font-family: monospace;
+    font-size: 13px;
+}
+
+/* Foreign key raw id fields */
+.vForeignKeyRawIdAdminField {
+    max-width: 400px;
+}
+
+/* Many to many fields */
+.selector {
+    border: 1px solid #E2E8F0;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.selector h2 {
+    background: var(--sipa-light);
+    color: var(--sipa-dark);
+    padding: 10px 12px;
+    font-size: 13px;
+    font-weight: 600;
+    margin: 0;
+    border-bottom: 1px solid #E2E8F0;
+}
+
+.selector select {
+    border: none;
+    border-radius: 0;
+}
+
+.selector-available, .selector-chosen {
+    background: white;
+}
+
+.selector .selector-filter {
+    background: var(--sipa-light);
+    padding: 10px;
+    border-bottom: 1px solid #E2E8F0;
+}
+
+.selector .selector-filter input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #CBD5E1;
+    border-radius: 6px;
+}
+
+/* Selector buttons */
+.selector-chooser {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 0 10px;
+}
+
+.selector-chooser a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background: var(--sipa-primary);
+    color: white;
+    border-radius: 6px;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 6px rgba(16, 185, 129, 0.3);
+}
+
+.selector-chooser a:hover {
+    background: var(--sipa-secondary);
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+}
+
+/* Calendar widget */
+.calendarbox {
+    border: 1px solid #E2E8F0;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.calendarbox h2 {
+    background: linear-gradient(135deg, var(--sipa-primary) 0%, var(--sipa-secondary) 100%);
+    color: white;
+    padding: 12px;
+    margin: 0;
+    font-size: 14px;
+}
+
+.calendarbox .calendar {
+    background: white;
+}
+
+.calendarbox .calendar td {
+    padding: 8px;
+    text-align: center;
+}
+
+.calendarbox .calendar td a {
+    display: block;
+    padding: 6px;
+    border-radius: 4px;
+    text-decoration: none;
+    color: var(--sipa-dark);
+    transition: all 0.2s ease;
+}
+
+.calendarbox .calendar td a:hover {
+    background: var(--sipa-primary);
+    color: white;
+}
+
+.calendarbox .calendar td.selected a {
+    background: var(--sipa-primary);
+    color: white;
+    font-weight: 600;
+}
+
+/* Time picker */
+.timelist {
+    border: 1px solid #E2E8F0;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.timelist a {
+    display: block;
+    padding: 8px 12px;
+    text-decoration: none;
+    color: var(--sipa-dark);
+    transition: all 0.2s ease;
+}
+
+.timelist a:hover {
+    background: var(--sipa-primary);
+    color: white;
+}
+
+/* Add another inline button */
+.add-row a, .inline-related .add-row a {
+    background: linear-gradient(135deg, var(--sipa-success) 0%, #16A34A 100%);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 6px;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 6px rgba(34, 197, 94, 0.3);
+}
+
+.add-row a:hover, .inline-related .add-row a:hover {
+    background: linear-gradient(135deg, #16A34A 0%, #15803D 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(34, 197, 94, 0.4);
+}
+
+/* Delete inline button */
+.inline-deletelink {
+    background: var(--sipa-danger);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 12px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.inline-deletelink:hover {
+    background: #DC2626;
+    transform: scale(1.05);
+}
+
+/* Collapse/Expand */
+.collapse {
+    border: 1px solid #E2E8F0;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    overflow: hidden;
+}
+
+.collapse h2 {
+    background: var(--sipa-light);
+    color: var(--sipa-dark);
+    padding: 12px 16px;
+    margin: 0;
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.collapse h2:hover {
+    background: #E2E8F0;
+}
+
+.collapse .collapse-toggle {
+    float: right;
+    color: var(--sipa-primary);
+}
+
+/* Object tools (action buttons at top) */
+.object-tools {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.object-tools li {
+    list-style: none;
+}
+
+.object-tools a {
+    background: linear-gradient(135deg, var(--sipa-primary) 0%, var(--sipa-secondary) 100%);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 6px rgba(16, 185, 129, 0.3);
+}
+
+.object-tools a:hover {
+    background: linear-gradient(135deg, var(--sipa-secondary) 0%, #047857 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+}
+
+/* History link */
+.historylink {
+    background: linear-gradient(135deg, var(--sipa-info) 0%, #2563EB 100%);
+}
+
+.historylink:hover {
+    background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
+}
+
+/* View on site link */
+.viewsitelink {
+    background: linear-gradient(135deg, var(--sipa-success) 0%, #16A34A 100%);
+}
+
+.viewsitelink:hover {
+    background: linear-gradient(135deg, #16A34A 0%, #15803D 100%);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .aligned .form-row {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+    
+    .aligned .form-row label {
+        text-align: left;
+        padding-top: 0;
+    }
+    
+    #content {
+        padding: 15px;
+    }
+    
+    #content-main {
+        padding: 20px;
+    }
+    
+    .object-tools {
+        flex-direction: column;
+    }
+}
+
+/* Loading spinner */
+.loading {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(16, 185, 129, 0.3);
+    border-radius: 50%;
+    border-top-color: var(--sipa-primary);
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Tooltips */
+.help-tooltip {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    background: var(--sipa-info);
+    color: white;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 16px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: help;
+    margin-left: 6px;
+}
+
+/* Focus states for accessibility */
+input:focus,
+select:focus,
+textarea:focus,
+button:focus {
+    outline: 2px solid var(--sipa-primary);
+    outline-offset: 2px;
+}
+
+/* Disabled state */
+input:disabled,
+select:disabled,
+textarea:disabled,
+button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
 }

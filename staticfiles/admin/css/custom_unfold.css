@@ -2,9 +2,9 @@
 
 /* Custom branding colors for SIPA Beta  */
 :root {
-    --sipa-primary: #2c5aa0;
-    --sipa-secondary: #1e3a5f;
-    --sipa-accent: #4a90e2;
+    --sipa-primary: #10b981;
+    --sipa-secondary: #059669;
+    --sipa-accent: #34d399;
     --sipa-success: #28a745;
     --sipa-warning: #ffc107;
     --sipa-danger: #dc3545;

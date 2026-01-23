@@ -73,9 +73,30 @@
         </div>
         
         <div class="nav-item">
-            <a href="{% url 'teacher_attendance_input' %}" class="nav-link {% if 'teacher_attendance' in request.resolver_match.url_name %}active{% endif %}">
+            <a href="{% url 'schedule_management' %}" class="nav-link {% if 'schedule_management' in request.resolver_match.url_name or 'schedule_create' in request.resolver_match.url_name or 'schedule_update' in request.resolver_match.url_name %}active{% endif %}">
+                <i class="fas fa-calendar-alt"></i>
+                <span>Jadwal Ustadz</span>
+            </a>
+        </div>
+        
+        <div class="nav-item">
+            <a href="{% url 'teacher_attendance_input' %}" class="nav-link {% if request.resolver_match.url_name == 'teacher_attendance_input' %}active{% endif %}">
+                <i class="fas fa-user-check"></i>
+                <span>Input Absensi (Self)</span>
+            </a>
+        </div>
+        
+        <div class="nav-item">
+            <a href="{% url 'teacher_attendance_admin' %}" class="nav-link {% if request.resolver_match.url_name == 'teacher_attendance_admin' %}active{% endif %}">
                 <i class="fas fa-clipboard-check"></i>
-                <span>Absensi Ustadz</span>
+                <span>Input Absensi (Admin)</span>
+            </a>
+        </div>
+        
+        <div class="nav-item">
+            <a href="{% url 'teacher_attendance_history' %}" class="nav-link {% if 'teacher_attendance_history' in request.resolver_match.url_name or 'teacher_attendance_update' in request.resolver_match.url_name %}active{% endif %}">
+                <i class="fas fa-history"></i>
+                <span>Riwayat Absensi</span>
             </a>
         </div>
         
@@ -153,11 +174,11 @@
 </aside>
 
 <style>
-/* Sidebar Styles */
+/* Sidebar Styles - Emerald Green Design */
 .sidebar {
     width: var(--sidebar-width);
-    background-color: var(--bg-sidebar);
-    border-right: 1px solid var(--slate-200);
+    background: linear-gradient(180deg, #10b981 0%, #059669 100%);
+    border-right: none;
     position: fixed;
     top: 0;
     left: 0;
@@ -167,12 +188,13 @@
     z-index: 1000;
     display: flex;
     flex-direction: column;
+    box-shadow: 0 4px 24px 0 rgba(34, 41, 47, 0.1);
 }
 
 /* Sidebar Header */
 .sidebar-header {
     padding: var(--spacing-6) var(--spacing-5);
-    border-bottom: 1px solid var(--slate-200);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .sidebar-brand {
@@ -180,13 +202,13 @@
     align-items: center;
     gap: var(--spacing-3);
     text-decoration: none;
-    color: var(--text-primary);
+    color: var(--text-white);
 }
 
 .sidebar-brand-icon {
     width: 40px;
     height: 40px;
-    background-color: var(--primary-600);
+    background-color: rgba(255, 255, 255, 0.2);
     border-radius: var(--radius-lg);
     display: flex;
     align-items: center;
@@ -194,6 +216,7 @@
     font-size: 1rem;
     font-weight: 700;
     color: var(--text-white);
+    backdrop-filter: blur(10px);
 }
 
 .sidebar-brand-content {
@@ -203,13 +226,13 @@
 .sidebar-brand-text {
     font-weight: 700;
     font-size: 1.125rem;
-    color: var(--text-primary);
+    color: var(--text-white);
     line-height: 1.2;
 }
 
 .sidebar-brand-subtitle {
     font-size: 0.75rem;
-    color: var(--text-secondary);
+    color: rgba(255, 255, 255, 0.8);
     line-height: 1.2;
 }
 
@@ -228,7 +251,7 @@
     align-items: center;
     gap: var(--spacing-3);
     padding: var(--spacing-3) var(--spacing-4);
-    color: var(--text-secondary);
+    color: rgba(255, 255, 255, 0.8);
     text-decoration: none;
     border-radius: var(--radius-lg);
     transition: all 0.2s ease;
@@ -238,13 +261,15 @@
 }
 
 .nav-link:hover {
-    background-color: var(--primary-50);
-    color: var(--primary-600);
+    background-color: rgba(255, 255, 255, 0.1);
+    color: var(--text-white);
+    transform: translateX(4px);
 }
 
 .nav-link.active {
-    background-color: var(--primary-600);
+    background-color: rgba(255, 255, 255, 0.2);
     color: var(--text-white);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 .nav-link i {
@@ -255,15 +280,15 @@
 
 .nav-divider {
     height: 1px;
-    background-color: var(--slate-200);
+    background-color: rgba(255, 255, 255, 0.1);
     margin: var(--spacing-4) var(--spacing-5);
 }
 
 /* Sidebar User Section */
 .sidebar-user {
     padding: var(--spacing-4) var(--spacing-5);
-    border-top: 1px solid var(--slate-200);
-    background-color: var(--slate-50);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    background-color: rgba(0, 0, 0, 0.1);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -279,7 +304,7 @@
 .sidebar-user-avatar {
     width: 36px;
     height: 36px;
-    background-color: var(--primary-600);
+    background-color: rgba(255, 255, 255, 0.2);
     border-radius: var(--radius-full);
     display: flex;
     align-items: center;
@@ -287,6 +312,7 @@
     color: var(--text-white);
     font-weight: 600;
     font-size: 0.875rem;
+    backdrop-filter: blur(10px);
 }
 
 .sidebar-user-details {
@@ -297,7 +323,7 @@
 .sidebar-user-name {
     font-weight: 500;
     font-size: 0.875rem;
-    color: var(--text-primary);
+    color: var(--text-white);
     line-height: 1.2;
     white-space: nowrap;
     overflow: hidden;
@@ -306,7 +332,7 @@
 
 .sidebar-user-role {
     font-size: 0.75rem;
-    color: var(--text-secondary);
+    color: rgba(255, 255, 255, 0.7);
     line-height: 1.2;
 }
 
@@ -321,14 +347,14 @@
     width: 32px;
     height: 32px;
     border-radius: var(--radius-md);
-    color: var(--text-secondary);
+    color: rgba(255, 255, 255, 0.8);
     text-decoration: none;
     transition: all 0.2s ease;
 }
 
 .sidebar-logout:hover {
-    background-color: var(--slate-200);
-    color: var(--text-primary);
+    background-color: rgba(255, 255, 255, 0.1);
+    color: var(--text-white);
 }
 
 /* Mobile Responsive */
@@ -354,17 +380,18 @@
     top: var(--spacing-4);
     left: var(--spacing-4);
     z-index: 1001;
-    background-color: var(--bg-white);
-    border: 1px solid var(--slate-200);
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    border: none;
     border-radius: var(--radius-md);
     padding: var(--spacing-2);
-    color: var(--text-secondary);
+    color: var(--text-white);
     cursor: pointer;
-    box-shadow: var(--shadow-sm);
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4);
 }
 
 .mobile-toggle:hover {
-    background-color: var(--slate-50);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.5);
+    transform: translateY(-1px);
 }
 
 /* Mobile Styles */

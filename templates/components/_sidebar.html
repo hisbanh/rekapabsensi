@@ -71,9 +71,30 @@
             </div>
             
             <div class="nav-item">
-                <a href="{% url 'teacher_attendance_input' %}" class="nav-link {% if 'teacher_attendance_input' in request.resolver_match.url_name %}active{% endif %}">
+                <a href="{% url 'schedule_management' %}" class="nav-link {% if 'schedule_management' in request.resolver_match.url_name or 'schedule_create' in request.resolver_match.url_name or 'schedule_update' in request.resolver_match.url_name %}active{% endif %}">
+                    <i class="fas fa-calendar-alt"></i>
+                    <span>Jadwal Ustadz</span>
+                </a>
+            </div>
+            
+            <div class="nav-item">
+                <a href="{% url 'teacher_attendance_input' %}" class="nav-link {% if request.resolver_match.url_name == 'teacher_attendance_input' %}active{% endif %}">
+                    <i class="fas fa-user-check"></i>
+                    <span>Input Absensi (Self)</span>
+                </a>
+            </div>
+            
+            <div class="nav-item">
+                <a href="{% url 'teacher_attendance_admin' %}" class="nav-link {% if request.resolver_match.url_name == 'teacher_attendance_admin' %}active{% endif %}">
                     <i class="fas fa-clipboard-check"></i>
-                    <span>Input Absensi Ustadz</span>
+                    <span>Input Absensi (Admin)</span>
+                </a>
+            </div>
+            
+            <div class="nav-item">
+                <a href="{% url 'teacher_attendance_history' %}" class="nav-link {% if 'teacher_attendance_history' in request.resolver_match.url_name or 'teacher_attendance_update' in request.resolver_match.url_name %}active{% endif %}">
+                    <i class="fas fa-history"></i>
+                    <span>Riwayat Absensi</span>
                 </a>
             </div>
             
