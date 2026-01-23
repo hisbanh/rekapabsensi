@@ -1,0 +1,352 @@
+/**
+ * Print Styles for Teacher Reports
+ * Optimized for A4 Landscape printing
+ */
+
+/* Print header - hidden by default, shown only in print */
+.print-header {
+    display: none;
+}
+
+.print-footer {
+    display: none;
+}
+
+@media print {
+    /* ============================================
+       HIDE ELEMENTS NOT NEEDED IN PRINT
+       ============================================ */
+    .sidebar,
+    .top-navbar,
+    .breadcrumb,
+    .btn,
+    button,
+    .card-header .btn,
+    .no-print,
+    .alert,
+    .sidebar-overlay,
+    .mobile-toggle,
+    form {
+        display: none !important;
+    }
+    
+    /* ============================================
+       PAGE SETUP
+       ============================================ */
+    @page {
+        size: A4 landscape;
+        margin: 1.5cm;
+    }
+    
+    body {
+        background: white !important;
+        margin: 0;
+        padding: 0;
+        font-size: 10pt;
+    }
+    
+    .main-content {
+        margin-left: 0 !important;
+        padding: 0 !important;
+    }
+    
+    .content-area {
+        padding: 0 !important;
+    }
+    
+    /* ============================================
+       PRINT HEADER
+       ============================================ */
+    .print-header {
+        display: block !important;
+        text-align: center;
+        border-bottom: 3px solid #10b981;
+        padding-bottom: 15px;
+        margin-bottom: 20px;
+        page-break-after: avoid;
+    }
+    
+    .print-header h2 {
+        margin: 0;
+        font-size: 18pt;
+        font-weight: bold;
+        color: #1e293b;
+    }
+    
+    .print-header h3 {
+        margin: 5px 0 0 0;
+        font-size: 14pt;
+        font-weight: normal;
+        color: #64748b;
+    }
+    
+    .print-header .period {
+        margin-top: 10px;
+        font-size: 11pt;
+        color: #475569;
+    }
+    
+    /* ============================================
+       CARDS
+       ============================================ */
+    .card {
+        border: 1px solid #e2e8f0 !important;
+        box-shadow: none !important;
+        page-break-inside: avoid;
+        margin-bottom: 15px !important;
+    }
+    
+    .card-header {
+        background-color: #f8fafc !important;
+        border-bottom: 2px solid #e2e8f0 !important;
+        padding: 10px 15px !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    
+    .card-body {
+        padding: 15px !important;
+    }
+    
+    /* Statistics cards with colored borders */
+    .border-left-primary,
+    .border-left-success,
+    .border-left-warning,
+    .border-left-danger {
+        border-left: 4px solid !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    
+    .border-left-primary {
+        border-left-color: #10b981 !important;
+    }
+    
+    .border-left-success {
+        border-left-color: #22c55e !important;
+    }
+    
+    .border-left-warning {
+        border-left-color: #eab308 !important;
+    }
+    
+    .border-left-danger {
+        border-left-color: #ef4444 !important;
+    }
+    
+    /* ============================================
+       TABLES
+       ============================================ */
+    .table {
+        font-size: 9pt !important;
+        width: 100% !important;
+        border-collapse: collapse !important;
+    }
+    
+    .table thead th {
+        background-color: #f1f5f9 !important;
+        border: 1px solid #cbd5e1 !important;
+        padding: 8px !important;
+        font-weight: bold !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    
+    .table tbody td {
+        border: 1px solid #e2e8f0 !important;
+        padding: 6px 8px !important;
+    }
+    
+    .table tbody tr:nth-child(even) {
+        background-color: #f8fafc !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    
+    .table-hover tbody tr:hover {
+        background-color: inherit !important;
+    }
+    
+    /* ============================================
+       BADGES - PRESERVE COLORS
+       ============================================ */
+    .badge {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        padding: 3px 8px !important;
+        font-size: 8pt !important;
+        border: 1px solid rgba(0,0,0,0.1);
+    }
+    
+    .bg-success,
+    .badge.bg-success {
+        background-color: #22c55e !important;
+        color: white !important;
+    }
+    
+    .bg-warning,
+    .badge.bg-warning {
+        background-color: #eab308 !important;
+        color: white !important;
+    }
+    
+    .bg-info,
+    .badge.bg-info {
+        background-color: #3b82f6 !important;
+        color: white !important;
+    }
+    
+    .bg-danger,
+    .badge.bg-danger {
+        background-color: #ef4444 !important;
+        color: white !important;
+    }
+    
+    .bg-primary,
+    .badge.bg-primary {
+        background-color: #10b981 !important;
+        color: white !important;
+    }
+    
+    .bg-secondary,
+    .badge.bg-secondary {
+        background-color: #64748b !important;
+        color: white !important;
+    }
+    
+    /* ============================================
+       CHARTS
+       ============================================ */
+    .chart-container {
+        page-break-inside: avoid;
+        max-height: 250px !important;
+    }
+    
+    canvas {
+        max-height: 250px !important;
+    }
+    
+    /* ============================================
+       PRINT FOOTER
+       ============================================ */
+    .print-footer {
+        display: block !important;
+        margin-top: 30px;
+        page-break-inside: avoid;
+        border-top: 2px solid #e2e8f0;
+        padding-top: 20px;
+    }
+    
+    .signature-section {
+        display: flex !important;
+        justify-content: space-between;
+        margin-top: 20px;
+        page-break-inside: avoid;
+    }
+    
+    .signature-box {
+        text-align: center;
+        width: 30%;
+        font-size: 9pt;
+    }
+    
+    .signature-box strong {
+        font-size: 10pt;
+    }
+    
+    .signature-line {
+        border-top: 1px solid #000;
+        margin-top: 60px;
+        padding-top: 5px;
+    }
+    
+    .qr-code-section {
+        text-align: center;
+        margin-top: 20px;
+        font-size: 8pt;
+        color: #64748b;
+        page-break-inside: avoid;
+    }
+    
+    .qr-code-section #qrcode {
+        margin: 10px auto;
+    }
+    
+    /* ============================================
+       PAGE BREAKS
+       ============================================ */
+    .page-break {
+        page-break-after: always;
+    }
+    
+    .page-break-before {
+        page-break-before: always;
+    }
+    
+    .page-break-avoid {
+        page-break-inside: avoid;
+    }
+    
+    /* ============================================
+       LAYOUT ADJUSTMENTS
+       ============================================ */
+    .row {
+        margin-bottom: 10px !important;
+    }
+    
+    .col-xl-3,
+    .col-md-6,
+    .col-lg-6,
+    .col-md-4 {
+        margin-bottom: 10px !important;
+        page-break-inside: avoid;
+    }
+    
+    /* Ensure images print */
+    img {
+        max-width: 100% !important;
+        page-break-inside: avoid;
+    }
+    
+    /* ============================================
+       TEXT COLORS
+       ============================================ */
+    .text-primary {
+        color: #10b981 !important;
+    }
+    
+    .text-success {
+        color: #22c55e !important;
+    }
+    
+    .text-warning {
+        color: #eab308 !important;
+    }
+    
+    .text-danger {
+        color: #ef4444 !important;
+    }
+    
+    .text-muted {
+        color: #64748b !important;
+    }
+    
+    /* ============================================
+       UTILITIES
+       ============================================ */
+    .shadow,
+    .shadow-sm,
+    .shadow-lg {
+        box-shadow: none !important;
+    }
+    
+    a {
+        text-decoration: none !important;
+        color: inherit !important;
+    }
+    
+    /* Hide empty states */
+    .empty-state {
+        display: none !important;
+    }
+}

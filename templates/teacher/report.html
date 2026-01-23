@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block page_title %}Laporan Absensi Ustadz{% endblock %}
 
@@ -12,6 +13,18 @@
 {% endblock %}
 
 {% block content %}
+<!-- Print Header (only visible when printing) -->
+{% if report_data %}
+<div class="print-header">
+    <h2>SIPA YAUMI</h2>
+    <h3>Sistem Informasi Presensi Pesantren Yaumi</h3>
+    <div class="period">
+        <strong>LAPORAN ABSENSI USTADZ</strong><br>
+        Periode: {{ start_date|date:"d F Y" }} - {{ end_date|date:"d F Y" }}
+    </div>
+</div>
+{% endif %}
+
 <!-- Filter Section -->
 <div class="card mb-4">
     <div class="card-header">
@@ -77,18 +90,23 @@
                 </button>
                 
                 {% if report_data %}
+                <button type="button" class="btn btn-secondary" onclick="window.print()">
+                    <i class="fas fa-print me-2"></i>
+                    Print
+                </button>
+                
                 <a href="{% url 'teacher_report_pdf' selected_teacher.id %}?start_date={{ start_date|date:'Y-m-d' }}&end_date={{ end_date|date:'Y-m-d' }}" 
                    class="btn btn-danger" 
                    target="_blank">
                     <i class="fas fa-file-pdf me-2"></i>
-                    Export PDF
+                    Download PDF
                 </a>
                 
                 {% if user.is_superuser %}
                 <a href="{% url 'teacher_report_excel' %}?start_date={{ start_date|date:'Y-m-d' }}&end_date={{ end_date|date:'Y-m-d' }}" 
                    class="btn btn-success">
                     <i class="fas fa-file-excel me-2"></i>
-                    Export Excel
+                    Download Excel
                 </a>
                 {% endif %}
                 {% endif %}
@@ -360,6 +378,50 @@
     </div>
 </div>
 
+<!-- Print Footer (only visible when printing) -->
+{% if report_data %}
+<div class="print-footer">
+    <!-- Signature Section -->
+    <div class="signature-section">
+        <div class="signature-box">
+            <div>Mengetahui,</div>
+            <div><strong>Kepala Sekolah</strong></div>
+            <div class="signature-line">
+                <strong>(...........................)</strong>
+            </div>
+        </div>
+        
+        <div class="signature-box">
+            <div>Dicetak oleh,</div>
+            <div><strong>{{ user.get_full_name|default:user.username }}</strong></div>
+            <div class="signature-line">
+                <strong>{{ user.get_full_name|default:user.username }}</strong>
+            </div>
+            <div style="font-size: 8pt; margin-top: 5px;">
+                {{ end_date|date:"d F Y" }}
+            </div>
+        </div>
+        
+        <div class="signature-box">
+            <div>Bagian Kepegawaian</div>
+            <div><strong>&nbsp;</strong></div>
+            <div class="signature-line">
+                <strong>(...........................)</strong>
+            </div>
+        </div>
+    </div>
+    
+    <!-- QR Code Section -->
+    <div class="qr-code-section">
+        <div id="qrcode" style="display: inline-block; margin: 10px auto;"></div>
+        <div>
+            Scan QR code untuk verifikasi dokumen<br>
+            Dokumen ID: TR-{{ report_data.teacher.id|slice:":8" }}-{{ start_date|date:"Ymd" }}-{{ end_date|date:"Ymd" }}
+        </div>
+    </div>
+</div>
+{% endif %}
+
 {% else %}
 <!-- Empty State -->
 <div class="card shadow">
@@ -381,10 +443,38 @@
 
 {% endblock %}
 
+{% block extra_css %}
+{% if report_data %}
+<!-- Print Styles -->
+<link href="{% static 'css/print-report.css' %}" rel="stylesheet">
+{% endif %}
+{% endblock %}
+
 {% block extra_js %}
+<!-- QR Code Library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
 {% if report_data %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Generate QR Code for document verification
+    const qrcodeContainer = document.getElementById('qrcode');
+    if (qrcodeContainer) {
+        // Create verification URL
+        const docId = 'TR-{{ report_data.teacher.id|slice:":8" }}-{{ start_date|date:"Ymd" }}-{{ end_date|date:"Ymd" }}';
+        const verificationUrl = window.location.origin + '/verify-report/' + docId;
+        
+        // Generate QR code
+        new QRCode(qrcodeContainer, {
+            text: verificationUrl,
+            width: 80,
+            height: 80,
+            colorDark: "#000000",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.M
+        });
+    }
+    
     // Attendance Breakdown Pie Chart
     const ctx = document.getElementById('attendanceBreakdownChart');
     if (ctx) {

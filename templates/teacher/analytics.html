@@ -79,6 +79,12 @@
                     <i class="fas fa-chart-line me-2"></i>
                     Tampilkan Analytics
                 </button>
+                {% if analytics %}
+                <button type="button" class="btn btn-secondary" onclick="window.print()">
+                    <i class="fas fa-print me-2"></i>
+                    Print
+                </button>
+                {% endif %}
                 <a href="{% url 'teacher_analytics' %}" class="btn btn-outline-secondary">
                     <i class="fas fa-redo me-2"></i>
                     Reset Filter
