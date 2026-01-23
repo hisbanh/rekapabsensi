@@ -86,16 +86,17 @@ class SubjectForm(forms.ModelForm):
 class TeacherForm(forms.ModelForm):
     """Form for creating and editing teachers with photo upload handling"""
     
-    # Additional field for subject selection
+    # Additional field for subject selection - using AJAX for better performance
     subject_ids = forms.ModelMultipleChoiceField(
         queryset=Subject.objects.none(),  # Will be set in __init__
         required=False,
         widget=forms.SelectMultiple(attrs={
-            'class': 'form-select',
-            'size': 8
+            'class': 'form-select select2-multiple',  # Add select2 for better UX
+            'size': 8,
+            'data-placeholder': 'Pilih mata pelajaran...'
         }),
         label='Mata Pelajaran',
-        help_text='Pilih mata pelajaran yang diajarkan (Ctrl+Click untuk pilih banyak)'
+        help_text='Pilih mata pelajaran yang diajarkan'
     )
     
     class Meta:
@@ -173,25 +174,51 @@ class TeacherForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         
-        # Set subject queryset efficiently
-        self.fields['subject_ids'].queryset = Subject.objects.filter(
-            is_active=True
-        ).only('id', 'name', 'category').order_by('category', 'name')
+        # Cache subjects and classrooms for better performance
+        from django.core.cache import cache
         
-        # Filter only active classrooms with optimized query
+        # Try to get subjects from cache
+        cache_key_subjects = 'active_subjects_for_form'
+        subjects = cache.get(cache_key_subjects)
+        if subjects is None:
+            subjects = Subject.objects.filter(
+                is_active=True
+            ).only('id', 'name', 'category').order_by('category', 'name')
+            # Cache for 5 minutes
+            cache.set(cache_key_subjects, list(subjects), 300)
+        
+        self.fields['subject_ids'].queryset = Subject.objects.filter(
+            id__in=[s.id if hasattr(s, 'id') else s['id'] for s in subjects]
+        ).only('id', 'name', 'category')
+        
+        # Try to get classrooms from cache
+        cache_key_classrooms = 'active_classrooms_for_form'
+        classrooms = cache.get(cache_key_classrooms)
+        if classrooms is None:
+            classrooms = Classroom.objects.filter(
+                is_active=True
+            ).select_related('academic_level').only(
+                'id', 'name', 'grade', 'section',
+                'academic_level__code'
+            ).order_by(
+                'academic_level__code', 'grade', 'section'
+            )
+            # Cache for 5 minutes
+            cache.set(cache_key_classrooms, list(classrooms), 300)
+        
         self.fields['homeroom_class'].queryset = Classroom.objects.filter(
-            is_active=True
+            id__in=[c.id if hasattr(c, 'id') else c['id'] for c in classrooms]
         ).select_related('academic_level').only(
-            'id', 'name', 'grade', 'section',
-            'academic_level__code', 'academic_level__name'
-        ).order_by(
-            'academic_level__code', 'grade', 'section'
+            'id', 'name', 'grade', 'section', 'academic_level__code'
         )
         self.fields['homeroom_class'].required = False
         
         # Set initial subjects if editing existing teacher (optimized)
+        # Only fetch IDs, not full objects
         if self.instance and self.instance.pk:
-            self.fields['subject_ids'].initial = self.instance.subjects.only('id')
+            # Use values_list for faster query
+            subject_ids = self.instance.subjects.values_list('id', flat=True)
+            self.fields['subject_ids'].initial = list(subject_ids)
     
     def clean_nip(self):
         """Validate and normalize NIP"""
