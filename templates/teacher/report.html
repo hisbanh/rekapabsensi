@@ -467,8 +467,8 @@ document.addEventListener('DOMContentLoaded', function() {
         // Generate QR code
         new QRCode(qrcodeContainer, {
             text: verificationUrl,
-            width: 80,
-            height: 80,
+            width: 60,  // Reduced from 80
+            height: 60,  // Reduced from 80
             colorDark: "#000000",
             colorLight: "#ffffff",
             correctLevel: QRCode.CorrectLevel.M
