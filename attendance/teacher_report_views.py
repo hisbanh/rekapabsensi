@@ -118,12 +118,12 @@ def teacher_report(request):
                 
                 # Calculate summary statistics
                 total_jp = len(attendances)
-                total_hadir = sum(1 for a in attendances if a['status'] == 'HADIR')
-                total_sakit = sum(1 for a in attendances if a['status'] == 'SAKIT')
-                total_izin = sum(1 for a in attendances if a['status'] == 'IZIN')
-                total_cuti = sum(1 for a in attendances if a['status'] == 'CUTI')
-                total_dinas = sum(1 for a in attendances if a['status'] == 'DINAS')
-                total_alpa = sum(1 for a in attendances if a['status'] == 'ALPA')
+                total_hadir = sum(1 for a in attendances if a.status == 'HADIR')
+                total_sakit = sum(1 for a in attendances if a.status == 'SAKIT')
+                total_izin = sum(1 for a in attendances if a.status == 'IZIN')
+                total_cuti = sum(1 for a in attendances if a.status == 'CUTI')
+                total_dinas = sum(1 for a in attendances if a.status == 'DINAS')
+                total_alpa = sum(1 for a in attendances if a.status == 'ALPA')
                 
                 attendance_percentage = round((total_hadir / total_jp * 100), 2) if total_jp > 0 else 0.0
                 
@@ -584,14 +584,29 @@ def api_teacher_report_data(request):
         
         # Calculate summary
         total_jp = len(attendances)
-        total_hadir = sum(1 for a in attendances if a['status'] == 'HADIR')
-        total_sakit = sum(1 for a in attendances if a['status'] == 'SAKIT')
-        total_izin = sum(1 for a in attendances if a['status'] == 'IZIN')
-        total_cuti = sum(1 for a in attendances if a['status'] == 'CUTI')
-        total_dinas = sum(1 for a in attendances if a['status'] == 'DINAS')
-        total_alpa = sum(1 for a in attendances if a['status'] == 'ALPA')
+        total_hadir = sum(1 for a in attendances if a.status == 'HADIR')
+        total_sakit = sum(1 for a in attendances if a.status == 'SAKIT')
+        total_izin = sum(1 for a in attendances if a.status == 'IZIN')
+        total_cuti = sum(1 for a in attendances if a.status == 'CUTI')
+        total_dinas = sum(1 for a in attendances if a.status == 'DINAS')
+        total_alpa = sum(1 for a in attendances if a.status == 'ALPA')
         
         attendance_percentage = round((total_hadir / total_jp * 100), 2) if total_jp > 0 else 0.0
+        
+        # Convert attendance objects to dictionaries for JSON response
+        attendances_data = []
+        for a in attendances:
+            attendances_data.append({
+                'id': str(a.id),
+                'date': a.date.strftime('%Y-%m-%d'),
+                'jp_number': a.jp_number,
+                'status': a.status,
+                'notes': a.notes or '',
+                'schedule': {
+                    'subject': a.schedule.subject.name if a.schedule else None,
+                    'classroom': a.schedule.classroom.name if a.schedule else None,
+                } if a.schedule else None,
+            })
         
         return JsonResponse({
             'success': True,
@@ -615,7 +630,7 @@ def api_teacher_report_data(request):
                     'total_alpa': total_alpa,
                     'attendance_percentage': attendance_percentage,
                 },
-                'attendances': attendances,
+                'attendances': attendances_data,
             }
         })
         
