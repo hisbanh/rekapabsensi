@@ -8,7 +8,7 @@ from django.db.models import Q, Count, Prefetch
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.utils import timezone
 
-from ..models import Teacher, Subject, Classroom, TeacherAttendanceSummary
+from ..models import Teacher, Subject, Classroom, TeacherAttendanceSummary, TeacherSchedule
 from ..exceptions import AttendanceBaseException
 
 
@@ -257,31 +257,48 @@ class TeacherService:
             >>> print(f"Subjects: {[s.name for s in profile['subjects']]}")
             >>> print(f"Teaching load: {profile['teaching_load']} JP/week")
         """
+        from django.db.models import Prefetch, Sum, Count
+        
         try:
+            # Optimized query with proper prefetch
             teacher = Teacher.objects.select_related(
                 'homeroom_class',
                 'homeroom_class__academic_level',
                 'user'
             ).prefetch_related(
-                'subjects',
-                Prefetch('schedules', queryset=Teacher.objects.model.schedules.rel.related_model.objects.filter(is_active=True))
+                Prefetch(
+                    'subjects',
+                    queryset=Subject.objects.filter(is_active=True).only('id', 'name', 'code')
+                ),
+                Prefetch(
+                    'schedules',
+                    queryset=TeacherSchedule.objects.filter(is_active=True).only(
+                        'id', 'jp_start', 'jp_end', 'teacher_id'
+                    )
+                )
             ).get(id=teacher_id)
         except Teacher.DoesNotExist:
             raise TeacherServiceError(f"Teacher with ID '{teacher_id}' not found")
         
-        # Get subjects
-        subjects = list(teacher.subjects.filter(is_active=True).order_by('name'))
+        # Get subjects (already prefetched)
+        subjects = list(teacher.subjects.all())
         
         # Get homeroom class
         homeroom_class = teacher.homeroom_class if teacher.is_homeroom_teacher else None
         
-        # Count active schedules
-        total_schedules = teacher.schedules.filter(is_active=True).count()
+        # Count active schedules (use aggregate for better performance)
+        from django.db.models import F
         
-        # Calculate teaching load (total JP per week)
-        teaching_load = 0
-        for schedule in teacher.schedules.filter(is_active=True):
-            teaching_load += schedule.jp_count
+        schedule_stats = TeacherSchedule.objects.filter(
+            teacher_id=teacher_id,
+            is_active=True
+        ).aggregate(
+            total_schedules=Count('id'),
+            total_jp=Sum(F('jp_end') - F('jp_start') + 1)
+        )
+        
+        total_schedules = schedule_stats['total_schedules'] or 0
+        teaching_load = schedule_stats['total_jp'] or 0
         
         return {
             'teacher': teacher,
@@ -363,6 +380,8 @@ class TeacherService:
             >>> print(f"Attendance: {stats['attendance_percentage']}%")
             >>> print(f"Present: {stats['total_hadir']} JP")
         """
+        from django.core.cache import cache
+        
         # Validate month and year
         if not (1 <= month <= 12):
             raise TeacherServiceError("Month must be between 1 and 12")
@@ -370,8 +389,14 @@ class TeacherService:
         if not (2020 <= year <= 2030):
             raise TeacherServiceError("Year must be between 2020 and 2030")
         
+        # Try cache first (cache for 5 minutes)
+        cache_key = f'teacher_stats_{teacher_id}_{year}_{month}'
+        cached_stats = cache.get(cache_key)
+        if cached_stats:
+            return cached_stats
+        
         try:
-            teacher = Teacher.objects.get(id=teacher_id)
+            teacher = Teacher.objects.only('id', 'full_name', 'nip').get(id=teacher_id)
         except Teacher.DoesNotExist:
             raise TeacherServiceError(f"Teacher with ID '{teacher_id}' not found")
         
@@ -383,7 +408,7 @@ class TeacherService:
                 month=month
             )
             
-            return {
+            stats = {
                 'teacher': teacher,
                 'year': year,
                 'month': month,
@@ -397,6 +422,10 @@ class TeacherService:
                 'attendance_percentage': summary.attendance_percentage,
                 'summary_exists': True,
             }
+            
+            # Cache the result
+            cache.set(cache_key, stats, 300)  # 5 minutes
+            return stats
         except TeacherAttendanceSummary.DoesNotExist:
             # Return empty statistics if no summary exists
             return {

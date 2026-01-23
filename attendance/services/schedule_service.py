@@ -173,6 +173,8 @@ class TeacherScheduleService:
             ValidationError: If validation fails or conflicts are detected
             ObjectDoesNotExist: If referenced objects don't exist
         """
+        from django.core.cache import cache
+        
         try:
             # Fetch related objects
             teacher = Teacher.objects.get(id=data['teacher_id'])
@@ -197,6 +199,10 @@ class TeacherScheduleService:
             # Validate and save (clean() will be called automatically)
             schedule.full_clean()
             schedule.save()
+            
+            # Invalidate cache
+            cache.delete(f'teacher_weekly_schedule_{teacher.id}')
+            cache.delete(f'teacher_stats_{teacher.id}_{date.today().year}_{date.today().month}')
             
             return schedule
             
@@ -327,11 +333,19 @@ class TeacherScheduleService:
         Raises:
             ObjectDoesNotExist: If teacher not found
         """
+        from django.core.cache import cache
+        
+        # Try cache first (cache for 5 minutes)
+        cache_key = f'teacher_weekly_schedule_{teacher_id}'
+        cached_schedule = cache.get(cache_key)
+        if cached_schedule:
+            return cached_schedule
+        
         # Verify teacher exists
         if not Teacher.objects.filter(id=teacher_id).exists():
             raise ObjectDoesNotExist(f"Teacher with id {teacher_id} not found")
         
-        # Get all active schedules for the teacher
+        # Get all active schedules for the teacher with optimized query
         schedules = TeacherSchedule.objects.filter(
             teacher_id=teacher_id,
             is_active=True,
@@ -339,13 +353,21 @@ class TeacherScheduleService:
         ).filter(
             Q(end_date__isnull=True) | Q(end_date__gte=date.today())
         ).select_related(
-            'subject', 'classroom'
+            'subject', 'classroom', 'classroom__academic_level'
+        ).only(
+            'id', 'day_of_week', 'jp_start', 'jp_end', 'room_number', 'notes',
+            'subject__name', 'subject__code',
+            'classroom__name', 'classroom__grade', 'classroom__section',
+            'classroom__academic_level__code'
         ).order_by('day_of_week', 'jp_start')
         
         # Organize by day of week
         weekly_schedule = {day: [] for day in range(7)}
         for schedule in schedules:
             weekly_schedule[schedule.day_of_week].append(schedule)
+        
+        # Cache the result
+        cache.set(cache_key, weekly_schedule, 300)  # 5 minutes
         
         return weekly_schedule
     
@@ -430,12 +452,16 @@ class TeacherScheduleService:
             ObjectDoesNotExist: If schedule not found
             ValidationError: If validation fails or conflicts are detected
         """
+        from django.core.cache import cache
+        
         try:
             schedule = TeacherSchedule.objects.get(id=schedule_id)
+            teacher_id = schedule.teacher_id
             
             # Update foreign key fields if provided
             if 'teacher_id' in data:
                 schedule.teacher = Teacher.objects.get(id=data['teacher_id'])
+                teacher_id = data['teacher_id']
             if 'subject_id' in data:
                 schedule.subject = Subject.objects.get(id=data['subject_id'])
             if 'classroom_id' in data:
@@ -463,6 +489,10 @@ class TeacherScheduleService:
             schedule.full_clean()
             schedule.save()
             
+            # Invalidate cache
+            cache.delete(f'teacher_weekly_schedule_{teacher_id}')
+            cache.delete(f'teacher_stats_{teacher_id}_{date.today().year}_{date.today().month}')
+            
             return schedule
             
         except TeacherSchedule.DoesNotExist:
@@ -488,10 +518,18 @@ class TeacherScheduleService:
         Raises:
             ObjectDoesNotExist: If schedule not found
         """
+        from django.core.cache import cache
+        
         try:
             schedule = TeacherSchedule.objects.get(id=schedule_id)
+            teacher_id = schedule.teacher_id
             schedule.is_active = False
             schedule.save()
+            
+            # Invalidate cache
+            cache.delete(f'teacher_weekly_schedule_{teacher_id}')
+            cache.delete(f'teacher_stats_{teacher_id}_{date.today().year}_{date.today().month}')
+            
             return True
         except TeacherSchedule.DoesNotExist:
             raise ObjectDoesNotExist(f"Schedule with id {schedule_id} not found")
