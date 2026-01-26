@@ -1,0 +1,31 @@
+# Simple Dockerfile for Cloud Run
+FROM python:3.11-slim
+
+# Set environment variables
+ENV PYTHONUNBUFFERED=1 \
+    PORT=8080
+
+WORKDIR /app
+
+# Install dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy and install requirements
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application
+COPY . .
+
+# Create directories
+RUN mkdir -p /app/data /app/staticfiles
+
+# Collect static files with minimal settings
+ENV SECRET_KEY=temporary-build-key
+ENV DEBUG=False
+RUN python manage.py collectstatic --noinput || true
+
+# Run application
+CMD gunicorn --bind :$PORT --workers 1 --threads 8 --timeout 0 sipa_yaumi.wsgi:application

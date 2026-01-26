@@ -7,12 +7,12 @@ __pycache__/
 venv/
 env/
 ENV/
+.venv
 
 # Django
 *.log
 db.sqlite3
 db.sqlite3-journal
-/staticfiles/
 /media/
 
 # IDE
@@ -25,14 +25,17 @@ db.sqlite3-journal
 # Git
 .git/
 .gitignore
+.gitattributes
 
 # Environment
 .env
 .env.local
+.env.*.local
 
 # OS
 .DS_Store
 Thumbs.db
+*.bak
 
 # Documentation
 *.md
@@ -42,6 +45,17 @@ Thumbs.db
 .coverage
 htmlcov/
 .pytest_cache/
+.tox/
 
 # Deployment
 *.sh
+.github/
+
+# Node (if any)
+node_modules/
+npm-debug.log
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
