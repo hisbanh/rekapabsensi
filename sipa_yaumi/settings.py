@@ -19,11 +19,22 @@ SECRET_KEY = config('SECRET_KEY', default='django-insecure-change-this-in-produc
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=True, cast=bool)
 
-# PythonAnywhere configuration
+# Detect if running on Cloud Run
+IS_CLOUD_RUN = os.getenv('K_SERVICE') is not None
+
+# PythonAnywhere and Cloud Run configuration
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1,testserver,hisbanh.pythonanywhere.com', cast=Csv())
 
-# CSRF trusted origins for PythonAnywhere
+# Add Cloud Run hosts automatically
+if IS_CLOUD_RUN:
+    ALLOWED_HOSTS.append('.run.app')
+
+# CSRF trusted origins for PythonAnywhere and Cloud Run
 CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', default='https://hisbanh.pythonanywhere.com', cast=Csv())
+
+# Add Cloud Run to trusted origins
+if IS_CLOUD_RUN:
+    CSRF_TRUSTED_ORIGINS.append('https://*.run.app')
 
 # Application definition
 DJANGO_APPS = [

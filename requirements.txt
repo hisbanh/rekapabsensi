@@ -13,6 +13,7 @@ django-extensions==3.2.3
 
 # Production tools
 whitenoise==6.6.0
+gunicorn==21.2.0
 
 # PDF Generation
 reportlab==4.0.8
